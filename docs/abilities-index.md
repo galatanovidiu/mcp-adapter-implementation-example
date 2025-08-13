@@ -1,0 +1,23 @@
+# Abilities Reference Index
+
+- Posts
+  - Create: `wpmcp/create-post`
+  - Get: `wpmcp/get-post`
+  - Update: `wpmcp/update-post`
+  - Delete: `wpmcp/delete-post`
+- Post Terms
+  - Attach: `wpmcp/attach-post-terms`
+  - Detach: `wpmcp/detach-post-terms`
+- Taxonomies & Terms
+  - List taxonomies: `wpmcp/list-taxonomies`
+  - Get terms: `wpmcp/get-terms`
+  - Create term: `wpmcp/create-term`
+  - Update term: `wpmcp/update-term`
+  - Delete term: `wpmcp/delete-term`
+- Post Meta
+  - List meta keys: `wpmcp/list-post-meta-keys`
+  - Get meta: `wpmcp/get-post-meta`
+  - Update meta: `wpmcp/update-post-meta`
+  - Delete meta: `wpmcp/delete-post-meta`
+- Blocks
+  - List block types: `wpmcp/list-block-types`
