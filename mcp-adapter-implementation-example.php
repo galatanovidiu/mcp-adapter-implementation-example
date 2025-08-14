@@ -39,12 +39,23 @@ if (is_file(__DIR__ . '/vendor/autoload_packages.php')) {
 
 // Load Abilities API (required by MCP Adapter).
 if (!function_exists('wp_register_ability')) {
+        // Setup admin notice to inform users about missing Abilities API.
+        add_action('admin_notices', static function() {
+            $plugin_url = 'https://github.com/WordPress/abilities-api';
+            $message = sprintf(
+                'The <strong>MCP Adapter Implementation Example</strong> plugin requires the <strong>Abilities API</strong> plugin to be installed and activated. ' .
+                'Please install it from <a href="%s" target="_blank">%s</a> or ensure it\'s available in the vendor directory.',
+                esc_url($plugin_url),
+                esc_html($plugin_url)
+            );
 
-    // This is a temporary fix to load the Abilities API.
-    // We should remove this once the Abilities API is available as a composerpackage or in the WordPress core.
-    if (is_file(__DIR__ . '/src/ThirdParty/AbilitiesApi/loader.php')) {
-        include_once __DIR__ . '/src/ThirdParty/AbilitiesApi/loader.php';
-    }
+            printf(
+                '<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+                wp_kses_post($message)
+            );
+        });
+        
+        return; // Exit early if Abilities API is not available.
 }
 
 
