@@ -19,7 +19,7 @@ parameters:
 		max: 80400
 	bootstrapFiles: []
 	paths:
-		- src/
+		- includes/
 	scanDirectories:
 		- vendor/wordpress/abilities-api
 		- vendor/wordpress/mcp-adapter

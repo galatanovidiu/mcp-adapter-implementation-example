@@ -210,6 +210,6 @@
 
 	<!-- Allow slow queries in this example plugin as they demonstrate functionality -->
 	<rule ref="WordPress.DB.SlowDBQuery">
-		<exclude-pattern>src/Abilities/Posts/ListPosts.php</exclude-pattern>
+		<exclude-pattern>includes/Abilities/Posts/ListPosts.php</exclude-pattern>
 	</rule>
 </ruleset>
