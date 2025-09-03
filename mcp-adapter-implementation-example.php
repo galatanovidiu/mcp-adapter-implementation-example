@@ -6,7 +6,7 @@
  * Author: Ovidiu Iulian Galatan (ovidiu.galatan@a8c.com)
  * Author URI: https://github.com/galatanovidiu
  * License: GPL-2.0-or-later
- * Requires PHP: 8.1
+ * Requires PHP: 7.4
  *
  * MCP Adapter Implementation Example plugin bootstrap.
  *
@@ -18,7 +18,7 @@
  * @link     https://github.com/WordPress/abilities-api
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 
 use WP\MCP\Core\McpAdapter;
@@ -41,26 +41,26 @@ if ( is_file( __DIR__ . '/vendor/autoload_packages.php' ) ) {
 
 // Load Abilities API (required by MCP Adapter).
 if ( ! function_exists( 'wp_register_ability' ) ) {
-		// Setup admin notice to inform users about missing Abilities API.
-		add_action(
-			'admin_notices',
-			static function () {
-				$plugin_url = 'https://github.com/WordPress/abilities-api';
-				$message    = sprintf(
-					'The <strong>MCP Adapter Implementation Example</strong> plugin requires the <strong>Abilities API</strong> plugin to be installed and activated. ' .
-					'Please install it from <a href="%s" target="_blank">%s</a> or ensure it\'s available in the vendor directory.',
-					esc_url( $plugin_url ),
-					esc_html( $plugin_url )
-				);
+	// Setup admin notice to inform users about missing Abilities API.
+	add_action(
+		'admin_notices',
+		static function () {
+			$plugin_url = 'https://github.com/WordPress/abilities-api';
+			$message    = sprintf(
+				'The <strong>MCP Adapter Implementation Example</strong> plugin requires the <strong>Abilities API</strong> plugin to be installed and activated. ' .
+				'Please install it from <a href="%s" target="_blank">%s</a> or ensure it\'s available in the vendor directory.',
+				esc_url( $plugin_url ),
+				esc_html( $plugin_url )
+			);
 
-				printf(
-					'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
-					wp_kses_post( $message )
-				);
-			}
-		);
+			printf(
+				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+				wp_kses_post( $message )
+			);
+		}
+	);
 
-		return; // Exit early if Abilities API is not available.
+	return; // Exit early if Abilities API is not available.
 }
 
 
@@ -69,6 +69,7 @@ add_action(
 	static function (): void {
 		if ( ! class_exists( McpAdapter::class ) ) {
 			error_log( '[MCP Adapter Example] McpAdapter class not found. Ensure MCP Adapter is loaded.' );
+
 			return;
 		}
 
@@ -88,7 +89,7 @@ add_action(
 						return;
 					}
 
-					$message  = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
+					$message = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
 					$message .= '<ul>';
 					foreach ( $errors as $error ) {
 						$message .= '<li>' . esc_html( $error ) . '</li>';
@@ -111,7 +112,7 @@ add_action(
 add_action(
 /**
  * @throws \Exception
- */    'mcp_adapter_init',
+ */ 'mcp_adapter_init',
 	static function ( McpAdapter $adapter ): void {
 
 		// Ensure abilities are loaded prior to server creation.
