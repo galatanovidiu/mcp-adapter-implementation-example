@@ -6,7 +6,8 @@
   "require": {
     "php": ">=8.1",
     "automattic/jetpack-autoloader": "^5.0",
-    "wordpress/mcp-adapter": "dev-trunk"
+    "wordpress/mcp-adapter": "dev-trunk",
+    "wordpress/abilities-api": "dev-trunk"
   },
   "autoload": {
     "psr-4": {
@@ -17,6 +18,10 @@
     {
       "type": "vcs",
       "url": "https://github.com/WordPress/mcp-adapter"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/WordPress/abilities-api"
     }
   ],
   "config": {
