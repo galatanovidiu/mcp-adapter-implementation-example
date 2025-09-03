@@ -1,0 +1,36 @@
+parameters:
+	# Rules
+	treatPhpDocTypesAsCertain: false
+	inferPrivatePropertyTypeFromConstructor: true
+	checkExplicitMixedMissingReturn: true
+	checkFunctionNameCase: true
+	checkInternalClassCaseSensitivity: true
+	checkTooWideReturnTypesInProtectedAndPublicMethods: true
+	polluteScopeWithAlwaysIterableForeach: false
+	polluteScopeWithLoopInitialAssignments: false
+	reportAlwaysTrueInLastCondition: true
+	reportStaticMethodSignatures: true
+	reportWrongPhpDocTypeInVarTag: true
+
+	# Configuration
+	level: 8
+	phpVersion:
+		min: 80100
+		max: 80400
+	bootstrapFiles: []
+	paths:
+		- includes/
+	scanDirectories:
+		- vendor/wordpress/abilities-api
+		- vendor/wordpress/mcp-adapter
+	excludePaths:
+		analyse:
+			- tests/
+			- vendor/
+			- tmp/
+		analyseAndScan:
+			- node_modules (?)
+
+	ignoreErrors:
+		- # TODO: These are too noisy, we'll restore them in the future.
+			identifier: missingType.iterableValue
