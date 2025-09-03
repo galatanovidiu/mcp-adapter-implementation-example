@@ -21,6 +21,7 @@
 declare( strict_types=1 );
 
 
+use OvidiuGalatan\McpAdapterExample\Abilities\BootstrapAbilities;
 use WP\MCP\Core\McpAdapter;
 use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
@@ -115,11 +116,9 @@ add_action(
  */ 'mcp_adapter_init',
 	static function ( McpAdapter $adapter ): void {
 
-		// Ensure abilities are loaded prior to server creation.
-		if ( is_file( __DIR__ . '/src/Abilities/Bootstrap.php' ) ) {
-			include_once __DIR__ . '/src/Abilities/Bootstrap.php';
-			\OvidiuGalatan\McpAdapterExample\Abilities\Bootstrap::init();
-		}
+
+			BootstrapAbilities::init();
+
 
 		$adapter->create_server(
 			'mcp-adapter-example-server',
