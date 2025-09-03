@@ -19,32 +19,66 @@ final class AttachPostTerms implements RegistersAbility {
 					'properties' => array(
 						'id'                => array(
 							'type'        => 'integer',
-							'description' => 'Post ID.',
+							'description' => 'The unique identifier of the WordPress post to attach terms to.',
+							'minimum'     => 1,
 						),
-						'taxonomy'          => array( 'type' => 'string' ),
+						'taxonomy'          => array(
+							'type'        => 'string',
+							'description' => 'The taxonomy slug (e.g., "category", "post_tag", or custom taxonomy) to attach terms to.',
+							'minLength'   => 1,
+							'maxLength'   => 32,
+							'pattern'     => '^[a-zA-Z0-9_-]+$',
+						),
 						'terms'             => array(
-							'type'  => 'array',
-							'items' => array(),
+							'type'        => 'array',
+							'description' => 'Array of terms to attach. Can be term IDs (integers), slugs, or names (strings).',
+							'minItems'    => 1,
+							'maxItems'    => 100,
+							'items'       => array(
+								'oneOf' => array(
+									array(
+										'type'        => 'integer',
+										'description' => 'Term ID',
+										'minimum'     => 1,
+									),
+									array(
+										'type'        => 'string',
+										'description' => 'Term slug or name',
+										'minLength'   => 1,
+										'maxLength'   => 200,
+									),
+								),
+							),
 						),
 						'append'            => array(
-							'type'    => 'boolean',
-							'default' => true,
+							'type'        => 'boolean',
+							'description' => 'Whether to append terms to existing ones (true) or replace all existing terms (false).',
+							'default'     => true,
 						),
 						'create_if_missing' => array(
-							'type'    => 'boolean',
-							'default' => false,
+							'type'        => 'boolean',
+							'description' => 'Whether to create new terms if they don\'t exist (requires appropriate permissions).',
+							'default'     => false,
 						),
 					),
+					'additionalProperties' => false,
 				),
 				'output_schema'       => array(
 					'type'       => 'object',
 					'required'   => array( 'attached_ids' ),
 					'properties' => array(
 						'attached_ids' => array(
-							'type'  => 'array',
-							'items' => array( 'type' => 'integer' ),
+							'type'        => 'array',
+							'description' => 'Array of term IDs that were successfully attached to the post.',
+							'items'       => array(
+								'type'        => 'integer',
+								'description' => 'Term ID',
+								'minimum'     => 1,
+							),
+							'uniqueItems' => true,
 						),
 					),
+					'additionalProperties' => false,
 				),
 				'permission_callback' => static function ( array $input ): bool {
 					$post_id = (int) ( $input['id'] ?? 0 );
