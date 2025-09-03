@@ -118,6 +118,11 @@ debug.log
 /test-results/
 /playwright-report/
 /coverage/
+/tests/_output/*
+!/tests/_output/.gitkeep
+
+# PHPCS cache
+.phpunit.result.cache
 
 # Local development
 local-config.php

@@ -50,6 +50,11 @@ The plugin implements a comprehensive set of MCP abilities that demonstrate Word
 - MCP Adapter with REST transport
 - Jetpack Autoloader
 
+**Code Quality:**
+- WordPress Coding Standards (PHPCS)
+- PHPStan Level 8 static analysis
+- Automated code formatting
+
 ## Dependencies
 
 **Abilities API**: Currently hardcoded in this implementation. As soon as it becomes available as a Composer package, it will be loaded as a standard dependency.
@@ -99,6 +104,28 @@ The plugin implements a comprehensive set of MCP abilities that demonstrate Word
 This is an educational/example plugin demonstrating MCP Adapter implementation patterns. Once activated, it exposes WordPress content management capabilities through the Model Context Protocol for AI agent interaction.
 
 The plugin creates an MCP server at the `mcp-adapter-example` endpoint with tools prefixed as `wpmcp-example/` to demonstrate proper tool naming conventions.
+
+## Development
+
+### Code Quality Commands
+
+```bash
+# Check coding standards
+composer lint:php
+
+# Fix coding standards automatically
+composer lint:php:fix
+
+# Run static analysis
+composer lint:php:stan
+
+# Format code (alias for lint:php:fix)
+composer format
+```
+
+### Documentation
+
+- [Coding Standards](docs/coding-standards.md) - Detailed setup and usage guide
 
 ## MCP Server Configuration 
 
