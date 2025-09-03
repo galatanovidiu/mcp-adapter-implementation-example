@@ -68,6 +68,9 @@
 		<exclude name="Universal.Operators.DisallowShortTernary" />
 		<!-- Needed to typehint, see: https://github.com/WordPress/WordPress-Coding-Standards/issues/403 -->
 		<exclude name="Generic.Commenting.DocComment.MissingShort" />
+		<!-- Allow classes and functions without doc comments in this example plugin -->
+		<exclude name="Squiz.Commenting.ClassComment.Missing" />
+		<exclude name="Squiz.Commenting.FunctionComment.Missing" />
 		<!-- Allow internal hook names without prefixes -->
 		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound" />
 		<!-- Allow unused parameters in interface implementations -->
