@@ -29,11 +29,11 @@
   "repositories": [
     {
       "type": "vcs",
-      "url": "https://github.com/WordPress/mcp-adapter"
+      "url": "https://github.com/WordPress/abilities-api"
     },
     {
       "type": "vcs",
-      "url": "https://github.com/WordPress/abilities-api"
+      "url": "https://github.com/WordPress/mcp-adapter"
     }
   ],
   "config": {

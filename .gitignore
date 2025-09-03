@@ -133,3 +133,4 @@ development.json
 # Plugin development
 *.dev.php
 *.local.php
+branch-config.json

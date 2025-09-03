@@ -1,0 +1,44 @@
+{
+  "configurations": {
+    "stable": {
+      "description": "Stable trunk versions",
+      "packages": {
+        "wordpress/mcp-adapter": {
+          "version": "dev-trunk",
+          "repository": "https://github.com/WordPress/mcp-adapter"
+        },
+        "wordpress/abilities-api": {
+          "version": "dev-trunk",
+          "repository": "https://github.com/WordPress/abilities-api"
+        }
+      }
+    },
+    "pr-37-cursor-fix": {
+      "description": "PR #37 - Fix for Cursor IDE compatibility (structuredContent)",
+      "packages": {
+        "wordpress/mcp-adapter": {
+          "version": "dev-fix/add-structured-content",
+          "repository": "https://github.com/finleyjchen/mcp-adapter"
+        },
+        "wordpress/abilities-api": {
+          "version": "dev-trunk",
+          "repository": "https://github.com/WordPress/abilities-api"
+        }
+      }
+    },
+    "custom": {
+      "description": "Custom branch configuration - edit as needed",
+      "packages": {
+        "wordpress/mcp-adapter": {
+          "version": "dev-trunk",
+          "repository": "https://github.com/WordPress/mcp-adapter"
+        },
+        "wordpress/abilities-api": {
+          "version": "dev-trunk",
+          "repository": "https://github.com/WordPress/abilities-api"
+        }
+      }
+    }
+  },
+  "current": "stable"
+}
