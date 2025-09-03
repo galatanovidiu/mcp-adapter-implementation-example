@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace OvidiuGalatan\McpAdapterExample\Abilities\Posts\Meta;
 
-use OvidiuGalatan\McpAdapterExample\Abilities\Contracts\RegistersAbility;
+use OvidiuGalatan\McpAdapterExample\Abilities\RegistersAbility;
 
 final class DeletePostMeta implements RegistersAbility {
 

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace OvidiuGalatan\McpAdapterExample\Abilities\Taxonomies;
 
-use OvidiuGalatan\McpAdapterExample\Abilities\Contracts\RegistersAbility;
+use OvidiuGalatan\McpAdapterExample\Abilities\RegistersAbility;
 
 final class DeleteTerm implements RegistersAbility {
 
