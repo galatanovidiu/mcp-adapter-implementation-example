@@ -19,9 +19,10 @@
  */
 
 declare(strict_types=1);;
-use WP\MCP\Core\McpAdapter;
+
 use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
+use WP\MCP\Core\McpAdapter;
 use WP\MCP\Transport\Http\RestTransport;
 
 if (!defined('ABSPATH')) {
