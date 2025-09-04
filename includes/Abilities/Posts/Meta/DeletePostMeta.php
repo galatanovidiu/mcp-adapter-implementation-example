@@ -42,52 +42,68 @@ final class DeletePostMeta implements RegistersAbility {
 						'deleted' => array( 'type' => 'boolean' ),
 					),
 				),
-				'permission_callback' => static function ( array $input ): bool {
-					$post_id = (int) ( $input['id'] ?? 0 );
-					$key     = isset( $input['key'] ) ? (string) $input['key'] : '';
-					if ( 0 >= $post_id || '' === $key ) {
-						return false;
-					}
-					return \current_user_can( 'edit_post_meta', $post_id, $key );
-				},
-				'execute_callback'    => static function ( array $input ) {
-					$post_id = (int) $input['id'];
-					$key     = (string) $input['key'];
-					$all     = ! empty( $input['all_values'] );
-
-					if ( $all ) {
-						$deleted_any = false;
-						$values = (array) \get_post_meta( $post_id, $key, false );
-						foreach ( $values as $v ) {
-							if ( ! \delete_post_meta( $post_id, $key, $v ) ) {
-								continue;
-							}
-
-							$deleted_any = true;
-						}
-						return array( 'deleted' => $deleted_any || empty( $values ) );
-					}
-
-					if ( array_key_exists( 'value', $input ) ) {
-						return array( 'deleted' => (bool) \delete_post_meta( $post_id, $key, $input['value'] ) );
-					}
-
-					$current = \get_post_meta( $post_id, $key, false );
-					if ( empty( $current ) ) {
-						return array( 'deleted' => true );
-					}
-					$deleted_any = false;
-					foreach ( $current as $v ) {
-						if ( ! \delete_post_meta( $post_id, $key, $v ) ) {
-							continue;
-						}
-
-						$deleted_any = true;
-					}
-					return array( 'deleted' => $deleted_any );
-				},
+				'permission_callback' => array( self::class, 'check_permission' ),
+				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(),
 			)
 		);
+	}
+
+	/**
+	 * Check permission for deleting post meta.
+	 *
+	 * @param array $input Input parameters.
+	 * @return bool Whether the user has permission.
+	 */
+	public static function check_permission( array $input ): bool {
+		$post_id = (int) ( $input['id'] ?? 0 );
+		$key     = isset( $input['key'] ) ? (string) $input['key'] : '';
+		if ( 0 >= $post_id || '' === $key ) {
+			return false;
+		}
+		return \current_user_can( 'edit_post_meta', $post_id, $key );
+	}
+
+	/**
+	 * Execute the delete post meta operation.
+	 *
+	 * @param array $input Input parameters.
+	 * @return array|\WP_Error Result array or error.
+	 */
+	public static function execute( array $input ) {
+		$post_id = (int) $input['id'];
+		$key     = (string) $input['key'];
+		$all     = ! empty( $input['all_values'] );
+
+		if ( $all ) {
+			$deleted_any = false;
+			$values      = (array) \get_post_meta( $post_id, $key, false );
+			foreach ( $values as $v ) {
+				if ( ! \delete_post_meta( $post_id, $key, $v ) ) {
+					continue;
+				}
+
+				$deleted_any = true;
+			}
+			return array( 'deleted' => $deleted_any || empty( $values ) );
+		}
+
+		if ( array_key_exists( 'value', $input ) ) {
+			return array( 'deleted' => (bool) \delete_post_meta( $post_id, $key, $input['value'] ) );
+		}
+
+		$current = \get_post_meta( $post_id, $key, false );
+		if ( empty( $current ) ) {
+			return array( 'deleted' => true );
+		}
+		$deleted_any = false;
+		foreach ( $current as $v ) {
+			if ( ! \delete_post_meta( $post_id, $key, $v ) ) {
+				continue;
+			}
+
+			$deleted_any = true;
+		}
+		return array( 'deleted' => $deleted_any );
 	}
 }

@@ -32,26 +32,45 @@ final class DeleteTerm implements RegistersAbility {
 						'deleted' => array( 'type' => 'boolean' ),
 					),
 				),
-				'permission_callback' => static function ( array $input ): bool {
-					$taxonomy = isset( $input['taxonomy'] ) ? \sanitize_key( (string) $input['taxonomy'] ) : '';
-					if ( ! \taxonomy_exists( $taxonomy ) ) {
-						return false; }
-					$tax = \get_taxonomy( $taxonomy );
-					return $tax && isset( $tax->cap->delete_terms ) ? \current_user_can( $tax->cap->delete_terms ) : \current_user_can( 'manage_categories' );
-				},
-				'execute_callback'    => static function ( array $input ) {
-					$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
-					$term_id  = (int) $input['term_id'];
-					$args = array();
-					if ( ! empty( $input['reassign'] ) ) {
-						$args['default'] = (int) $input['reassign']; }
-					$deleted = \wp_delete_term( $term_id, $taxonomy, $args );
-					if ( \is_wp_error( $deleted ) ) {
-						return $deleted; }
-					return array( 'deleted' => ( false !== $deleted ) );
-				},
+				'permission_callback' => array( self::class, 'check_permission' ),
+				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(),
 			)
 		);
+	}
+
+	/**
+	 * Check permission for deleting a term.
+	 *
+	 * @param array $input Input parameters.
+	 * @return bool Whether the user has permission.
+	 */
+	public static function check_permission( array $input ): bool {
+		$taxonomy = isset( $input['taxonomy'] ) ? \sanitize_key( (string) $input['taxonomy'] ) : '';
+		if ( ! \taxonomy_exists( $taxonomy ) ) {
+			return false;
+		}
+		$tax = \get_taxonomy( $taxonomy );
+		return $tax && isset( $tax->cap->delete_terms ) ? \current_user_can( $tax->cap->delete_terms ) : \current_user_can( 'manage_categories' );
+	}
+
+	/**
+	 * Execute the delete term operation.
+	 *
+	 * @param array $input Input parameters.
+	 * @return array|\WP_Error Result array or error.
+	 */
+	public static function execute( array $input ) {
+		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
+		$term_id  = (int) $input['term_id'];
+		$args     = array();
+		if ( ! empty( $input['reassign'] ) ) {
+			$args['default'] = (int) $input['reassign'];
+		}
+		$deleted = \wp_delete_term( $term_id, $taxonomy, $args );
+		if ( \is_wp_error( $deleted ) ) {
+			return $deleted;
+		}
+		return array( 'deleted' => ( false !== $deleted ) );
 	}
 }

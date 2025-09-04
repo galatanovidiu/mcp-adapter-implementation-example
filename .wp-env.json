@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/wp-env.json",
+	"core": null,
+	"plugins": [
+		"./"
+	],
+	"themes": [
+		"WordPress/twentytwentyfour"
+	],
+	"port": 8890,
+	"testsPort": 8891,
+	"env": {
+		"development": {
+			"config": {
+				"WP_DEBUG": true,
+				"WP_DEBUG_LOG": true,
+				"WP_DEBUG_DISPLAY": false,
+				"SCRIPT_DEBUG": true,
+				"WP_DEVELOPMENT_MODE": "plugin"
+			}
+		},
+		"tests": {
+			"config": {
+				"WP_DEBUG": true,
+				"WP_DEBUG_LOG": true,
+				"SCRIPT_DEBUG": true,
+				"FS_METHOD": "direct"
+			},
+			"mappings": {
+				"/wp-content/plugins/mcp-adapter-implementation-example": "."
+			}
+		}
+	}
+}

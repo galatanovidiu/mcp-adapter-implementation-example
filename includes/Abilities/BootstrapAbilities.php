@@ -23,11 +23,21 @@ use OvidiuGalatan\McpAdapterExample\Abilities\Taxonomies\UpdateTerm;
 
 final class BootstrapAbilities {
 
+	/**
+	 * Flag to track if abilities have been initialized.
+	 *
+	 * @var bool
+	 */
+	private static bool $initialized = false;
+
 	public static function init(): void {
+		if ( self::$initialized ) {
+			return;
+		}
+
 		\add_action(
 			'abilities_api_init',
 			static function (): void {
-				@ray('Registering abilities...');
 				// Post CRUD abilities
 				CreatePost::register();
 				GetPost::register();
@@ -54,8 +64,16 @@ final class BootstrapAbilities {
 				// Attach/Detach helpers
 				AttachPostTerms::register();
 				DetachPostTerms::register();
-			},
-			10
+			}
 		);
+
+		self::$initialized = true;
+	}
+
+	/**
+	 * Reset the initialization state for testing.
+	 */
+	public static function reset(): void {
+		self::$initialized = false;
 	}
 }

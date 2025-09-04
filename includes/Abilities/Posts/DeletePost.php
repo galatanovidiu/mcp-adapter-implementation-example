@@ -35,28 +35,44 @@ final class DeletePost implements RegistersAbility {
 						'deleted' => array( 'type' => 'boolean' ),
 					),
 				),
-				'permission_callback' => static function ( array $input ): bool {
-					$post_id = (int) ( $input['id'] ?? 0 );
-					if ( $post_id <= 0 ) {
-						return false;
-					}
-					return \current_user_can( 'delete_post', $post_id );
-				},
-				'execute_callback'    => static function ( array $input ) {
-					$post_id = (int) $input['id'];
-					$force   = ! empty( $input['force'] );
-
-					$deleted = \wp_delete_post( $post_id, $force );
-					if ( false === $deleted ) {
-						return new \WP_Error( 'delete_failed', 'Failed to delete the post.' );
-					}
-
-					return array(
-						'deleted' => true,
-					);
-				},
+				'permission_callback' => array( self::class, 'check_permission' ),
+				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(),
 			)
+		);
+	}
+
+	/**
+	 * Check permission for deleting a post.
+	 *
+	 * @param array $input Input parameters.
+	 * @return bool Whether the user has permission.
+	 */
+	public static function check_permission( array $input ): bool {
+		$post_id = (int) ( $input['id'] ?? 0 );
+		if ( $post_id <= 0 ) {
+			return false;
+		}
+		return \current_user_can( 'delete_post', $post_id );
+	}
+
+	/**
+	 * Execute the delete post operation.
+	 *
+	 * @param array $input Input parameters.
+	 * @return array|\WP_Error Result array or error.
+	 */
+	public static function execute( array $input ) {
+		$post_id = (int) $input['id'];
+		$force   = ! empty( $input['force'] );
+
+		$deleted = \wp_delete_post( $post_id, $force );
+		if ( false === $deleted ) {
+			return new \WP_Error( 'delete_failed', 'Failed to delete the post.' );
+		}
+
+		return array(
+			'deleted' => true,
 		);
 	}
 }

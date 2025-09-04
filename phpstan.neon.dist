@@ -27,7 +27,7 @@ parameters:
 		analyse:
 			- tests/
 			- vendor/
-			- tmp/
+			- tmp (?)
 		analyseAndScan:
 			- node_modules (?)
 

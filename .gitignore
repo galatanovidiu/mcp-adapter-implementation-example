@@ -1,136 +1,34 @@
-# Composer dependencies
+# Dependencies
 /vendor/
-composer.phar
-composer.lock
+/node_modules/
 
-# Temporary and cache files
-/tmp/
-/temp/
-*.tmp
-*.cache
-*.log
-*.swp
-*.swo
-*~
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDE and editor files
+# IDE files
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
-*.code-workspace
-.phpstorm.meta.php
 
-# OS generated files
+# OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-desktop.ini
 
-# PHP
-*.php~
-*.phps
-*.phtml
-
-# PHPUnit
-/phpunit.xml
-phpunit.phar
-/.phpunit.result.cache
-
-# Code coverage
-/coverage/
-/build/
-clover.xml
-coverage.xml
+# Test output
+/tests/_output/*
+!/tests/_output/.gitkeep
+.phpunit.result.cache
 
 # Logs
 *.log
-logs/
-error_log
-access_log
 
-# Environment files
+# Environment
 .env
-.env.local
-.env.*.local
-.environment
-
-# Node.js (if any frontend assets)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.node_repl_history
-
-# Package managers
-pnpm-lock.yaml
-yarn.lock
-package-lock.json
 
 # Build artifacts
-/dist/
-/build/
-/public/build/
-
-# Backup files
-*.bak
-*.backup
-*.orig
-*.save
-
-# Database
-*.sql
-*.sqlite
-*.db
-
-# Archives
 *.zip
-*.tar
-*.tar.gz
-*.rar
-*.7z
 
-# Documentation build artifacts
-/docs/_build/
-/docs/build/
+# Composer
+composer.lock
 
-# Security
-.htpasswd
-.htaccess.bak
-
-# Plugin specific temporary files
-mcp-*.log
-debug.log
-
-# Test artifacts
-/test-results/
-/playwright-report/
-/coverage/
-/tests/_output/*
-!/tests/_output/.gitkeep
-
-# PHPCS cache
-.phpunit.result.cache
-
-# Local development
-local-config.php
-local.json
-development.json
-
-
-# Plugin development
-*.dev.php
-*.local.php
-branch-config.json
+# Cache
+phpcs-cache.json
+phpstan-cache/

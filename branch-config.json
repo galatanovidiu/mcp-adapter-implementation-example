@@ -1,0 +1,33 @@
+{
+  "configurations": {
+    "stable": {
+      "description": "Stable trunk versions",
+      "packages": {
+        "wordpress/mcp-adapter": {
+          "version": "dev-trunk",
+          "repository": "https://github.com/WordPress/mcp-adapter"
+        },
+        "wordpress/abilities-api": {
+          "version": "dev-trunk",
+          "repository": "https://github.com/WordPress/abilities-api"
+        }
+      }
+    },
+    "local-vcs": {
+      "description": "Local VCS versions from wp-content/lib",
+      "packages": {
+        "wordpress/mcp-adapter": {
+          "version": "*",
+          "type": "path",
+          "repository": "/Users/ovidiugalatan/Studio/mcp-adapter/wp-content/lib/mcp-adapter"
+        },
+        "wordpress/abilities-api": {
+          "version": "*",
+          "type": "path",
+          "repository": "/Users/ovidiugalatan/Studio/mcp-adapter/wp-content/lib/abilities-api"
+        }
+      }
+    }
+  },
+  "current": "local-vcs"
+}

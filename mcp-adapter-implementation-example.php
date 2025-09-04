@@ -90,7 +90,7 @@ add_action(
 						return;
 					}
 
-					$message = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
+					$message  = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
 					$message .= '<ul>';
 					foreach ( $errors as $error ) {
 						$message .= '<li>' . esc_html( $error ) . '</li>';
@@ -113,12 +113,10 @@ add_action(
 add_action(
 /**
  * @throws \Exception
- */ 'mcp_adapter_init',
+ */    'mcp_adapter_init',
 	static function ( McpAdapter $adapter ): void {
 
-
 			BootstrapAbilities::init();
-
 
 		$adapter->create_server(
 			'mcp-adapter-example-server',
