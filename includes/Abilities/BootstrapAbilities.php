@@ -23,7 +23,18 @@ use OvidiuGalatan\McpAdapterExample\Abilities\Taxonomies\UpdateTerm;
 
 final class BootstrapAbilities {
 
+	/**
+	 * Flag to track if abilities have been initialized.
+	 *
+	 * @var bool
+	 */
+	private static bool $initialized = false;
+
 	public static function init(): void {
+		if ( self::$initialized ) {
+			return;
+		}
+
 		\add_action(
 			'abilities_api_init',
 			static function (): void {
@@ -55,5 +66,14 @@ final class BootstrapAbilities {
 				DetachPostTerms::register();
 			}
 		);
+
+		self::$initialized = true;
+	}
+
+	/**
+	 * Reset the initialization state for testing.
+	 */
+	public static function reset(): void {
+		self::$initialized = false;
 	}
 }
