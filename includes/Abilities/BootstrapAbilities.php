@@ -27,7 +27,6 @@ final class BootstrapAbilities {
 		\add_action(
 			'abilities_api_init',
 			static function (): void {
-				@ray('Registering abilities...');
 				// Post CRUD abilities
 				CreatePost::register();
 				GetPost::register();
@@ -54,8 +53,7 @@ final class BootstrapAbilities {
 				// Attach/Detach helpers
 				AttachPostTerms::register();
 				DetachPostTerms::register();
-			},
-			10
+			}
 		);
 	}
 }
