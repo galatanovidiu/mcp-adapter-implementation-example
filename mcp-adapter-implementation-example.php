@@ -113,12 +113,10 @@ add_action(
 add_action(
 /**
  * @throws \Exception
- */ 'mcp_adapter_init',
+ */    'mcp_adapter_init',
 	static function ( McpAdapter $adapter ): void {
 
-
 			BootstrapAbilities::init();
-
 
 		$adapter->create_server(
 			'mcp-adapter-example-server',
