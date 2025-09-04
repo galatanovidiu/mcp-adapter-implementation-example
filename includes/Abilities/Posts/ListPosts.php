@@ -18,6 +18,11 @@ final class ListPosts implements RegistersAbility {
 				)
 			)
 		);
+		
+		// Ensure we always have at least some basic post statuses
+		if ( empty( $available_post_statuses ) ) {
+			$available_post_statuses = array( 'publish', 'draft', 'private', 'pending', 'future' );
+		}
 
 		\wp_register_ability(
 			'wpmcp-example/list-posts',
@@ -215,218 +220,234 @@ final class ListPosts implements RegistersAbility {
 						),
 					),
 				),
-				'permission_callback' => static function ( array $input ): bool {
-					// Check if user can read posts for the requested post types
-					$post_types = isset( $input['post_type'] ) ? (array) $input['post_type'] : array( 'post' );
-
-					// Handle 'any' post type - expand to all public post types
-					if ( in_array( 'any', $post_types, true ) ) {
-						$post_types = array_values( (array) \get_post_types( array( 'public' => true ), 'names' ) );
-					}
-
-					foreach ( $post_types as $post_type ) {
-						$post_type = \sanitize_key( (string) $post_type );
-						if ( ! \post_type_exists( $post_type ) ) {
-							continue;
-						}
-						$pto = \get_post_type_object( $post_type );
-						if ( ! $pto ) {
-							continue;
-						}
-						$cap = $pto->cap->read ?? 'read';
-						if ( ! \current_user_can( $cap ) ) {
-							return false;
-						}
-					}
-					return true;
-				},
-				'execute_callback'    => static function ( array $input ) {
-					// Handle post types - expand 'any' to all public post types
-					$post_types = isset( $input['post_type'] ) ? (array) $input['post_type'] : array( 'post' );
-					if ( in_array( 'any', $post_types, true ) ) {
-						$post_types = array_values( (array) \get_post_types( array( 'public' => true ), 'names' ) );
-					}
-
-					// Build WP_Query arguments
-					$args = array(
-						'post_type'      => $post_types,
-						'post_status'    => isset( $input['post_status'] ) ? (array) $input['post_status'] : array( 'publish' ),
-						'posts_per_page' => isset( $input['limit'] ) ? (int) $input['limit'] : 10,
-						'offset'         => isset( $input['offset'] ) ? (int) $input['offset'] : 0,
-						'orderby'        => isset( $input['orderby'] ) ? \sanitize_key( (string) $input['orderby'] ) : 'date',
-						'order'          => isset( $input['order'] ) ? \sanitize_key( (string) $input['order'] ) : 'DESC',
-						'no_found_rows'  => false, // We need found_posts for pagination
-					);
-
-					// Add search term
-					if ( ! empty( $input['search'] ) ) {
-						$args['s'] = \sanitize_text_field( (string) $input['search'] );
-					}
-
-					// Add author filter
-					if ( ! empty( $input['author'] ) ) {
-						$args['author'] = (int) $input['author'];
-					}
-
-					// Add date query
-					if ( ! empty( $input['date_query'] ) && \is_array( $input['date_query'] ) ) {
-						$date_query = array();
-						$date_input = $input['date_query'];
-
-						if ( ! empty( $date_input['after'] ) ) {
-							$date_query['after'] = \sanitize_text_field( (string) $date_input['after'] );
-						}
-						if ( ! empty( $date_input['before'] ) ) {
-							$date_query['before'] = \sanitize_text_field( (string) $date_input['before'] );
-						}
-						if ( ! empty( $date_input['year'] ) ) {
-							$date_query['year'] = (int) $date_input['year'];
-						}
-						if ( ! empty( $date_input['month'] ) ) {
-							$date_query['month'] = (int) $date_input['month'];
-						}
-
-						if ( ! empty( $date_query ) ) {
-							$args['date_query'] = array( $date_query );
-						}
-					}
-
-					// Add meta query
-					if ( ! empty( $input['meta_query'] ) && \is_array( $input['meta_query'] ) ) {
-						$meta_query = array();
-						foreach ( $input['meta_query'] as $meta_condition ) {
-							if ( ! \is_array( $meta_condition ) || empty( $meta_condition['key'] ) ) {
-								continue;
-							}
-
-							$condition = array(
-								'key'     => \sanitize_key( (string) $meta_condition['key'] ),
-								'compare' => isset( $meta_condition['compare'] ) ? \sanitize_key( (string) $meta_condition['compare'] ) : '=',
-							);
-
-							if ( isset( $meta_condition['value'] ) ) {
-								$condition['value'] = \sanitize_text_field( (string) $meta_condition['value'] );
-							}
-
-							$meta_query[] = $condition;
-						}
-
-						if ( ! empty( $meta_query ) ) {
-							$args['meta_query'] = $meta_query;
-						}
-					}
-
-					// Add taxonomy query
-					if ( ! empty( $input['tax_query'] ) && \is_array( $input['tax_query'] ) ) {
-						$tax_query = array();
-						foreach ( $input['tax_query'] as $tax_condition ) {
-							if ( ! \is_array( $tax_condition ) || empty( $tax_condition['taxonomy'] ) || empty( $tax_condition['terms'] ) ) {
-								continue;
-							}
-
-							$taxonomy = \sanitize_key( (string) $tax_condition['taxonomy'] );
-							if ( ! \taxonomy_exists( $taxonomy ) ) {
-								continue;
-							}
-
-							$condition = array(
-								'taxonomy' => $taxonomy,
-								'field'    => isset( $tax_condition['field'] ) ? \sanitize_key( (string) $tax_condition['field'] ) : 'term_id',
-								'terms'    => \is_array( $tax_condition['terms'] ) ? $tax_condition['terms'] : array( $tax_condition['terms'] ),
-								'operator' => isset( $tax_condition['operator'] ) ? \sanitize_key( (string) $tax_condition['operator'] ) : 'IN',
-							);
-
-							$tax_query[] = $condition;
-						}
-
-						if ( ! empty( $tax_query ) ) {
-							$args['tax_query'] = $tax_query;
-						}
-					}
-
-					// Execute query
-					$query = new \WP_Query( $args );
-
-					if ( ! $query->have_posts() ) {
-						return array(
-							'posts'       => array(),
-							'total'       => 0,
-							'found_posts' => 0,
-							'max_pages'   => 0,
-						);
-					}
-
-					$include_meta = ! empty( $input['include_meta'] );
-					$include_taxonomies = ! empty( $input['include_taxonomies'] );
-
-					$posts = array();
-					while ( $query->have_posts() ) {
-						$query->the_post();
-						$post = \get_post();
-						if ( ! $post ) {
-							continue;
-						}
-
-						$post_data = array(
-							'id'        => $post->ID,
-							'post_type' => $post->post_type,
-							'status'    => $post->post_status,
-							'title'     => (string) $post->post_title,
-							'content'   => (string) $post->post_content,
-							'excerpt'   => (string) $post->post_excerpt,
-							'link'      => (string) \get_permalink( $post->ID ),
-							'date'      => $post->post_date,
-							'modified'  => $post->post_modified,
-							'author'    => (int) $post->post_author,
-							'slug'      => $post->post_name,
-						);
-
-						// Include meta if requested
-						if ( $include_meta ) {
-							$post_data['meta'] = \get_post_meta( $post->ID );
-						}
-
-						// Include taxonomies if requested
-						if ( $include_taxonomies ) {
-							$tax_map = array();
-							$supported_taxonomies = \get_object_taxonomies( $post->post_type, 'names' );
-							foreach ( $supported_taxonomies as $tax ) {
-								$terms = \wp_get_post_terms( $post->ID, $tax, array( 'fields' => 'all' ) );
-								$tax_map[ $tax ] = array();
-								if ( \is_wp_error( $terms ) ) {
-									continue;
-								}
-								foreach ( $terms as $t ) {
-									if ( ! ( $t instanceof \WP_Term ) ) {
-										continue;
-									}
-
-									$tax_map[ $tax ][] = array(
-										'id'     => (int) $t->term_id,
-										'name'   => (string) $t->name,
-										'slug'   => (string) $t->slug,
-										'parent' => (int) $t->parent,
-									);
-								}
-							}
-							$post_data['taxonomies'] = $tax_map;
-						}
-
-						$posts[] = $post_data;
-					}
-
-					// Reset global post data
-					\wp_reset_postdata();
-
-					return array(
-						'posts'       => $posts,
-						'total'       => count( $posts ),
-						'found_posts' => (int) $query->found_posts,
-						'max_pages'   => (int) $query->max_num_pages,
-					);
-				},
+				'permission_callback' => array( static::class, 'check_permission' ),
+				'execute_callback'    => array( static::class, 'execute' ),
 				'meta'                => array(),
 			)
+		);
+	}
+
+	/**
+	 * Check permission for listing posts.
+	 *
+	 * @param array $input Input parameters.
+	 * @return bool Whether the user has permission.
+	 */
+	public static function check_permission( array $input ): bool {
+		// Check if user can read posts for the requested post types
+		$post_types = isset( $input['post_type'] ) ? (array) $input['post_type'] : array( 'post' );
+
+		// Handle 'any' post type - expand to all public post types
+		if ( in_array( 'any', $post_types, true ) ) {
+			$post_types = array_values( (array) \get_post_types( array( 'public' => true ), 'names' ) );
+		}
+
+		foreach ( $post_types as $post_type ) {
+			$post_type = \sanitize_key( (string) $post_type );
+			if ( ! \post_type_exists( $post_type ) ) {
+				continue;
+			}
+			$pto = \get_post_type_object( $post_type );
+			if ( ! $pto ) {
+				continue;
+			}
+			$cap = $pto->cap->read ?? 'read';
+			if ( ! \current_user_can( $cap ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Execute the list posts operation.
+	 *
+	 * @param array $input Input parameters.
+	 * @return array|\\WP_Error Result array or error.
+	 */
+	public static function execute( array $input ) {
+		// Handle post types - expand 'any' to all public post types
+		$post_types = isset( $input['post_type'] ) ? (array) $input['post_type'] : array( 'post' );
+		if ( in_array( 'any', $post_types, true ) ) {
+			$post_types = array_values( (array) \get_post_types( array( 'public' => true ), 'names' ) );
+		}
+
+		// Build WP_Query arguments
+		$args = array(
+			'post_type'      => $post_types,
+			'post_status'    => isset( $input['post_status'] ) ? (array) $input['post_status'] : array( 'publish' ),
+			'posts_per_page' => isset( $input['limit'] ) ? (int) $input['limit'] : 10,
+			'offset'         => isset( $input['offset'] ) ? (int) $input['offset'] : 0,
+			'orderby'        => isset( $input['orderby'] ) ? \sanitize_key( (string) $input['orderby'] ) : 'date',
+			'order'          => isset( $input['order'] ) ? \sanitize_key( (string) $input['order'] ) : 'DESC',
+			'no_found_rows'  => false, // We need found_posts for pagination
+		);
+
+		// Add search term
+		if ( ! empty( $input['search'] ) ) {
+			$args['s'] = \sanitize_text_field( (string) $input['search'] );
+		}
+
+		// Add author filter
+		if ( ! empty( $input['author'] ) ) {
+			$args['author'] = (int) $input['author'];
+		}
+
+		// Add date query
+		if ( ! empty( $input['date_query'] ) && \is_array( $input['date_query'] ) ) {
+			$date_query = array();
+			$date_input = $input['date_query'];
+
+			if ( ! empty( $date_input['after'] ) ) {
+				$date_query['after'] = \sanitize_text_field( (string) $date_input['after'] );
+			}
+			if ( ! empty( $date_input['before'] ) ) {
+				$date_query['before'] = \sanitize_text_field( (string) $date_input['before'] );
+			}
+			if ( ! empty( $date_input['year'] ) ) {
+				$date_query['year'] = (int) $date_input['year'];
+			}
+			if ( ! empty( $date_input['month'] ) ) {
+				$date_query['month'] = (int) $date_input['month'];
+			}
+
+			if ( ! empty( $date_query ) ) {
+				$args['date_query'] = array( $date_query );
+			}
+		}
+
+		// Add meta query
+		if ( ! empty( $input['meta_query'] ) && \is_array( $input['meta_query'] ) ) {
+			$meta_query = array();
+			foreach ( $input['meta_query'] as $meta_condition ) {
+				if ( ! \is_array( $meta_condition ) || empty( $meta_condition['key'] ) ) {
+					continue;
+				}
+
+				$condition = array(
+					'key'     => \sanitize_key( (string) $meta_condition['key'] ),
+					'compare' => isset( $meta_condition['compare'] ) ? \sanitize_key( (string) $meta_condition['compare'] ) : '=',
+				);
+
+				if ( isset( $meta_condition['value'] ) ) {
+					$condition['value'] = \sanitize_text_field( (string) $meta_condition['value'] );
+				}
+
+				$meta_query[] = $condition;
+			}
+
+			if ( ! empty( $meta_query ) ) {
+				$args['meta_query'] = $meta_query;
+			}
+		}
+
+		// Add taxonomy query
+		if ( ! empty( $input['tax_query'] ) && \is_array( $input['tax_query'] ) ) {
+			$tax_query = array();
+			foreach ( $input['tax_query'] as $tax_condition ) {
+				if ( ! \is_array( $tax_condition ) || empty( $tax_condition['taxonomy'] ) || empty( $tax_condition['terms'] ) ) {
+					continue;
+				}
+
+				$taxonomy = \sanitize_key( (string) $tax_condition['taxonomy'] );
+				if ( ! \taxonomy_exists( $taxonomy ) ) {
+					continue;
+				}
+
+				$condition = array(
+					'taxonomy' => $taxonomy,
+					'field'    => isset( $tax_condition['field'] ) ? \sanitize_key( (string) $tax_condition['field'] ) : 'term_id',
+					'terms'    => \is_array( $tax_condition['terms'] ) ? $tax_condition['terms'] : array( $tax_condition['terms'] ),
+					'operator' => isset( $tax_condition['operator'] ) ? \sanitize_key( (string) $tax_condition['operator'] ) : 'IN',
+				);
+
+				$tax_query[] = $condition;
+			}
+
+			if ( ! empty( $tax_query ) ) {
+				$args['tax_query'] = $tax_query;
+			}
+		}
+
+		// Execute query
+		$query = new \WP_Query( $args );
+
+		if ( ! $query->have_posts() ) {
+			return array(
+				'posts'       => array(),
+				'total'       => 0,
+				'found_posts' => 0,
+				'max_pages'   => 0,
+			);
+		}
+
+		$include_meta = ! empty( $input['include_meta'] );
+		$include_taxonomies = ! empty( $input['include_taxonomies'] );
+
+		$posts = array();
+		while ( $query->have_posts() ) {
+			$query->the_post();
+			$post = \get_post();
+			if ( ! $post ) {
+				continue;
+			}
+
+			$post_data = array(
+				'id'        => $post->ID,
+				'post_type' => $post->post_type,
+				'status'    => $post->post_status,
+				'title'     => (string) $post->post_title,
+				'content'   => (string) $post->post_content,
+				'excerpt'   => (string) $post->post_excerpt,
+				'link'      => (string) \get_permalink( $post->ID ),
+				'date'      => $post->post_date,
+				'modified'  => $post->post_modified,
+				'author'    => (int) $post->post_author,
+				'slug'      => $post->post_name,
+			);
+
+			// Include meta if requested
+			if ( $include_meta ) {
+				$post_data['meta'] = \get_post_meta( $post->ID );
+			}
+
+			// Include taxonomies if requested
+			if ( $include_taxonomies ) {
+				$tax_map = array();
+				$supported_taxonomies = \get_object_taxonomies( $post->post_type, 'names' );
+				foreach ( $supported_taxonomies as $tax ) {
+					$terms = \wp_get_post_terms( $post->ID, $tax, array( 'fields' => 'all' ) );
+					$tax_map[ $tax ] = array();
+					if ( \is_wp_error( $terms ) ) {
+						continue;
+					}
+					foreach ( $terms as $t ) {
+						if ( ! ( $t instanceof \WP_Term ) ) {
+							continue;
+						}
+
+						$tax_map[ $tax ][] = array(
+							'id'     => (int) $t->term_id,
+							'name'   => (string) $t->name,
+							'slug'   => (string) $t->slug,
+							'parent' => (int) $t->parent,
+						);
+					}
+				}
+				$post_data['taxonomies'] = $tax_map;
+			}
+
+			$posts[] = $post_data;
+		}
+
+		// Reset global post data
+		\wp_reset_postdata();
+
+		return array(
+			'posts'       => $posts,
+			'total'       => count( $posts ),
+			'found_posts' => (int) $query->found_posts,
+			'max_pages'   => (int) $query->max_num_pages,
 		);
 	}
 }

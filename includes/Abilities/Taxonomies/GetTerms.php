@@ -65,49 +65,65 @@ final class GetTerms implements RegistersAbility {
 						),
 					),
 				),
-				'permission_callback' => static function (): bool {
-					return \current_user_can( 'edit_posts' );
-				},
-				'execute_callback'    => static function ( array $input ) {
-					$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
-					if ( ! \taxonomy_exists( $taxonomy ) ) {
-						return new \WP_Error( 'invalid_taxonomy', 'Invalid taxonomy.' );
-					}
-					$args = array(
-						'taxonomy'   => $taxonomy,
-						'search'     => isset( $input['search'] ) ? (string) $input['search'] : '',
-						'parent'     => isset( $input['parent'] ) ? (int) $input['parent'] : 0,
-						'hide_empty' => ! empty( $input['hide_empty'] ),
-						'include'    => isset( $input['include'] ) ? array_map( 'intval', (array) $input['include'] ) : array(),
-						'exclude'    => isset( $input['exclude'] ) ? array_map( 'intval', (array) $input['exclude'] ) : array(),
-						'orderby'    => isset( $input['orderby'] ) ? (string) $input['orderby'] : '',
-						'order'      => isset( $input['order'] ) ? (string) $input['order'] : '',
-						'number'     => isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50,
-						'offset'     => isset( $input['page'] ) ? ( max( 1, (int) $input['page'] ) - 1 ) * ( isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50 ) : 0,
-					);
-					$terms = \get_terms( $args );
-					if ( \is_wp_error( $terms ) ) {
-						return $terms;
-					}
-					$out = array();
-					foreach ( $terms as $t ) {
-						if ( ! ( $t instanceof \WP_Term ) ) {
-							continue;
-						}
-
-						$out[] = array(
-							'id'          => (int) $t->term_id,
-							'name'        => (string) $t->name,
-							'slug'        => (string) $t->slug,
-							'description' => (string) $t->description,
-							'count'       => (int) $t->count,
-							'parent'      => (int) $t->parent,
-						);
-					}
-					return array( 'terms' => $out );
-				},
+				'permission_callback' => array( static::class, 'check_permission' ),
+				'execute_callback'    => array( static::class, 'execute' ),
 				'meta'                => array(),
 			)
 		);
+	}
+
+	/**
+	 * Check permission for getting terms.
+	 *
+	 * @param array $input Input parameters.
+	 * @return bool Whether the user has permission.
+	 */
+	public static function check_permission( array $input ): bool {
+		return \current_user_can( 'edit_posts' );
+	}
+
+	/**
+	 * Execute the get terms operation.
+	 *
+	 * @param array $input Input parameters.
+	 * @return array|\WP_Error Result array or error.
+	 */
+	public static function execute( array $input ) {
+		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
+		if ( ! \taxonomy_exists( $taxonomy ) ) {
+			return new \WP_Error( 'invalid_taxonomy', 'Invalid taxonomy.' );
+		}
+		$args = array(
+			'taxonomy'   => $taxonomy,
+			'search'     => isset( $input['search'] ) ? (string) $input['search'] : '',
+			'parent'     => isset( $input['parent'] ) ? (int) $input['parent'] : 0,
+			'hide_empty' => ! empty( $input['hide_empty'] ),
+			'include'    => isset( $input['include'] ) ? array_map( 'intval', (array) $input['include'] ) : array(),
+			'exclude'    => isset( $input['exclude'] ) ? array_map( 'intval', (array) $input['exclude'] ) : array(),
+			'orderby'    => isset( $input['orderby'] ) ? (string) $input['orderby'] : '',
+			'order'      => isset( $input['order'] ) ? (string) $input['order'] : '',
+			'number'     => isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50,
+			'offset'     => isset( $input['page'] ) ? ( max( 1, (int) $input['page'] ) - 1 ) * ( isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50 ) : 0,
+		);
+		$terms = \get_terms( $args );
+		if ( \is_wp_error( $terms ) ) {
+			return $terms;
+		}
+		$out = array();
+		foreach ( $terms as $t ) {
+			if ( ! ( $t instanceof \WP_Term ) ) {
+				continue;
+			}
+
+			$out[] = array(
+				'id'          => (int) $t->term_id,
+				'name'        => (string) $t->name,
+				'slug'        => (string) $t->slug,
+				'description' => (string) $t->description,
+				'count'       => (int) $t->count,
+				'parent'      => (int) $t->parent,
+			);
+		}
+		return array( 'terms' => $out );
 	}
 }
