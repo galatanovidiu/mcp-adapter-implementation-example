@@ -59,8 +59,8 @@ final class UpdatePost implements RegistersAbility {
 						'title'     => array( 'type' => 'string' ),
 					),
 				),
-				'permission_callback' => array( static::class, 'check_permission' ),
-				'execute_callback'    => array( static::class, 'execute' ),
+				'permission_callback' => array( self::class, 'check_permission' ),
+				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(),
 			)
 		);

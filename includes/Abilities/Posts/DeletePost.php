@@ -35,8 +35,8 @@ final class DeletePost implements RegistersAbility {
 						'deleted' => array( 'type' => 'boolean' ),
 					),
 				),
-				'permission_callback' => array( static::class, 'check_permission' ),
-				'execute_callback'    => array( static::class, 'execute' ),
+				'permission_callback' => array( self::class, 'check_permission' ),
+				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(),
 			)
 		);

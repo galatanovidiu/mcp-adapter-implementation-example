@@ -220,8 +220,8 @@ final class ListPosts implements RegistersAbility {
 						),
 					),
 				),
-				'permission_callback' => array( static::class, 'check_permission' ),
-				'execute_callback'    => array( static::class, 'execute' ),
+				'permission_callback' => array( self::class, 'check_permission' ),
+				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(),
 			)
 		);
