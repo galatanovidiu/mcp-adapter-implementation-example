@@ -140,10 +140,14 @@ final class GetTerms implements RegistersAbility {
 				'name'        => (string) $t->name,
 				'slug'        => (string) $t->slug,
 				'description' => (string) $t->description,
+				'taxonomy'    => (string) $t->taxonomy,
 				'count'       => (int) $t->count,
 				'parent'      => (int) $t->parent,
 			);
 		}
-		return array( 'terms' => $out );
+		return array( 
+			'terms' => $out,
+			'total' => (int) $total,
+		);
 	}
 }
