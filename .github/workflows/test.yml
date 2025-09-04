@@ -1,0 +1,83 @@
+name: Test MCP Adapter Implementation Example
+
+on:
+  push:
+    branches: [ trunk, main ]
+  pull_request:
+    branches: [ trunk, main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test PHP ${{ matrix.php }} WP ${{ matrix.wp }}
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3']
+        wp: ['latest', 'trunk']
+        include:
+          - php: '8.3'
+            wp: 'latest'
+            coverage: true
+    
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Setup WordPress test environment
+        env:
+          WP_VERSION: ${{ matrix.wp }}
+          DB_NAME: wordpress_test
+          DB_USER: root
+          DB_PASS: root
+          DB_HOST: 127.0.0.1
+        run: |
+          # Install WordPress test suite
+          bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 $WP_VERSION
+
+      - name: Run code linting
+        run: composer lint:php
+
+      - name: Run static analysis
+        run: composer lint:php:stan
+
+      - name: Run unit tests
+        run: composer test:unit
+
+      - name: Run integration tests
+        run: composer test:integration
+
+      - name: Generate coverage report
+        if: matrix.coverage
+        run: composer test:coverage
+
+      - name: Upload coverage to Codecov
+        if: matrix.coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: tests/_output/php-coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
