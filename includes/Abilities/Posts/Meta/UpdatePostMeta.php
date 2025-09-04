@@ -85,8 +85,8 @@ final class UpdatePostMeta implements RegistersAbility {
 			return new \WP_Error( 'invalid_meta', 'Meta must be an object.' );
 		}
 
-		$post_type = $post->post_type;
-		$include_private = ! empty( $input['include_private'] );
+		$post_type         = $post->post_type;
+		$include_private   = ! empty( $input['include_private'] );
 		$only_show_in_rest = array_key_exists( 'only_show_in_rest', $input ) ? (bool) $input['only_show_in_rest'] : true;
 
 		$registered = function_exists( 'get_registered_meta_keys' )

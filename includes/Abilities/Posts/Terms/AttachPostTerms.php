@@ -14,9 +14,9 @@ final class AttachPostTerms implements RegistersAbility {
 				'label'               => 'Attach Post Terms',
 				'description'         => 'Attach terms to a post in a supported taxonomy.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'id', 'taxonomy', 'terms' ),
-					'properties' => array(
+					'type'                 => 'object',
+					'required'             => array( 'id', 'taxonomy', 'terms' ),
+					'properties'           => array(
 						'id'                => array(
 							'type'        => 'integer',
 							'description' => 'The unique identifier of the WordPress post to attach terms to.',
@@ -64,9 +64,9 @@ final class AttachPostTerms implements RegistersAbility {
 					'additionalProperties' => false,
 				),
 				'output_schema'       => array(
-					'type'       => 'object',
-					'required'   => array( 'attached_ids' ),
-					'properties' => array(
+					'type'                 => 'object',
+					'required'             => array( 'attached_ids' ),
+					'properties'           => array(
 						'attached_ids' => array(
 							'type'        => 'array',
 							'description' => 'Array of term IDs that were successfully attached to the post.',
@@ -94,7 +94,7 @@ final class AttachPostTerms implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$post_id = (int) ( $input['id'] ?? 0 );
+		$post_id  = (int) ( $input['id'] ?? 0 );
 		$taxonomy = isset( $input['taxonomy'] ) ? \sanitize_key( (string) $input['taxonomy'] ) : '';
 		if ( $post_id <= 0 || ! \taxonomy_exists( $taxonomy ) ) {
 			return false;
@@ -123,10 +123,10 @@ final class AttachPostTerms implements RegistersAbility {
 		if ( ! \is_object_in_taxonomy( $post->post_type, $taxonomy ) ) {
 			return new \WP_Error( 'invalid_taxonomy', 'Taxonomy not supported by post type.' );
 		}
-		$append = array_key_exists( 'append', $input ) ? (bool) $input['append'] : true;
+		$append            = array_key_exists( 'append', $input ) ? (bool) $input['append'] : true;
 		$create_if_missing = ! empty( $input['create_if_missing'] );
-		$term_ids = array();
-		$terms_in = is_array( $input['terms'] ) ? $input['terms'] : array( $input['terms'] );
+		$term_ids          = array();
+		$terms_in          = is_array( $input['terms'] ) ? $input['terms'] : array( $input['terms'] );
 		foreach ( $terms_in as $t ) {
 			if ( is_numeric( $t ) ) {
 				$term_ids[] = (int) $t;

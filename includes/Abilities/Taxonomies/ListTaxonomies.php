@@ -74,8 +74,8 @@ final class ListTaxonomies implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$post_type = isset( $input['post_type'] ) ? \sanitize_key( (string) $input['post_type'] ) : '';
-		$include_private = ! empty( $input['include_private'] );
+		$post_type         = isset( $input['post_type'] ) ? \sanitize_key( (string) $input['post_type'] ) : '';
+		$include_private   = ! empty( $input['include_private'] );
 		$only_show_in_rest = array_key_exists( 'only_show_in_rest', $input ) ? (bool) $input['only_show_in_rest'] : true;
 
 		$tax_objects = $post_type

@@ -63,7 +63,7 @@ final class DeleteTerm implements RegistersAbility {
 	public static function execute( array $input ) {
 		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
 		$term_id  = (int) $input['term_id'];
-		$args = array();
+		$args     = array();
 		if ( ! empty( $input['reassign'] ) ) {
 			$args['default'] = (int) $input['reassign'];
 		}

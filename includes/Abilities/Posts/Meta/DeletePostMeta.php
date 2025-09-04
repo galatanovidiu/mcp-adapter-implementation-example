@@ -77,7 +77,7 @@ final class DeletePostMeta implements RegistersAbility {
 
 		if ( $all ) {
 			$deleted_any = false;
-			$values = (array) \get_post_meta( $post_id, $key, false );
+			$values      = (array) \get_post_meta( $post_id, $key, false );
 			foreach ( $values as $v ) {
 				if ( ! \delete_post_meta( $post_id, $key, $v ) ) {
 					continue;

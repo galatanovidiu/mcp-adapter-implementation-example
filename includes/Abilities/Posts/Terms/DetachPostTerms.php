@@ -58,7 +58,7 @@ final class DetachPostTerms implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$post_id = (int) ( $input['id'] ?? 0 );
+		$post_id  = (int) ( $input['id'] ?? 0 );
 		$taxonomy = isset( $input['taxonomy'] ) ? \sanitize_key( (string) $input['taxonomy'] ) : '';
 		if ( $post_id <= 0 || ! \taxonomy_exists( $taxonomy ) ) {
 			return false;
@@ -92,7 +92,7 @@ final class DetachPostTerms implements RegistersAbility {
 			return new \WP_Error( 'terms_error', 'Failed to retrieve current terms.' );
 		}
 		$to_remove = array();
-		$terms_in = is_array( $input['terms'] ) ? $input['terms'] : array( $input['terms'] );
+		$terms_in  = is_array( $input['terms'] ) ? $input['terms'] : array( $input['terms'] );
 		foreach ( $terms_in as $t ) {
 			$to_remove[] = (int) $t;
 		}

@@ -63,7 +63,7 @@ final class UpdateTerm implements RegistersAbility {
 	public static function execute( array $input ) {
 		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
 		$term_id  = (int) $input['term_id'];
-		$args = array();
+		$args     = array();
 		if ( array_key_exists( 'name', $input ) ) {
 			$args['name'] = (string) $input['name'];
 		}

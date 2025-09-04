@@ -80,8 +80,8 @@ final class ListPostMetaKeys implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$post_type = \sanitize_key( (string) $input['post_type'] );
-		$include_private = ! empty( $input['include_private'] );
+		$post_type         = \sanitize_key( (string) $input['post_type'] );
+		$include_private   = ! empty( $input['include_private'] );
 		$only_show_in_rest = array_key_exists( 'only_show_in_rest', $input ) ? (bool) $input['only_show_in_rest'] : true;
 
 		if ( ! \post_type_exists( $post_type ) ) {
@@ -101,7 +101,7 @@ final class ListPostMetaKeys implements RegistersAbility {
 				continue;
 			}
 			$show_in_rest = false;
-			$schema = new \stdClass();
+			$schema       = new \stdClass();
 			if ( isset( $args['show_in_rest'] ) ) {
 				if ( is_bool( $args['show_in_rest'] ) ) {
 					$show_in_rest = (bool) $args['show_in_rest'];

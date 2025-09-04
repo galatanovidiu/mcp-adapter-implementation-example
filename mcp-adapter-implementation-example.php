@@ -90,7 +90,7 @@ add_action(
 						return;
 					}
 
-					$message = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
+					$message  = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
 					$message .= '<ul>';
 					foreach ( $errors as $error ) {
 						$message .= '<li>' . esc_html( $error ) . '</li>';

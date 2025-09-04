@@ -82,8 +82,8 @@ final class GetPostMeta implements RegistersAbility {
 			return new \WP_Error( 'not_found', 'Post not found.' );
 		}
 
-		$post_type = $post->post_type;
-		$include_private = ! empty( $input['include_private'] );
+		$post_type         = $post->post_type;
+		$include_private   = ! empty( $input['include_private'] );
 		$only_show_in_rest = array_key_exists( 'only_show_in_rest', $input ) ? (bool) $input['only_show_in_rest'] : true;
 
 		$registered = function_exists( 'get_registered_meta_keys' )
@@ -126,7 +126,7 @@ final class GetPostMeta implements RegistersAbility {
 			if ( ! array_key_exists( $k, $allowed_keys ) ) {
 				continue;
 			}
-			$single = (bool) $allowed_keys[ $k ];
+			$single         = (bool) $allowed_keys[ $k ];
 			$meta_out[ $k ] = \get_post_meta( $post_id, $k, $single );
 		}
 

@@ -96,8 +96,8 @@ final class ListBlockTypes implements RegistersAbility {
 				continue;
 			}
 
-			$name = (string) $type->name;
-			$title = $type->title ? (string) $type->title : $name;
+			$name        = (string) $type->name;
+			$title       = $type->title ? (string) $type->title : $name;
 			$description = $type->description ? (string) $type->description : '';
 
 			if ( $search ) {

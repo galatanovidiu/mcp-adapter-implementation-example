@@ -18,7 +18,7 @@ final class ListPosts implements RegistersAbility {
 				)
 			)
 		);
-		
+
 		// Ensure we always have at least some basic post statuses
 		if ( empty( $available_post_statuses ) ) {
 			$available_post_statuses = array( 'publish', 'draft', 'private', 'pending', 'future' );
@@ -381,7 +381,7 @@ final class ListPosts implements RegistersAbility {
 			);
 		}
 
-		$include_meta = ! empty( $input['include_meta'] );
+		$include_meta       = ! empty( $input['include_meta'] );
 		$include_taxonomies = ! empty( $input['include_taxonomies'] );
 
 		$posts = array();
@@ -413,10 +413,10 @@ final class ListPosts implements RegistersAbility {
 
 			// Include taxonomies if requested
 			if ( $include_taxonomies ) {
-				$tax_map = array();
+				$tax_map              = array();
 				$supported_taxonomies = \get_object_taxonomies( $post->post_type, 'names' );
 				foreach ( $supported_taxonomies as $tax ) {
-					$terms = \wp_get_post_terms( $post->ID, $tax, array( 'fields' => 'all' ) );
+					$terms           = \wp_get_post_terms( $post->ID, $tax, array( 'fields' => 'all' ) );
 					$tax_map[ $tax ] = array();
 					if ( \is_wp_error( $terms ) ) {
 						continue;
