@@ -115,10 +115,15 @@ final class CreatePost implements RegistersAbility {
 	public static function execute( array $input ) {
 		$post_type = \sanitize_key( (string) $input['post_type'] );
 		if ( ! \post_type_exists( $post_type ) ) {
-			return new \WP_Error( 'invalid_post_type', 'Invalid post type.' );
+			return array(
+				'error' => array(
+					'code'    => 'invalid_post_type',
+					'message' => 'Invalid post type.',
+				),
+			);
 		}
 
-		$status = isset( $input['status'] ) ? \sanitize_key( (string) $input['status'] ) : 'draft';
+		$status  = isset( $input['status'] ) ? \sanitize_key( (string) $input['status'] ) : 'draft';
 		$postarr = array(
 			'post_type'   => $post_type,
 			'post_status' => $status,
@@ -141,13 +146,18 @@ final class CreatePost implements RegistersAbility {
 
 		$post_id = \wp_insert_post( $postarr, true );
 		if ( \is_wp_error( $post_id ) ) {
-			return $post_id;
+			return array(
+				'error' => array(
+					'code'    => $post_id->get_error_code(),
+					'message' => $post_id->get_error_message(),
+				),
+			);
 		}
 
 		// Handle taxonomy assignments with validation after creation.
 		if ( ! empty( $input['tax_input'] ) && \is_array( $input['tax_input'] ) ) {
-			$append = ! empty( $input['append_terms'] );
-			$create_if_missing = ! empty( $input['create_terms_if_missing'] );
+			$append               = ! empty( $input['append_terms'] );
+			$create_if_missing    = ! empty( $input['create_terms_if_missing'] );
 			$supported_taxonomies = \get_object_taxonomies( $post_type, 'names' );
 			foreach ( $input['tax_input'] as $taxonomy => $terms_in ) {
 				$taxonomy = \sanitize_key( (string) $taxonomy );
@@ -191,7 +201,12 @@ final class CreatePost implements RegistersAbility {
 
 		$post = \get_post( $post_id );
 		if ( ! $post ) {
-			return new \WP_Error( 'creation_failed', 'Post created but could not be loaded.' );
+			return array(
+				'error' => array(
+					'code'    => 'creation_failed',
+					'message' => 'Post created but could not be loaded.',
+				),
+			);
 		}
 
 		return array(

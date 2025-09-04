@@ -91,9 +91,14 @@ final class GetTerms implements RegistersAbility {
 	public static function execute( array $input ) {
 		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
 		if ( ! \taxonomy_exists( $taxonomy ) ) {
-			return new \WP_Error( 'invalid_taxonomy', 'Invalid taxonomy.' );
+			return array(
+				'error' => array(
+					'code'    => 'invalid_taxonomy',
+					'message' => 'Invalid taxonomy.',
+				),
+			);
 		}
-		$args = array(
+		$args  = array(
 			'taxonomy'   => $taxonomy,
 			'search'     => isset( $input['search'] ) ? (string) $input['search'] : '',
 			'parent'     => isset( $input['parent'] ) ? (int) $input['parent'] : 0,
@@ -102,12 +107,27 @@ final class GetTerms implements RegistersAbility {
 			'exclude'    => isset( $input['exclude'] ) ? array_map( 'intval', (array) $input['exclude'] ) : array(),
 			'orderby'    => isset( $input['orderby'] ) ? (string) $input['orderby'] : '',
 			'order'      => isset( $input['order'] ) ? (string) $input['order'] : '',
-			'number'     => isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50,
-			'offset'     => isset( $input['page'] ) ? ( max( 1, (int) $input['page'] ) - 1 ) * ( isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50 ) : 0,
+			'number'     => isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : ( isset( $input['limit'] ) ? max( 1, (int) $input['limit'] ) : 50 ),
+			'offset'     => isset( $input['page'] ) ? ( max( 1, (int) $input['page'] ) - 1 ) * ( isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50 ) : ( isset( $input['offset'] ) ? max( 0, (int) $input['offset'] ) : 0 ),
 		);
+		// Get total count without pagination.
+		$count_args = $args;
+		$count_args['fields'] = 'count';
+		$count_args['number'] = '';
+		$count_args['offset'] = '';
+		$total = \get_terms( $count_args );
+		if ( \is_wp_error( $total ) ) {
+			$total = 0;
+		}
+
 		$terms = \get_terms( $args );
 		if ( \is_wp_error( $terms ) ) {
-			return $terms;
+			return array(
+				'error' => array(
+					'code'    => $terms->get_error_code(),
+					'message' => $terms->get_error_message(),
+				),
+			);
 		}
 		$out = array();
 		foreach ( $terms as $t ) {

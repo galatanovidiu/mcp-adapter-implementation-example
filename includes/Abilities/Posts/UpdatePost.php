@@ -90,7 +90,12 @@ final class UpdatePost implements RegistersAbility {
 		$post_id = (int) $input['id'];
 		$post    = \get_post( $post_id );
 		if ( ! $post ) {
-			return new \WP_Error( 'not_found', 'Post not found.' );
+			return array(
+				'error' => array(
+					'code'    => 'not_found',
+					'message' => 'Post not found.',
+				),
+			);
 		}
 
 		$postarr = array(
@@ -116,16 +121,26 @@ final class UpdatePost implements RegistersAbility {
 
 		$updated = \wp_update_post( $postarr, true );
 		if ( \is_wp_error( $updated ) ) {
-			return $updated;
+			return array(
+				'error' => array(
+					'code'    => $updated->get_error_code(),
+					'message' => $updated->get_error_message(),
+				),
+			);
 		}
 		$updated_post = \get_post( $post_id );
 		if ( ! $updated_post ) {
-			return new \WP_Error( 'update_failed', 'Post updated but could not be loaded.' );
+			return array(
+				'error' => array(
+					'code'    => 'update_failed',
+					'message' => 'Post updated but could not be loaded.',
+				),
+			);
 		}
 
 		if ( $has_tax_input ) {
-			$append = array_key_exists( 'append_terms', $input ) ? (bool) $input['append_terms'] : true;
-			$create_if_missing = ! empty( $input['create_terms_if_missing'] );
+			$append               = array_key_exists( 'append_terms', $input ) ? (bool) $input['append_terms'] : true;
+			$create_if_missing    = ! empty( $input['create_terms_if_missing'] );
 			$supported_taxonomies = \get_object_taxonomies( $updated_post->post_type, 'names' );
 			foreach ( $input['tax_input'] as $taxonomy => $terms_in ) {
 				$taxonomy = \sanitize_key( (string) $taxonomy );

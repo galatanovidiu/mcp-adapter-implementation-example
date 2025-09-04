@@ -68,14 +68,19 @@ final class GetPost implements RegistersAbility {
 		$post_id = (int) $input['id'];
 		$post    = \get_post( $post_id );
 		if ( ! $post ) {
-			return new \WP_Error( 'not_found', 'Post not found.' );
+			return array(
+				'error' => array(
+					'code'    => 'not_found',
+					'message' => 'Post not found.',
+				),
+			);
 		}
 
 		// Build attached taxonomies mapping for this post.
-		$tax_map = array();
+		$tax_map              = array();
 		$supported_taxonomies = \get_object_taxonomies( $post->post_type, 'names' );
 		foreach ( $supported_taxonomies as $tax ) {
-			$terms = \wp_get_post_terms( $post->ID, $tax, array( 'fields' => 'all' ) );
+			$terms           = \wp_get_post_terms( $post->ID, $tax, array( 'fields' => 'all' ) );
 			$tax_map[ $tax ] = array();
 			if ( \is_wp_error( $terms ) ) {
 				continue;
