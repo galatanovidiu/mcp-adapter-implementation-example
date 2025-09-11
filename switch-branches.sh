@@ -120,16 +120,19 @@ update_composer() {
     local dependencies='{}'
     local repositories='[]'
     
-    # Extract unique repositories and build dependencies
+    # Extract unique repositories and build dependencies from config
     for package in $(echo "$packages" | jq -r 'keys[]'); do
         local version=$(echo "$packages" | jq -r ".[\"$package\"].version")
         local repo_url=$(echo "$packages" | jq -r ".[\"$package\"].repository")
         
+        # Check if the package configuration specifies a type (default to "vcs")
+        local repo_type=$(echo "$packages" | jq -r ".[\"$package\"].type // \"vcs\"")
+        
         # Add to dependencies
         dependencies=$(echo "$dependencies" | jq --arg pkg "$package" --arg ver "$version" '. + {($pkg): $ver}')
         
-        # Add unique repository
-        local repo_obj=$(jq -n --arg url "$repo_url" '{type: "vcs", url: $url}')
+        # Add unique repository with the specified type
+        local repo_obj=$(jq -n --arg type "$repo_type" --arg url "$repo_url" '{type: $type, url: $url}')
         if ! echo "$repositories" | jq --argjson repo "$repo_obj" 'map(.url) | contains([$repo.url])' | grep -q true; then
             repositories=$(echo "$repositories" | jq --argjson repo "$repo_obj" '. + [$repo]')
         fi
@@ -152,15 +155,64 @@ update_composer() {
     print_success "Updated composer.json with $config_name configuration"
 }
 
+# Function to check if wp-env is running
+is_wp_env_running() {
+    if command -v wp-env &> /dev/null; then
+        # Check if wp-env is running for this project
+        cd "$SCRIPT_DIR" && wp-env run cli "echo 'test'" &> /dev/null
+        return $?
+    fi
+    return 1
+}
+
 # Function to run composer update
 run_composer_update() {
     print_info "Running composer update..."
     
-    if composer update --no-interaction --optimize-autoloader; then
-        print_success "Composer update completed successfully"
+    local composer_cmd
+    
+    # Check if we should run composer inside wp-env container
+    if is_wp_env_running; then
+        print_info "Detected wp-env is running, using composer inside container..."
+        
+        # Check if we need to update repository paths for container
+        local temp_composer=$(mktemp)
+        
+        # Update repository paths for container environment
+        # No need to change paths since we're mapping them correctly in .wp-env.json
+        cp "$COMPOSER_FILE" "$temp_composer"
+        
+        # Replace composer.json temporarily for container
+        cp "$COMPOSER_FILE" "$COMPOSER_FILE.backup"
+        mv "$temp_composer" "$COMPOSER_FILE"
+        
+        composer_cmd="cd $SCRIPT_DIR && wp-env run cli composer update --working-dir=/var/www/html/wp-content/plugins/mcp-adapter-implementation-example --no-interaction --optimize-autoloader"
+        
+        # Run composer and capture result
+        local result=0
+        if eval "$composer_cmd"; then
+            print_success "Composer update completed successfully"
+        else
+            print_error "Composer update failed"
+            result=1
+        fi
+        
+        # Restore original composer.json
+        mv "$COMPOSER_FILE.backup" "$COMPOSER_FILE"
+        
+        if [[ $result -ne 0 ]]; then
+            exit 1
+        fi
     else
-        print_error "Composer update failed"
-        exit 1
+        print_info "Running composer on host system..."
+        composer_cmd="composer update --no-interaction --optimize-autoloader"
+        
+        if eval "$composer_cmd"; then
+            print_success "Composer update completed successfully"
+        else
+            print_error "Composer update failed"
+            exit 1
+        fi
     fi
 }
 

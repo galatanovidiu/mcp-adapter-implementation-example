@@ -7,19 +7,21 @@
 		"wp-env": "wp-env",
 		"env:start": "wp-env start",
 		"env:stop": "wp-env stop",
+        "env:restart": "wp-env stop && wp-env start",
 		"env:clean": "wp-env clean",
 		"env:destroy": "wp-env destroy",
-		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/mcp-adapter-implementation-example bash -c 'export WP_PHPUNIT__TESTS_CONFIG=/var/www/html/wp-content/plugins/mcp-adapter-implementation-example/tests/wp-tests-config.php && vendor/bin/phpunit'",
-		"test:php:unit": "wp-env run tests-cli --env-cwd=wp-content/plugins/mcp-adapter-implementation-example bash -c 'export WP_PHPUNIT__TESTS_CONFIG=/var/www/html/wp-content/plugins/mcp-adapter-implementation-example/tests/wp-tests-config.php && vendor/bin/phpunit --testsuite=unit'",
-		"test:php:integration": "wp-env run tests-cli --env-cwd=wp-content/plugins/mcp-adapter-implementation-example bash -c 'export WP_PHPUNIT__TESTS_CONFIG=/var/www/html/wp-content/plugins/mcp-adapter-implementation-example/tests/wp-tests-config.php && vendor/bin/phpunit --testsuite=integration'",
-		"test:php:coverage": "wp-env run tests-cli --env-cwd=wp-content/plugins/mcp-adapter-implementation-example bash -c 'export WP_PHPUNIT__TESTS_CONFIG=/var/www/html/wp-content/plugins/mcp-adapter-implementation-example/tests/wp-tests-config.php && vendor/bin/phpunit --coverage-html tests/_output/coverage'",
 		"lint:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/mcp-adapter-implementation-example composer lint:php",
 		"lint:php:fix": "wp-env run tests-cli --env-cwd=wp-content/plugins/mcp-adapter-implementation-example composer lint:php:fix",
 		"dev": "wp-env start && echo 'WordPress development site: http://localhost:8890' && echo 'WordPress admin: http://localhost:8890/wp-admin (admin/password)'",
-		"setup": "npm install && wp-env start"
+		"setup": "npm install && wp-env start",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:debug": "playwright test --debug",
+		"test:db:clean": "wp-env run tests-cli wp db reset --yes && wp-env run tests-cli wp core install --url=http://localhost:8891 --title='Test Site' --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email && wp-env run tests-cli wp plugin activate mcp-adapter-implementation-example && wp-env run tests-cli wp user application-password create admin 'E2E Test App'"
 	},
 	"devDependencies": {
-		"@wordpress/env": "^10.28.0"
+		"@wordpress/env": "^10.28.0",
+		"@playwright/test": "^1.40.0"
 	},
 	"engines": {
 		"node": ">=18.0.0",

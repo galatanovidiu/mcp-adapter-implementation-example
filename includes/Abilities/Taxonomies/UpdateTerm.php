@@ -9,7 +9,7 @@ final class UpdateTerm implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/update-term',
+			'core/update-term',
 			array(
 				'label'               => 'Update Term',
 				'description'         => 'Update a term in a taxonomy.',
@@ -34,7 +34,17 @@ final class UpdateTerm implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'taxonomies' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.7,
+						'readOnlyHint'    => false,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

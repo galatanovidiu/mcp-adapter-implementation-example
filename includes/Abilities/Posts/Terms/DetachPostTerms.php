@@ -9,7 +9,7 @@ final class DetachPostTerms implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/detach-post-terms',
+			'core/detach-post-terms',
 			array(
 				'label'               => 'Detach Post Terms',
 				'description'         => 'Detach specific terms from a post in a supported taxonomy.',
@@ -46,7 +46,17 @@ final class DetachPostTerms implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'taxonomies' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.6,
+						'readOnlyHint'    => false,
+						'destructiveHint' => false,
+						'idempotentHint'  => false,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

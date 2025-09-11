@@ -9,7 +9,7 @@ final class UpdatePost implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/update-post',
+			'core/update-post',
 			array(
 				'label'               => 'Update Post',
 				'description'         => 'Update a WordPress post by ID using HTML content. Supports WordPress block comments for full editor compatibility. Use list-block-types first to get available blocks and their attributes.',
@@ -61,7 +61,17 @@ final class UpdatePost implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'posts' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.8,
+						'readOnlyHint'    => false,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

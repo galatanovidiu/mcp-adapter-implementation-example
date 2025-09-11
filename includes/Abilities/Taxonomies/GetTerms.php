@@ -9,7 +9,7 @@ final class GetTerms implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/get-terms',
+			'core/get-terms',
 			array(
 				'label'               => 'Get Terms',
 				'description'         => 'List terms in a taxonomy with optional filters/pagination.',
@@ -67,7 +67,17 @@ final class GetTerms implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'taxonomies' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.8,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

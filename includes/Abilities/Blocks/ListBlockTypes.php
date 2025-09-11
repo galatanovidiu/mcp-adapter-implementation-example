@@ -9,7 +9,7 @@ final class ListBlockTypes implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/list-block-types',
+			'core/list-block-types',
 			array(
 				'label'               => 'List Gutenberg Block Types',
 				'description'         => 'Return available Gutenberg blocks with descriptions and attribute schemas. Use this before creating/updating posts to get valid block names and attributes for block comments.',
@@ -59,7 +59,17 @@ final class ListBlockTypes implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'blocks' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.9,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

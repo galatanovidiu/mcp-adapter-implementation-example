@@ -15,6 +15,7 @@ Thumbs.db
 # Test output
 /tests/_output/*
 !/tests/_output/.gitkeep
+/tests/e2e/test-data/
 .phpunit.result.cache
 
 # Logs
@@ -32,3 +33,5 @@ composer.lock
 # Cache
 phpcs-cache.json
 phpstan-cache/
+
+branch-config.json

@@ -9,7 +9,7 @@ final class GetPostMeta implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/get-post-meta',
+			'core/get-post-meta',
 			array(
 				'label'               => 'Get Post Meta',
 				'description'         => 'Retrieve post meta for a post ID. Defaults to registered show_in_rest keys only.',
@@ -50,7 +50,17 @@ final class GetPostMeta implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'metadata' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.8,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

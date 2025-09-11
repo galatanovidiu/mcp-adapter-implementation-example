@@ -9,7 +9,7 @@ final class DeletePost implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/delete-post',
+			'core/delete-post',
 			array(
 				'label'               => 'Delete Post',
 				'description'         => 'Delete a WordPress post by ID.',
@@ -37,7 +37,18 @@ final class DeletePost implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'posts' ),
+					'annotations' => array(
+						'audience'             => array( 'user', 'assistant' ),
+						'priority'             => 0.6,
+						'readOnlyHint'         => false,
+						'destructiveHint'      => true,
+						'idempotentHint'       => true,
+						'openWorldHint'        => false,
+						'requiresConfirmation' => true,
+					),
+				),
 			)
 		);
 	}
