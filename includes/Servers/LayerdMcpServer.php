@@ -557,4 +557,22 @@ class LayerdMcpServer implements McpServerInterface {
             )
         );
     }
+
+    /**
+     * Get the error handler instance.
+     *
+     * @return \WP\MCP\Infrastructure\ErrorHandling\Contracts\McpErrorHandlerInterface|null
+     */
+    public function get_error_handler(): ?\WP\MCP\Infrastructure\ErrorHandling\Contracts\McpErrorHandlerInterface {
+        return $this->error_handler;
+    }
+
+    /**
+     * Get the observability handler class name.
+     *
+     * @return string
+     */
+    public function get_observability_handler(): string {
+        return $this->observability_handler;
+    }
 }
