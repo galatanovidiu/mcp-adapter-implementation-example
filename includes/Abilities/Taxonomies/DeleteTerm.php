@@ -9,7 +9,7 @@ final class DeleteTerm implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/delete-term',
+			'core/delete-term',
 			array(
 				'label'               => 'Delete Term',
 				'description'         => 'Delete a term from a taxonomy.',
@@ -34,7 +34,18 @@ final class DeleteTerm implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'taxonomies' ),
+					'annotations' => array(
+						'audience'             => array( 'user', 'assistant' ),
+						'priority'             => 0.5,
+						'readOnlyHint'         => false,
+						'destructiveHint'      => true,
+						'idempotentHint'       => true,
+						'openWorldHint'        => false,
+						'requiresConfirmation' => true,
+					),
+				),
 			)
 		);
 	}

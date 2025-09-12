@@ -9,7 +9,7 @@ final class UpdatePostMeta implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/update-post-meta',
+			'core/update-post-meta',
 			array(
 				'label'               => 'Update Post Meta',
 				'description'         => 'Update post meta for a post ID. Only registered show_in_rest meta keys are permitted by default.',
@@ -50,7 +50,17 @@ final class UpdatePostMeta implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'metadata' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.7,
+						'readOnlyHint'    => false,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

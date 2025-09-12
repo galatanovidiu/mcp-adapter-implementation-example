@@ -9,7 +9,7 @@ final class GetPost implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/get-post',
+			'core/get-post',
 			array(
 				'label'               => 'Get Post',
 				'description'         => 'Retrieve a WordPress post by ID, including HTML content and attached taxonomies.',
@@ -39,7 +39,17 @@ final class GetPost implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'posts' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.9,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

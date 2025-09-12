@@ -12,7 +12,7 @@ final class CreatePost implements RegistersAbility {
 		$available_post_types_desc = empty( $available_post_types ) ? 'none' : implode( ', ', $available_post_types );
 
 		\wp_register_ability(
-			'wpmcp-example/create-post',
+			'core/create-post',
 			array(
 				'label'               => 'Create Post',
 				'description'         => 'Create a WordPress post for any post type using HTML content. Supports WordPress block comments for full editor compatibility. Use list-block-types first to get available blocks and their attributes. Available post types: ' . $available_post_types_desc . '.',
@@ -82,7 +82,17 @@ final class CreatePost implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'meta'                => array(
+					'categories' => array( 'content', 'posts' ),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.8,
+						'readOnlyHint'    => false,
+						'destructiveHint' => false,
+						'idempotentHint'  => false,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

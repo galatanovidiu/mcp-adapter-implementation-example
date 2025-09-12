@@ -25,7 +25,7 @@ use OvidiuGalatan\McpAdapterExample\Abilities\BootstrapAbilities;
 use WP\MCP\Core\McpAdapter;
 use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
-use WP\MCP\Transport\Http\RestTransport;
+use WP\MCP\Transport\HttpTransport;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -76,37 +76,6 @@ add_action(
 
 		// Attempt to initialize the adapter.
 		$adapter = McpAdapter::instance();
-		if ( null === $adapter ) {
-			// Log detailed information about missing dependencies.
-			$status = McpAdapter::get_dependency_status();
-			error_log( '[MCP Adapter Example] MCP Adapter initialization failed. Status: ' . wp_json_encode( $status ) );
-
-			// Setup admin notices to inform users about missing dependencies.
-			add_action(
-				'admin_notices',
-				static function () {
-					$errors = McpAdapter::get_initialization_errors();
-					if ( empty( $errors ) ) {
-						return;
-					}
-
-					$message  = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
-					$message .= '<ul>';
-					foreach ( $errors as $error ) {
-						$message .= '<li>' . esc_html( $error ) . '</li>';
-					}
-					$message .= '</ul>';
-					$message .= 'Please ensure all required dependencies are installed and activated.';
-
-					printf(
-						'<div class="notice notice-error"><p><strong>MCP Adapter Example:</strong> %s</p></div>',
-						wp_kses_post( $message )
-					);
-				}
-			);
-
-			return;
-		}
 	}
 );
 
@@ -125,27 +94,108 @@ add_action(
 			'MCP Adapter Example Server',
 			'MCP server for the MCP Adapter Implementation Example plugin',
 			'v1.0.0',
-			array( RestTransport::class ),
+			array( HttpTransport::class ),
 			ErrorLogMcpErrorHandler::class,
 			NullMcpObservabilityHandler::class,
 			array(
-				'wpmcp-example/list-posts',
-				'wpmcp-example/create-post',
-				'wpmcp-example/get-post',
-				'wpmcp-example/update-post',
-				'wpmcp-example/delete-post',
-				'wpmcp-example/list-block-types',
-				'wpmcp-example/list-post-meta-keys',
-				'wpmcp-example/get-post-meta',
-				'wpmcp-example/update-post-meta',
-				'wpmcp-example/delete-post-meta',
-				'wpmcp-example/list-taxonomies',
-				'wpmcp-example/get-terms',
-				'wpmcp-example/create-term',
-				'wpmcp-example/update-term',
-				'wpmcp-example/delete-term',
-				'wpmcp-example/attach-post-terms',
-				'wpmcp-example/detach-post-terms',
+				// Core WordPress abilities
+				'core/activate-plugin',
+				'core/activate-theme',
+				'core/approve-comment',
+				'core/assign-menu-location',
+				'core/attach-post-terms',
+				'core/change-user-role',
+				'core/check-file-permissions',
+				'core/check-updates',
+				'core/create-comment',
+				'core/create-menu',
+				'core/create-post',
+				'core/create-term',
+				'core/create-user',
+				'core/deactivate-plugin',
+				'core/delete-attachment',
+				'core/delete-comment',
+				'core/delete-menu',
+				'core/delete-plugin',
+				'core/delete-post',
+				'core/delete-post-meta',
+				'core/delete-term',
+				'core/delete-theme',
+				'core/delete-user',
+				'core/detach-post-terms',
+				'core/generate-image-sizes',
+				'core/get-attachment',
+				'core/get-comment',
+				'core/get-comment-meta',
+				'core/get-constants',
+				'core/get-debug-info',
+				'core/get-media-sizes',
+				'core/get-menu',
+				'core/get-menu-locations',
+				'core/get-plugin-info',
+				'core/get-post',
+				'core/get-post-meta',
+				'core/get-site-settings',
+				'core/get-system-info',
+				'core/get-terms',
+				'core/get-theme-customizer',
+				'core/get-theme-info',
+				'core/get-user',
+				'core/get-user-meta',
+				'core/install-plugin',
+				'core/install-theme',
+				'core/list-block-types',
+				'core/list-comments',
+				'core/list-media',
+				'core/list-menus',
+				'core/list-plugins',
+				'core/list-post-meta-keys',
+				'core/list-posts',
+				'core/list-site-options',
+				'core/list-taxonomies',
+				'core/list-themes',
+				'core/list-users',
+				'core/manage-transients',
+				'core/optimize-database',
+				'core/run-updates',
+				'core/scan-malware',
+				'core/update-attachment',
+				'core/update-comment',
+				'core/update-menu',
+				'core/update-post',
+				'core/update-post-meta',
+				'core/update-salts',
+				'core/update-site-settings',
+				'core/update-term',
+				'core/update-user',
+				'core/update-user-meta',
+				'core/upload-media',
+				
+				// WooCommerce abilities
+				// 'woo/create-product',
+				// 'woo/create-product-attribute',
+				// 'woo/create-product-category',
+				// 'woo/create-product-variation',
+				// 'woo/delete-product',
+				// 'woo/delete-product-category',
+				// 'woo/delete-product-variation',
+				// 'woo/duplicate-product',
+				// 'woo/get-product',
+				// 'woo/get-product-category',
+				// 'woo/get-product-variation',
+				// 'woo/get-store-info',
+				// 'woo/get-store-settings',
+				// 'woo/get-store-status',
+				// 'woo/list-product-attributes',
+				// 'woo/list-product-categories',
+				// 'woo/list-product-tags',
+				// 'woo/list-product-variations',
+				// 'woo/list-products',
+				// 'woo/manage-product-tags',
+				// 'woo/update-product',
+				// 'woo/update-product-attribute',
+				// 'woo/update-product-category',
+				// 'woo/update-product-variation',
 			),
 			array(),
 			array()
