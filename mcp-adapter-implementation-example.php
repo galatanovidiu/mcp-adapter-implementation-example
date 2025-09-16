@@ -89,7 +89,7 @@ add_action(
 
 		$adapter->create_server(
 			'mcp-adapter-example-server',
-			'mcp-adapter-example',
+			'mcp-example',
 			'mcp',
 			'MCP Adapter Example Server',
 			'MCP server for the MCP Adapter Implementation Example plugin',
