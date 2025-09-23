@@ -77,6 +77,7 @@ final class ListThemes implements RegistersAbility {
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(
+					'public_mcp'  => true,
 					'categories' => array( 'appearance', 'themes' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),

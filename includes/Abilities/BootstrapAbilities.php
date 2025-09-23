@@ -85,6 +85,9 @@ use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Basic\UpdateP
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Configuration\GetStoreInfo;
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Configuration\GetStoreSettings;
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Configuration\GetStoreStatus;
+use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Configuration\ManagePaymentMethods;
+use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Configuration\ManageShippingMethods;
+use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Configuration\UpdateStoreSettings;
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Variations\CreateProductVariation;
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Variations\DeleteProductVariation;
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Variations\GetProductVariation;
@@ -231,6 +234,9 @@ final class BootstrapAbilities {
 				GetStoreSettings::register();
 				GetStoreStatus::register();
 				GetStoreInfo::register();
+				UpdateStoreSettings::register();
+				ManagePaymentMethods::register();
+				ManageShippingMethods::register();
 
 				// WooCommerce Product Variations abilities
 				ListProductVariations::register();

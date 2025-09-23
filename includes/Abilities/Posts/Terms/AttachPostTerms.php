@@ -83,6 +83,7 @@ final class AttachPostTerms implements RegistersAbility {
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(
+					'public_mcp'  => true,
 					'categories' => array( 'content', 'taxonomies' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),

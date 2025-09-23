@@ -55,6 +55,7 @@ final class GetMediaSizes implements RegistersAbility {
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(
+					'public_mcp'  => true,
 					'categories' => array( 'media', 'settings' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),

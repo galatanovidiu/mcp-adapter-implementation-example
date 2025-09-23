@@ -38,6 +38,7 @@ final class DeletePost implements RegistersAbility {
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(
+					'public_mcp'  => true,
 					'categories' => array( 'content', 'posts' ),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
@@ -47,6 +48,27 @@ final class DeletePost implements RegistersAbility {
 						'idempotentHint'       => true,
 						'openWorldHint'        => false,
 						'requiresConfirmation' => true,
+					),
+					'elicitation' => array(
+						'message' => 'You are about to delete the post "{post_title}". The post will be {action}. Do you want to continue?',
+						'impact'  => 'medium',
+						'schema'  => array(
+							'type'       => 'object',
+							'properties' => array(
+								'confirm' => array(
+									'type'        => 'boolean',
+									'title'       => 'Confirm Deletion',
+									'description' => 'Confirm that you want to delete this post',
+								),
+								'reason'  => array(
+									'type'        => 'string',
+									'title'       => 'Reason (Optional)',
+									'description' => 'Why are you deleting this post?',
+									'maxLength'   => 200,
+								),
+							),
+							'required'   => array( 'confirm' ),
+						),
 					),
 				),
 			)

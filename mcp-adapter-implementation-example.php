@@ -23,6 +23,8 @@ declare( strict_types=1 );
 
 use OvidiuGalatan\McpAdapterExample\Abilities\BootstrapAbilities;
 use WP\MCP\Core\McpAdapter;
+use OvidiuGalatan\McpAdapterExample\Handlers\RayMcpErrorHandler;
+use OvidiuGalatan\McpAdapterExample\Handlers\RayMcpObservabilityHandler;
 use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
 use WP\MCP\Transport\HttpTransport;
@@ -74,8 +76,8 @@ add_action(
 			return;
 		}
 
-		// Attempt to initialize the adapter.
-		$adapter = McpAdapter::instance();
+		// Initialize the adapter.
+		McpAdapter::instance();
 	}
 );
 
@@ -88,15 +90,15 @@ add_action(
 			BootstrapAbilities::init();
 
 		$adapter->create_server(
-			'mcp-adapter-example-server',
+			'mcp-adapter-example',
 			'mcp-example',
 			'mcp',
 			'MCP Adapter Example Server',
 			'MCP server for the MCP Adapter Implementation Example plugin',
 			'v1.0.0',
 			array( HttpTransport::class ),
-			ErrorLogMcpErrorHandler::class,
-			NullMcpObservabilityHandler::class,
+			RayMcpErrorHandler::class,
+			RayMcpObservabilityHandler::class,
 			array(
 				// Core WordPress abilities
 				'core/activate-plugin',
@@ -172,30 +174,30 @@ add_action(
 				'core/upload-media',
 				
 				// WooCommerce abilities
-				// 'woo/create-product',
-				// 'woo/create-product-attribute',
-				// 'woo/create-product-category',
-				// 'woo/create-product-variation',
-				// 'woo/delete-product',
-				// 'woo/delete-product-category',
-				// 'woo/delete-product-variation',
-				// 'woo/duplicate-product',
-				// 'woo/get-product',
-				// 'woo/get-product-category',
-				// 'woo/get-product-variation',
-				// 'woo/get-store-info',
-				// 'woo/get-store-settings',
-				// 'woo/get-store-status',
-				// 'woo/list-product-attributes',
-				// 'woo/list-product-categories',
-				// 'woo/list-product-tags',
-				// 'woo/list-product-variations',
-				// 'woo/list-products',
-				// 'woo/manage-product-tags',
-				// 'woo/update-product',
-				// 'woo/update-product-attribute',
-				// 'woo/update-product-category',
-				// 'woo/update-product-variation',
+				 'woo/create-product',
+				 'woo/create-product-attribute',
+				 'woo/create-product-category',
+				 'woo/create-product-variation',
+				 'woo/delete-product',
+				 'woo/delete-product-category',
+				 'woo/delete-product-variation',
+				 'woo/duplicate-product',
+				 'woo/get-product',
+				 'woo/get-product-category',
+				 'woo/get-product-variation',
+				 'woo/get-store-info',
+				 'woo/get-store-settings',
+				 'woo/get-store-status',
+				 'woo/list-product-attributes',
+				 'woo/list-product-categories',
+				 'woo/list-product-tags',
+				 'woo/list-product-variations',
+				 'woo/list-products',
+				 'woo/manage-product-tags',
+				 'woo/update-product',
+				 'woo/update-product-attribute',
+				 'woo/update-product-category',
+				 'woo/update-product-variation',
 			),
 			array(),
 			array()
