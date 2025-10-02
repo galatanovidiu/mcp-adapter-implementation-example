@@ -138,10 +138,10 @@ composer format
         "-y",
         "@automattic/mcp-wordpress-remote@latest"      ],
       "env": {
-        "WP_API_URL": "http://your-wordpress-site.com/wp-json/mcp-adapter-example/mcp",
+        "WP_API_URL": "http://your-wordpress-site.com/wp-json/mcp/mcp-adapter-default-server",
         "WP_API_USERNAME": "your wordpress username",
         "WP_API_PASSWORD": "your wordpress application password", // https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/
-        "LOG_FILE": "full path to lofs file"
+        "LOG_FILE": "optional full path to logs file"
       }
     }
   }
