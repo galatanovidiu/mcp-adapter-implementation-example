@@ -60,7 +60,8 @@ final class ListBlockTypes implements RegistersAbility {
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(
-					'categories' => array( 'content', 'blocks' ),
+					'mcp'  => ['public' => true, 'type' => 'tool'],
+					'categories'  => array( 'content', 'blocks' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,

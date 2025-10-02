@@ -35,7 +35,7 @@ final class DeleteTerm implements RegistersAbility {
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(
-					'public_mcp'  => true,
+					'mcp'  => ['public' => true, 'type' => 'tool'],
 					'categories' => array( 'content', 'taxonomies' ),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),

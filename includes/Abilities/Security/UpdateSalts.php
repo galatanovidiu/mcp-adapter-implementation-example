@@ -65,7 +65,7 @@ class UpdateSalts implements RegistersAbility {
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
 				'meta'                => array(
-					'public_mcp'  => true,
+					'mcp'  => ['public' => true, 'type' => 'tool'],
 					'categories' => array( 'security', 'configuration' ),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
