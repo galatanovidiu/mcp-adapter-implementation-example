@@ -17,11 +17,11 @@ final class UpdateUserMeta implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'user_id', 'meta' ),
 					'properties' => array(
-						'user_id' => array(
+						'user_id'       => array(
 							'type'        => 'integer',
 							'description' => 'User ID.',
 						),
-						'meta' => array(
+						'meta'          => array(
 							'type'                 => 'object',
 							'description'          => 'Meta key-value pairs to update.',
 							'additionalProperties' => true,
@@ -47,9 +47,12 @@ final class UpdateUserMeta implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'metadata' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -70,7 +73,7 @@ final class UpdateUserMeta implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$user_id = (int) ( $input['user_id'] ?? 0 );
+		$user_id         = (int) ( $input['user_id'] ?? 0 );
 		$current_user_id = \get_current_user_id();
 
 		// Users can update their own meta (with restrictions)
@@ -111,8 +114,8 @@ final class UpdateUserMeta implements RegistersAbility {
 			);
 		}
 
-		$allow_private = ! empty( $input['allow_private'] );
-		$updated_keys = array();
+		$allow_private   = ! empty( $input['allow_private'] );
+		$updated_keys    = array();
 		$current_user_id = \get_current_user_id();
 
 		// Protected meta keys that should not be modified directly
@@ -156,15 +159,17 @@ final class UpdateUserMeta implements RegistersAbility {
 
 			// Update the meta
 			$updated = \update_user_meta( $user_id, $meta_key, $meta_value );
-			
+
 			// update_user_meta returns false if the value is the same, but that's still "successful"
-			if ( $updated !== false || \get_user_meta( $user_id, $meta_key, true ) === $meta_value ) {
-				$updated_keys[] = $meta_key;
+			if ( $updated === false && \get_user_meta( $user_id, $meta_key, true ) !== $meta_value ) {
+				continue;
 			}
+
+			$updated_keys[] = $meta_key;
 		}
 
-		$message = count( $updated_keys ) > 0 
-			? 'User meta updated successfully.' 
+		$message = count( $updated_keys ) > 0
+			? 'User meta updated successfully.'
 			: 'No meta keys were updated.';
 
 		return array(

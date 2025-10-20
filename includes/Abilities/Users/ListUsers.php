@@ -16,54 +16,54 @@ final class ListUsers implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'role' => array(
+						'role'         => array(
 							'type'        => 'string',
 							'description' => 'Filter users by role (administrator, editor, author, contributor, subscriber, or custom role).',
 						),
-						'search' => array(
+						'search'       => array(
 							'type'        => 'string',
 							'description' => 'Search term to match against user login, email, display name, or meta values.',
 						),
-						'include' => array(
+						'include'      => array(
 							'type'        => 'array',
 							'description' => 'Array of user IDs to include.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'exclude' => array(
+						'exclude'      => array(
 							'type'        => 'array',
 							'description' => 'Array of user IDs to exclude.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'orderby' => array(
+						'orderby'      => array(
 							'type'        => 'string',
 							'description' => 'Field to order results by.',
 							'enum'        => array( 'ID', 'login', 'nicename', 'email', 'url', 'registered', 'display_name', 'post_count', 'include', 'meta_value', 'meta_value_num' ),
 							'default'     => 'registered',
 						),
-						'order' => array(
+						'order'        => array(
 							'type'        => 'string',
 							'description' => 'Sort order.',
 							'enum'        => array( 'ASC', 'DESC' ),
 							'default'     => 'DESC',
 						),
-						'limit' => array(
+						'limit'        => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of users to return.',
 							'default'     => 50,
 							'minimum'     => 1,
 							'maximum'     => 500,
 						),
-						'offset' => array(
+						'offset'       => array(
 							'type'        => 'integer',
 							'description' => 'Number of users to skip (for pagination).',
 							'default'     => 0,
 							'minimum'     => 0,
 						),
-						'meta_key' => array(
+						'meta_key'     => array(
 							'type'        => 'string',
 							'description' => 'Meta key to query (used with meta_value).',
 						),
-						'meta_value' => array(
+						'meta_value'   => array(
 							'type'        => 'string',
 							'description' => 'Meta value to match.',
 						),
@@ -117,9 +117,12 @@ final class ListUsers implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'management' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
@@ -152,10 +155,10 @@ final class ListUsers implements RegistersAbility {
 	public static function execute( array $input ) {
 		// Build WP_User_Query arguments
 		$args = array(
-			'number' => isset( $input['limit'] ) ? max( 1, min( 500, (int) $input['limit'] ) ) : 50,
-			'offset' => isset( $input['offset'] ) ? max( 0, (int) $input['offset'] ) : 0,
-			'orderby' => isset( $input['orderby'] ) ? \sanitize_key( (string) $input['orderby'] ) : 'registered',
-			'order' => isset( $input['order'] ) ? \sanitize_key( (string) $input['order'] ) : 'DESC',
+			'number'      => isset( $input['limit'] ) ? max( 1, min( 500, (int) $input['limit'] ) ) : 50,
+			'offset'      => isset( $input['offset'] ) ? max( 0, (int) $input['offset'] ) : 0,
+			'orderby'     => isset( $input['orderby'] ) ? \sanitize_key( (string) $input['orderby'] ) : 'registered',
+			'order'       => isset( $input['order'] ) ? \sanitize_key( (string) $input['order'] ) : 'DESC',
 			'count_total' => true, // We need total count for pagination
 		);
 
@@ -181,19 +184,19 @@ final class ListUsers implements RegistersAbility {
 		// Add meta query
 		if ( ! empty( $input['meta_key'] ) ) {
 			$args['meta_key'] = \sanitize_key( (string) $input['meta_key'] );
-			
+
 			if ( ! empty( $input['meta_value'] ) ) {
-				$args['meta_value'] = \sanitize_text_field( (string) $input['meta_value'] );
+				$args['meta_value']   = \sanitize_text_field( (string) $input['meta_value'] );
 				$args['meta_compare'] = isset( $input['meta_compare'] ) ? \sanitize_key( (string) $input['meta_compare'] ) : '=';
 			}
 		}
 
 		// Execute query
 		$user_query = new \WP_User_Query( $args );
-		$users = $user_query->get_results();
-		$total = $user_query->get_total();
+		$users      = $user_query->get_results();
+		$total      = $user_query->get_total();
 
-		$include_meta = ! empty( $input['include_meta'] );
+		$include_meta    = ! empty( $input['include_meta'] );
 		$processed_users = array();
 
 		foreach ( $users as $user ) {

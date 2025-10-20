@@ -168,7 +168,10 @@ final class BootstrapAbilitiesTest extends TestCase {
 			// Prepare valid input based on ability requirements.
 			$test_input = array();
 			if ( $ability_name === 'wpmcp-example/create-post' ) {
-				$test_input = array( 'post_type' => 'post', 'title' => 'Test' );
+				$test_input = array(
+					'post_type' => 'post',
+					'title'     => 'Test',
+				);
 			} elseif ( $ability_name === 'wpmcp-example/list-posts' ) {
 				$test_input = array( 'post_type' => 'post' );
 			} elseif ( $ability_name === 'wpmcp-example/list-block-types' ) {

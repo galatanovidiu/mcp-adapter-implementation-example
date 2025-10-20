@@ -13,15 +13,15 @@ class DeleteProductCategory implements RegistersAbility {
 				'label'               => 'Delete Product Category',
 				'description'         => 'Delete a WooCommerce product category with options for handling products and child categories.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'category_id' ),
-					'properties' => array(
-						'category_id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'category_id' ),
+					'properties'           => array(
+						'category_id'          => array(
 							'type'        => 'integer',
 							'description' => 'Category ID to delete.',
 							'minimum'     => 1,
 						),
-						'force_delete' => array(
+						'force_delete'         => array(
 							'type'        => 'boolean',
 							'description' => 'Force delete even if category has products.',
 							'default'     => false,
@@ -31,7 +31,7 @@ class DeleteProductCategory implements RegistersAbility {
 							'description' => 'Category ID to reassign products to (0 for Uncategorized).',
 							'default'     => 0,
 						),
-						'delete_children' => array(
+						'delete_children'      => array(
 							'type'        => 'boolean',
 							'description' => 'Also delete child categories.',
 							'default'     => false,
@@ -47,40 +47,44 @@ class DeleteProductCategory implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'category' => array(
+						'success'             => array( 'type' => 'boolean' ),
+						'category'            => array(
 							'type'       => 'object',
 							'properties' => array(
-								'id'          => array( 'type' => 'integer' ),
-								'name'        => array( 'type' => 'string' ),
-								'slug'        => array( 'type' => 'string' ),
-								'count'       => array( 'type' => 'integer' ),
+								'id'             => array( 'type' => 'integer' ),
+								'name'           => array( 'type' => 'string' ),
+								'slug'           => array( 'type' => 'string' ),
+								'count'          => array( 'type' => 'integer' ),
 								'children_count' => array( 'type' => 'integer' ),
 							),
 						),
 						'products_reassigned' => array( 'type' => 'integer' ),
-						'children_handled' => array(
+						'children_handled'    => array(
 							'type'       => 'object',
 							'properties' => array(
 								'deleted'    => array( 'type' => 'integer' ),
 								'reassigned' => array( 'type' => 'integer' ),
 							),
 						),
-						'reassign_info' => array(
+						'reassign_info'       => array(
 							'type'       => 'object',
 							'properties' => array(
-								'products_to'  => array( 'type' => 'string' ),
-								'children_to'  => array( 'type' => 'string' ),
+								'products_to' => array( 'type' => 'string' ),
+								'children_to' => array( 'type' => 'string' ),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'             => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'catalog' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'categories'  => array( 'ecommerce', 'catalog' ),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.6,
@@ -106,16 +110,19 @@ class DeleteProductCategory implements RegistersAbility {
 				'success'             => false,
 				'category'            => array(),
 				'products_reassigned' => 0,
-				'children_handled'    => array( 'deleted' => 0, 'reassigned' => 0 ),
+				'children_handled'    => array(
+					'deleted'    => 0,
+					'reassigned' => 0,
+				),
 				'reassign_info'       => array(),
 				'message'             => 'WooCommerce is not active.',
 			);
 		}
 
-		$category_id = $input['category_id'];
-		$force_delete = $input['force_delete'] ?? false;
+		$category_id          = $input['category_id'];
+		$force_delete         = $input['force_delete'] ?? false;
 		$reassign_products_to = $input['reassign_products_to'] ?? 0;
-		$delete_children = $input['delete_children'] ?? false;
+		$delete_children      = $input['delete_children'] ?? false;
 		$reassign_children_to = $input['reassign_children_to'] ?? 0;
 
 		$category = get_term( $category_id, 'product_cat' );
@@ -124,7 +131,10 @@ class DeleteProductCategory implements RegistersAbility {
 				'success'             => false,
 				'category'            => array(),
 				'products_reassigned' => 0,
-				'children_handled'    => array( 'deleted' => 0, 'reassigned' => 0 ),
+				'children_handled'    => array(
+					'deleted'    => 0,
+					'reassigned' => 0,
+				),
 				'reassign_info'       => array(),
 				'message'             => 'Category not found.',
 			);
@@ -139,7 +149,10 @@ class DeleteProductCategory implements RegistersAbility {
 					'name' => $category->name,
 				),
 				'products_reassigned' => 0,
-				'children_handled'    => array( 'deleted' => 0, 'reassigned' => 0 ),
+				'children_handled'    => array(
+					'deleted'    => 0,
+					'reassigned' => 0,
+				),
 				'reassign_info'       => array(),
 				'message'             => 'Cannot delete the default "Uncategorized" category.',
 			);
@@ -155,11 +168,13 @@ class DeleteProductCategory implements RegistersAbility {
 		);
 
 		// Get children count
-		$children = get_terms( array(
-			'taxonomy' => 'product_cat',
-			'parent'   => $category_id,
-			'fields'   => 'ids',
-		) );
+		$children = get_terms(
+			array(
+				'taxonomy' => 'product_cat',
+				'parent'   => $category_id,
+				'fields'   => 'ids',
+			)
+		);
 
 		if ( ! is_wp_error( $children ) ) {
 			$category_info['children_count'] = count( $children );
@@ -171,7 +186,10 @@ class DeleteProductCategory implements RegistersAbility {
 				'success'             => false,
 				'category'            => $category_info,
 				'products_reassigned' => 0,
-				'children_handled'    => array( 'deleted' => 0, 'reassigned' => 0 ),
+				'children_handled'    => array(
+					'deleted'    => 0,
+					'reassigned' => 0,
+				),
 				'reassign_info'       => array(),
 				'message'             => sprintf( 'Category "%s" has %d products. Use force_delete to delete anyway or specify reassign_products_to.', $category->name, $category->count ),
 			);
@@ -179,15 +197,18 @@ class DeleteProductCategory implements RegistersAbility {
 
 		try {
 			$products_reassigned = 0;
-			$children_handled = array( 'deleted' => 0, 'reassigned' => 0 );
-			$reassign_info = array();
+			$children_handled    = array(
+				'deleted'    => 0,
+				'reassigned' => 0,
+			);
+			$reassign_info       = array();
 
 			// Handle products
 			if ( $category->count > 0 ) {
 				$products_reassigned = self::reassign_products( $category_id, $reassign_products_to );
-				
+
 				if ( $reassign_products_to > 0 ) {
-					$reassign_category = get_term( $reassign_products_to, 'product_cat' );
+					$reassign_category            = get_term( $reassign_products_to, 'product_cat' );
 					$reassign_info['products_to'] = $reassign_category ? $reassign_category->name : 'Unknown';
 				} else {
 					$reassign_info['products_to'] = 'Uncategorized';
@@ -199,22 +220,30 @@ class DeleteProductCategory implements RegistersAbility {
 				if ( $delete_children ) {
 					foreach ( $children as $child_id ) {
 						$child_result = wp_delete_term( $child_id, 'product_cat' );
-						if ( ! is_wp_error( $child_result ) && $child_result ) {
-							$children_handled['deleted']++;
+						if ( is_wp_error( $child_result ) || ! $child_result ) {
+							continue;
 						}
+
+						++$children_handled['deleted'];
 					}
 				} else {
 					foreach ( $children as $child_id ) {
-						$result = wp_update_term( $child_id, 'product_cat', array(
-							'parent' => $reassign_children_to,
-						) );
-						if ( ! is_wp_error( $result ) ) {
-							$children_handled['reassigned']++;
+						$result = wp_update_term(
+							$child_id,
+							'product_cat',
+							array(
+								'parent' => $reassign_children_to,
+							)
+						);
+						if ( is_wp_error( $result ) ) {
+							continue;
 						}
+
+						++$children_handled['reassigned'];
 					}
 
 					if ( $reassign_children_to > 0 ) {
-						$reassign_category = get_term( $reassign_children_to, 'product_cat' );
+						$reassign_category            = get_term( $reassign_children_to, 'product_cat' );
 						$reassign_info['children_to'] = $reassign_category ? $reassign_category->name : 'Unknown';
 					} else {
 						$reassign_info['children_to'] = 'Top-level';
@@ -250,13 +279,15 @@ class DeleteProductCategory implements RegistersAbility {
 					$delete_children ? $children_handled['deleted'] : $children_handled['reassigned']
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'             => false,
 				'category'            => $category_info,
 				'products_reassigned' => 0,
-				'children_handled'    => array( 'deleted' => 0, 'reassigned' => 0 ),
+				'children_handled'    => array(
+					'deleted'    => 0,
+					'reassigned' => 0,
+				),
 				'reassign_info'       => array(),
 				'message'             => 'Error deleting category: ' . $e->getMessage(),
 			);
@@ -265,20 +296,22 @@ class DeleteProductCategory implements RegistersAbility {
 
 	private static function reassign_products( int $from_category_id, int $to_category_id ): int {
 		// Get products in the category
-		$products = wc_get_products( array(
-			'category' => array( $from_category_id ),
-			'limit'    => -1,
-			'status'   => 'any',
-		) );
+		$products = wc_get_products(
+			array(
+				'category' => array( $from_category_id ),
+				'limit'    => -1,
+				'status'   => 'any',
+			)
+		);
 
 		$reassigned_count = 0;
 
 		foreach ( $products as $product ) {
 			$current_categories = $product->get_category_ids();
-			
+
 			// Remove the old category
 			$new_categories = array_diff( $current_categories, array( $from_category_id ) );
-			
+
 			// Add the new category if specified
 			if ( $to_category_id > 0 ) {
 				$new_categories[] = $to_category_id;
@@ -294,7 +327,7 @@ class DeleteProductCategory implements RegistersAbility {
 
 			$product->set_category_ids( $new_categories );
 			$product->save();
-			$reassigned_count++;
+			++$reassigned_count;
 		}
 
 		return $reassigned_count;

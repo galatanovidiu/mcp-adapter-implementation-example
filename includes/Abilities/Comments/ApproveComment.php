@@ -21,7 +21,7 @@ final class ApproveComment implements RegistersAbility {
 							'type'        => 'integer',
 							'description' => 'The comment ID to moderate.',
 						),
-						'status' => array(
+						'status'     => array(
 							'type'        => 'string',
 							'description' => 'The approval status to set.',
 							'enum'        => array( 'approve', 'hold', 'spam', 'unspam', 'trash', 'untrash' ),
@@ -32,12 +32,12 @@ final class ApproveComment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'comment_id' ),
 					'properties' => array(
-						'success'     => array( 'type' => 'boolean' ),
-						'comment_id'  => array( 'type' => 'integer' ),
-						'old_status'  => array( 'type' => 'string' ),
-						'new_status'  => array( 'type' => 'string' ),
+						'success'      => array( 'type' => 'boolean' ),
+						'comment_id'   => array( 'type' => 'integer' ),
+						'old_status'   => array( 'type' => 'string' ),
+						'new_status'   => array( 'type' => 'string' ),
 						'action_taken' => array( 'type' => 'string' ),
-						'comment'     => array(
+						'comment'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'comment_ID'       => array( 'type' => 'integer' ),
@@ -49,14 +49,17 @@ final class ApproveComment implements RegistersAbility {
 								'comment_url'      => array( 'type' => 'string' ),
 							),
 						),
-						'message'     => array( 'type' => 'string' ),
+						'message'      => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'engagement', 'moderation' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -88,7 +91,7 @@ final class ApproveComment implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$comment_id = (int) $input['comment_id'];
-		$status = \sanitize_text_field( (string) $input['status'] );
+		$status     = \sanitize_text_field( (string) $input['status'] );
 
 		// Get the comment
 		$comment = \get_comment( $comment_id );
@@ -100,28 +103,28 @@ final class ApproveComment implements RegistersAbility {
 			);
 		}
 
-		$old_status = $comment->comment_approved;
+		$old_status   = $comment->comment_approved;
 		$action_taken = '';
-		$new_status = '';
-		$result = false;
+		$new_status   = '';
+		$result       = false;
 
 		// Perform the requested action
 		switch ( $status ) {
 			case 'approve':
-				$result = \wp_set_comment_status( $comment_id, 'approve' );
-				$new_status = '1';
+				$result       = \wp_set_comment_status( $comment_id, 'approve' );
+				$new_status   = '1';
 				$action_taken = 'approved';
 				break;
 
 			case 'hold':
-				$result = \wp_set_comment_status( $comment_id, 'hold' );
-				$new_status = '0';
+				$result       = \wp_set_comment_status( $comment_id, 'hold' );
+				$new_status   = '0';
 				$action_taken = 'held_for_moderation';
 				break;
 
 			case 'spam':
-				$result = \wp_spam_comment( $comment_id );
-				$new_status = 'spam';
+				$result       = \wp_spam_comment( $comment_id );
+				$new_status   = 'spam';
 				$action_taken = 'marked_as_spam';
 				break;
 
@@ -129,13 +132,13 @@ final class ApproveComment implements RegistersAbility {
 				$result = \wp_unspam_comment( $comment_id );
 				// After unspam, comment goes back to its previous status or pending
 				$updated_comment = \get_comment( $comment_id );
-				$new_status = $updated_comment ? $updated_comment->comment_approved : '0';
-				$action_taken = 'unmarked_as_spam';
+				$new_status      = $updated_comment ? $updated_comment->comment_approved : '0';
+				$action_taken    = 'unmarked_as_spam';
 				break;
 
 			case 'trash':
-				$result = \wp_trash_comment( $comment_id );
-				$new_status = 'trash';
+				$result       = \wp_trash_comment( $comment_id );
+				$new_status   = 'trash';
 				$action_taken = 'moved_to_trash';
 				break;
 
@@ -143,8 +146,8 @@ final class ApproveComment implements RegistersAbility {
 				$result = \wp_untrash_comment( $comment_id );
 				// After untrash, comment goes back to its previous status
 				$updated_comment = \get_comment( $comment_id );
-				$new_status = $updated_comment ? $updated_comment->comment_approved : '0';
-				$action_taken = 'restored_from_trash';
+				$new_status      = $updated_comment ? $updated_comment->comment_approved : '0';
+				$action_taken    = 'restored_from_trash';
 				break;
 
 			default:
@@ -187,17 +190,17 @@ final class ApproveComment implements RegistersAbility {
 				'comment_post_ID'  => (int) $updated_comment->comment_post_ID,
 				'comment_url'      => \get_comment_link( $updated_comment ),
 			);
-			$new_status = $updated_comment->comment_approved;
+			$new_status   = $updated_comment->comment_approved;
 		}
 
 		// Generate appropriate message
 		$messages = array(
-			'approved'             => 'Comment approved successfully.',
-			'held_for_moderation'  => 'Comment held for moderation.',
-			'marked_as_spam'       => 'Comment marked as spam.',
-			'unmarked_as_spam'     => 'Comment unmarked as spam.',
-			'moved_to_trash'       => 'Comment moved to trash.',
-			'restored_from_trash'  => 'Comment restored from trash.',
+			'approved'            => 'Comment approved successfully.',
+			'held_for_moderation' => 'Comment held for moderation.',
+			'marked_as_spam'      => 'Comment marked as spam.',
+			'unmarked_as_spam'    => 'Comment unmarked as spam.',
+			'moved_to_trash'      => 'Comment moved to trash.',
+			'restored_from_trash' => 'Comment restored from trash.',
 		);
 
 		$message = $messages[ $action_taken ] ?? 'Comment status updated successfully.';

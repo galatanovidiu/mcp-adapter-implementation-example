@@ -17,7 +17,7 @@ final class DeleteAttachment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'id' ),
 					'properties' => array(
-						'id' => array(
+						'id'           => array(
 							'type'        => 'integer',
 							'description' => 'Attachment ID to delete.',
 						),
@@ -32,8 +32,8 @@ final class DeleteAttachment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'deleted' ),
 					'properties' => array(
-						'deleted'     => array( 'type' => 'boolean' ),
-						'message'     => array( 'type' => 'string' ),
+						'deleted'       => array( 'type' => 'boolean' ),
+						'message'       => array( 'type' => 'string' ),
 						'files_deleted' => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
@@ -42,9 +42,12 @@ final class DeleteAttachment implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'media',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'media', 'attachments' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.5,
@@ -67,7 +70,7 @@ final class DeleteAttachment implements RegistersAbility {
 	 */
 	public static function check_permission( array $input ): bool {
 		$attachment_id = (int) ( $input['id'] ?? 0 );
-		
+
 		// Check if user can delete this specific attachment
 		return \current_user_can( 'delete_post', $attachment_id );
 	}
@@ -80,7 +83,7 @@ final class DeleteAttachment implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$attachment_id = (int) $input['id'];
-		$force_delete = ! empty( $input['force_delete'] );
+		$force_delete  = ! empty( $input['force_delete'] );
 
 		// Check if attachment exists
 		$attachment = \get_post( $attachment_id );
@@ -89,26 +92,30 @@ final class DeleteAttachment implements RegistersAbility {
 		}
 
 		// Get file information before deletion
-		$file_path = \get_attached_file( $attachment_id );
-		$metadata = \wp_get_attachment_metadata( $attachment_id );
+		$file_path       = \get_attached_file( $attachment_id );
+		$metadata        = \wp_get_attachment_metadata( $attachment_id );
 		$files_to_delete = array();
 
 		// Collect all files that will be deleted
 		if ( $file_path ) {
 			$files_to_delete[] = \basename( $file_path );
-			
+
 			// Add image size files if it's an image
 			if ( \wp_attachment_is_image( $attachment_id ) && $metadata && isset( $metadata['sizes'] ) ) {
 				$upload_dir = \wp_upload_dir();
-				$file_dir = \dirname( $file_path );
-				
+				$file_dir   = \dirname( $file_path );
+
 				foreach ( $metadata['sizes'] as $size => $size_data ) {
-					if ( isset( $size_data['file'] ) ) {
-						$size_file = $file_dir . '/' . $size_data['file'];
-						if ( \file_exists( $size_file ) ) {
-							$files_to_delete[] = \basename( $size_file );
-						}
+					if ( ! isset( $size_data['file'] ) ) {
+						continue;
 					}
+
+					$size_file = $file_dir . '/' . $size_data['file'];
+					if ( ! \file_exists( $size_file ) ) {
+						continue;
+					}
+
+					$files_to_delete[] = \basename( $size_file );
 				}
 			}
 		}
@@ -120,13 +127,13 @@ final class DeleteAttachment implements RegistersAbility {
 			return new \WP_Error( 'deletion_failed', 'Failed to delete attachment.' );
 		}
 
-		$message = $force_delete 
+		$message = $force_delete
 			? "Attachment '{$attachment->post_title}' permanently deleted."
 			: "Attachment '{$attachment->post_title}' moved to trash.";
 
 		if ( ! empty( $files_to_delete ) ) {
 			$file_count = count( $files_to_delete );
-			$message .= " {$file_count} file(s) removed from server.";
+			$message   .= " {$file_count} file(s) removed from server.";
 		}
 
 		return array(

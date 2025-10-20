@@ -21,7 +21,7 @@ final class DeletePlugin implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Plugin file path (e.g., "plugin-folder/plugin-file.php").',
 						),
-						'force' => array(
+						'force'       => array(
 							'type'        => 'boolean',
 							'description' => 'Force deletion even if plugin is active (will deactivate first).',
 							'default'     => false,
@@ -32,8 +32,8 @@ final class DeletePlugin implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'deleted' ),
 					'properties' => array(
-						'deleted' => array( 'type' => 'boolean' ),
-						'message' => array( 'type' => 'string' ),
+						'deleted'     => array( 'type' => 'boolean' ),
+						'message'     => array( 'type' => 'string' ),
 						'plugin_info' => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -45,9 +45,12 @@ final class DeletePlugin implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'plugins',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'plugins', 'management' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.5,
@@ -147,9 +150,9 @@ final class DeletePlugin implements RegistersAbility {
 			}
 
 			// Verify deactivation
-			$still_active = \is_plugin_active( $plugin_file ) || 
+			$still_active = \is_plugin_active( $plugin_file ) ||
 				( \is_multisite() && \is_plugin_active_for_network( $plugin_file ) );
-			
+
 			if ( $still_active ) {
 				return array(
 					'error' => array(

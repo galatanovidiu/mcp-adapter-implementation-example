@@ -16,7 +16,7 @@ final class GetSystemInfo implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'include_server_info' => array(
+						'include_server_info'   => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include server information. Default: true.',
 							'default'     => true,
@@ -26,17 +26,17 @@ final class GetSystemInfo implements RegistersAbility {
 							'description' => 'Whether to include database information. Default: true.',
 							'default'     => true,
 						),
-						'include_theme_info' => array(
+						'include_theme_info'    => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include active theme information. Default: true.',
 							'default'     => true,
 						),
-						'include_plugin_info' => array(
+						'include_plugin_info'   => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include plugin information. Default: false.',
 							'default'     => false,
 						),
-						'include_constants' => array(
+						'include_constants'     => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include WordPress constants. Default: false.',
 							'default'     => false,
@@ -50,59 +50,59 @@ final class GetSystemInfo implements RegistersAbility {
 						'wordpress' => array(
 							'type'       => 'object',
 							'properties' => array(
-								'version'        => array( 'type' => 'string' ),
-								'multisite'      => array( 'type' => 'boolean' ),
-								'site_url'       => array( 'type' => 'string' ),
-								'home_url'       => array( 'type' => 'string' ),
-								'admin_url'      => array( 'type' => 'string' ),
-								'language'       => array( 'type' => 'string' ),
-								'timezone'       => array( 'type' => 'string' ),
-								'date_format'    => array( 'type' => 'string' ),
-								'time_format'    => array( 'type' => 'string' ),
-								'debug_mode'     => array( 'type' => 'boolean' ),
-								'memory_limit'   => array( 'type' => 'string' ),
-								'max_upload'     => array( 'type' => 'string' ),
-								'post_max_size'  => array( 'type' => 'string' ),
-								'max_execution'  => array( 'type' => 'string' ),
+								'version'       => array( 'type' => 'string' ),
+								'multisite'     => array( 'type' => 'boolean' ),
+								'site_url'      => array( 'type' => 'string' ),
+								'home_url'      => array( 'type' => 'string' ),
+								'admin_url'     => array( 'type' => 'string' ),
+								'language'      => array( 'type' => 'string' ),
+								'timezone'      => array( 'type' => 'string' ),
+								'date_format'   => array( 'type' => 'string' ),
+								'time_format'   => array( 'type' => 'string' ),
+								'debug_mode'    => array( 'type' => 'boolean' ),
+								'memory_limit'  => array( 'type' => 'string' ),
+								'max_upload'    => array( 'type' => 'string' ),
+								'post_max_size' => array( 'type' => 'string' ),
+								'max_execution' => array( 'type' => 'string' ),
 							),
 						),
-						'server' => array(
+						'server'    => array(
 							'type'       => 'object',
 							'properties' => array(
-								'software'       => array( 'type' => 'string' ),
-								'php_version'    => array( 'type' => 'string' ),
-								'mysql_version'  => array( 'type' => 'string' ),
-								'server_ip'      => array( 'type' => 'string' ),
-								'server_name'    => array( 'type' => 'string' ),
-								'document_root'  => array( 'type' => 'string' ),
-								'user_agent'     => array( 'type' => 'string' ),
-								'https'          => array( 'type' => 'boolean' ),
+								'software'      => array( 'type' => 'string' ),
+								'php_version'   => array( 'type' => 'string' ),
+								'mysql_version' => array( 'type' => 'string' ),
+								'server_ip'     => array( 'type' => 'string' ),
+								'server_name'   => array( 'type' => 'string' ),
+								'document_root' => array( 'type' => 'string' ),
+								'user_agent'    => array( 'type' => 'string' ),
+								'https'         => array( 'type' => 'boolean' ),
 							),
 						),
-						'database' => array(
+						'database'  => array(
 							'type'       => 'object',
 							'properties' => array(
-								'name'           => array( 'type' => 'string' ),
-								'host'           => array( 'type' => 'string' ),
-								'charset'        => array( 'type' => 'string' ),
-								'collate'        => array( 'type' => 'string' ),
-								'prefix'         => array( 'type' => 'string' ),
-								'size'           => array( 'type' => 'string' ),
-								'tables_count'   => array( 'type' => 'integer' ),
+								'name'         => array( 'type' => 'string' ),
+								'host'         => array( 'type' => 'string' ),
+								'charset'      => array( 'type' => 'string' ),
+								'collate'      => array( 'type' => 'string' ),
+								'prefix'       => array( 'type' => 'string' ),
+								'size'         => array( 'type' => 'string' ),
+								'tables_count' => array( 'type' => 'integer' ),
 							),
 						),
-						'theme' => array(
+						'theme'     => array(
 							'type'       => 'object',
 							'properties' => array(
-								'name'           => array( 'type' => 'string' ),
-								'version'        => array( 'type' => 'string' ),
-								'author'         => array( 'type' => 'string' ),
-								'template'       => array( 'type' => 'string' ),
-								'stylesheet'     => array( 'type' => 'string' ),
-								'parent_theme'   => array( 'type' => 'string' ),
+								'name'         => array( 'type' => 'string' ),
+								'version'      => array( 'type' => 'string' ),
+								'author'       => array( 'type' => 'string' ),
+								'template'     => array( 'type' => 'string' ),
+								'stylesheet'   => array( 'type' => 'string' ),
+								'parent_theme' => array( 'type' => 'string' ),
 							),
 						),
-						'plugins' => array(
+						'plugins'   => array(
 							'type'       => 'object',
 							'properties' => array(
 								'active_count'   => array( 'type' => 'integer' ),
@@ -130,9 +130,12 @@ final class GetSystemInfo implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'system',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'system', 'monitoring' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -163,11 +166,11 @@ final class GetSystemInfo implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$include_server_info = (bool) ( $input['include_server_info'] ?? true );
+		$include_server_info   = (bool) ( $input['include_server_info'] ?? true );
 		$include_database_info = (bool) ( $input['include_database_info'] ?? true );
-		$include_theme_info = (bool) ( $input['include_theme_info'] ?? true );
-		$include_plugin_info = (bool) ( $input['include_plugin_info'] ?? false );
-		$include_constants = (bool) ( $input['include_constants'] ?? false );
+		$include_theme_info    = (bool) ( $input['include_theme_info'] ?? true );
+		$include_plugin_info   = (bool) ( $input['include_plugin_info'] ?? false );
+		$include_constants     = (bool) ( $input['include_constants'] ?? false );
 
 		$result = array();
 
@@ -192,7 +195,7 @@ final class GetSystemInfo implements RegistersAbility {
 		// Server Information
 		if ( $include_server_info ) {
 			global $wpdb;
-			
+
 			$result['server'] = array(
 				'software'      => isset( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : 'Unknown',
 				'php_version'   => \phpversion(),
@@ -210,12 +213,12 @@ final class GetSystemInfo implements RegistersAbility {
 		// Database Information
 		if ( $include_database_info ) {
 			global $wpdb;
-			
+
 			// Get database size
-			$db_size = 0;
+			$db_size      = 0;
 			$tables_count = 0;
-			
-			$tables = $wpdb->get_results( "SHOW TABLE STATUS", ARRAY_A );
+
+			$tables = $wpdb->get_results( 'SHOW TABLE STATUS', ARRAY_A );
 			if ( $tables ) {
 				$tables_count = count( $tables );
 				foreach ( $tables as $table ) {
@@ -238,9 +241,9 @@ final class GetSystemInfo implements RegistersAbility {
 
 		// Theme Information
 		if ( $include_theme_info ) {
-			$theme = \wp_get_theme();
+			$theme        = \wp_get_theme();
 			$parent_theme = $theme->parent();
-			
+
 			$result['theme'] = array(
 				'name'         => $theme->get( 'Name' ),
 				'version'      => $theme->get( 'Version' ),
@@ -259,20 +262,22 @@ final class GetSystemInfo implements RegistersAbility {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
 
-			$all_plugins = \get_plugins();
+			$all_plugins    = \get_plugins();
 			$active_plugins = \get_option( 'active_plugins', array() );
-			$mu_plugins = \get_mu_plugins();
+			$mu_plugins     = \get_mu_plugins();
 
 			$active_plugin_data = array();
 			foreach ( $active_plugins as $plugin_file ) {
-				if ( isset( $all_plugins[ $plugin_file ] ) ) {
-					$plugin = $all_plugins[ $plugin_file ];
-					$active_plugin_data[] = array(
-						'name'    => $plugin['Name'],
-						'version' => $plugin['Version'],
-						'file'    => $plugin_file,
-					);
+				if ( ! isset( $all_plugins[ $plugin_file ] ) ) {
+					continue;
 				}
+
+				$plugin               = $all_plugins[ $plugin_file ];
+				$active_plugin_data[] = array(
+					'name'    => $plugin['Name'],
+					'version' => $plugin['Version'],
+					'file'    => $plugin_file,
+				);
 			}
 
 			$result['plugins'] = array(
@@ -289,23 +294,23 @@ final class GetSystemInfo implements RegistersAbility {
 		// WordPress Constants
 		if ( $include_constants ) {
 			$constants = array(
-				'WP_DEBUG'           => defined( 'WP_DEBUG' ) ? ( WP_DEBUG ? 'true' : 'false' ) : 'undefined',
-				'WP_DEBUG_LOG'       => defined( 'WP_DEBUG_LOG' ) ? ( WP_DEBUG_LOG ? 'true' : 'false' ) : 'undefined',
-				'WP_DEBUG_DISPLAY'   => defined( 'WP_DEBUG_DISPLAY' ) ? ( WP_DEBUG_DISPLAY ? 'true' : 'false' ) : 'undefined',
-				'WP_CACHE'           => defined( 'WP_CACHE' ) ? ( WP_CACHE ? 'true' : 'false' ) : 'undefined',
+				'WP_DEBUG'            => defined( 'WP_DEBUG' ) ? ( WP_DEBUG ? 'true' : 'false' ) : 'undefined',
+				'WP_DEBUG_LOG'        => defined( 'WP_DEBUG_LOG' ) ? ( WP_DEBUG_LOG ? 'true' : 'false' ) : 'undefined',
+				'WP_DEBUG_DISPLAY'    => defined( 'WP_DEBUG_DISPLAY' ) ? ( WP_DEBUG_DISPLAY ? 'true' : 'false' ) : 'undefined',
+				'WP_CACHE'            => defined( 'WP_CACHE' ) ? ( WP_CACHE ? 'true' : 'false' ) : 'undefined',
 				'CONCATENATE_SCRIPTS' => defined( 'CONCATENATE_SCRIPTS' ) ? ( CONCATENATE_SCRIPTS ? 'true' : 'false' ) : 'undefined',
-				'COMPRESS_SCRIPTS'   => defined( 'COMPRESS_SCRIPTS' ) ? ( COMPRESS_SCRIPTS ? 'true' : 'false' ) : 'undefined',
-				'COMPRESS_CSS'       => defined( 'COMPRESS_CSS' ) ? ( COMPRESS_CSS ? 'true' : 'false' ) : 'undefined',
-				'WP_LOCAL_DEV'       => defined( 'WP_LOCAL_DEV' ) ? ( constant( 'WP_LOCAL_DEV' ) ? 'true' : 'false' ) : 'undefined',
-				'SCRIPT_DEBUG'       => defined( 'SCRIPT_DEBUG' ) ? ( SCRIPT_DEBUG ? 'true' : 'false' ) : 'undefined',
-				'WP_MEMORY_LIMIT'    => defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'undefined',
+				'COMPRESS_SCRIPTS'    => defined( 'COMPRESS_SCRIPTS' ) ? ( COMPRESS_SCRIPTS ? 'true' : 'false' ) : 'undefined',
+				'COMPRESS_CSS'        => defined( 'COMPRESS_CSS' ) ? ( COMPRESS_CSS ? 'true' : 'false' ) : 'undefined',
+				'WP_LOCAL_DEV'        => defined( 'WP_LOCAL_DEV' ) ? ( constant( 'WP_LOCAL_DEV' ) ? 'true' : 'false' ) : 'undefined',
+				'SCRIPT_DEBUG'        => defined( 'SCRIPT_DEBUG' ) ? ( SCRIPT_DEBUG ? 'true' : 'false' ) : 'undefined',
+				'WP_MEMORY_LIMIT'     => defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : 'undefined',
 				'WP_MAX_MEMORY_LIMIT' => defined( 'WP_MAX_MEMORY_LIMIT' ) ? WP_MAX_MEMORY_LIMIT : 'undefined',
-				'ABSPATH'            => defined( 'ABSPATH' ) ? ABSPATH : 'undefined',
-				'WP_CONTENT_DIR'     => defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : 'undefined',
-				'WP_CONTENT_URL'     => defined( 'WP_CONTENT_URL' ) ? WP_CONTENT_URL : 'undefined',
-				'WP_PLUGIN_DIR'      => defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR : 'undefined',
-				'WP_PLUGIN_URL'      => defined( 'WP_PLUGIN_URL' ) ? WP_PLUGIN_URL : 'undefined',
-				'UPLOADS'            => defined( 'UPLOADS' ) ? UPLOADS : 'undefined',
+				'ABSPATH'             => defined( 'ABSPATH' ) ? ABSPATH : 'undefined',
+				'WP_CONTENT_DIR'      => defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : 'undefined',
+				'WP_CONTENT_URL'      => defined( 'WP_CONTENT_URL' ) ? WP_CONTENT_URL : 'undefined',
+				'WP_PLUGIN_DIR'       => defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR : 'undefined',
+				'WP_PLUGIN_URL'       => defined( 'WP_PLUGIN_URL' ) ? WP_PLUGIN_URL : 'undefined',
+				'UPLOADS'             => defined( 'UPLOADS' ) ? UPLOADS : 'undefined',
 			);
 
 			$result['constants'] = $constants;

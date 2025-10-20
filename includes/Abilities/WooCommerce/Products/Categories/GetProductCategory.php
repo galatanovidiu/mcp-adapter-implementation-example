@@ -13,20 +13,20 @@ class GetProductCategory implements RegistersAbility {
 				'label'               => 'Get Product Category',
 				'description'         => 'Retrieve detailed information about a specific WooCommerce product category including hierarchy and products.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'category_id' ),
-					'properties' => array(
-						'category_id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'category_id' ),
+					'properties'           => array(
+						'category_id'       => array(
 							'type'        => 'integer',
 							'description' => 'Category ID to retrieve.',
 							'minimum'     => 1,
 						),
-						'include_products' => array(
+						'include_products'  => array(
 							'type'        => 'boolean',
 							'description' => 'Include products in this category.',
 							'default'     => true,
 						),
-						'include_children' => array(
+						'include_children'  => array(
 							'type'        => 'boolean',
 							'description' => 'Include child categories.',
 							'default'     => true,
@@ -36,7 +36,7 @@ class GetProductCategory implements RegistersAbility {
 							'description' => 'Include ancestor categories.',
 							'default'     => true,
 						),
-						'products_limit' => array(
+						'products_limit'    => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of products to include.',
 							'default'     => 10,
@@ -49,7 +49,7 @@ class GetProductCategory implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'category' => array(
+						'category'   => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'          => array( 'type' => 'integer' ),
@@ -64,7 +64,7 @@ class GetProductCategory implements RegistersAbility {
 								'link'        => array( 'type' => 'string' ),
 							),
 						),
-						'products' => array(
+						'products'   => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -78,7 +78,7 @@ class GetProductCategory implements RegistersAbility {
 								),
 							),
 						),
-						'children' => array(
+						'children'   => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -91,7 +91,7 @@ class GetProductCategory implements RegistersAbility {
 								),
 							),
 						),
-						'ancestors' => array(
+						'ancestors'  => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -104,14 +104,18 @@ class GetProductCategory implements RegistersAbility {
 							),
 						),
 						'breadcrumb' => array( 'type' => 'string' ),
-						'message' => array( 'type' => 'string' ),
+						'message'    => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'catalog' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'categories'  => array( 'ecommerce', 'catalog' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -142,11 +146,11 @@ class GetProductCategory implements RegistersAbility {
 			);
 		}
 
-		$category_id = $input['category_id'];
-		$include_products = $input['include_products'] ?? true;
-		$include_children = $input['include_children'] ?? true;
+		$category_id       = $input['category_id'];
+		$include_products  = $input['include_products'] ?? true;
+		$include_children  = $input['include_children'] ?? true;
 		$include_ancestors = $input['include_ancestors'] ?? true;
-		$products_limit = $input['products_limit'] ?? 10;
+		$products_limit    = $input['products_limit'] ?? 10;
 
 		$category = get_term( $category_id, 'product_cat' );
 
@@ -177,10 +181,10 @@ class GetProductCategory implements RegistersAbility {
 		}
 
 		// Get ancestors if requested
-		$ancestors = array();
+		$ancestors  = array();
 		$breadcrumb = '';
 		if ( $include_ancestors ) {
-			$ancestors = self::get_category_ancestors( $category_id );
+			$ancestors  = self::get_category_ancestors( $category_id );
 			$breadcrumb = self::build_breadcrumb( $ancestors, $category );
 		}
 
@@ -195,10 +199,10 @@ class GetProductCategory implements RegistersAbility {
 	}
 
 	private static function format_detailed_category( \WP_Term $category ): array {
-		$image_data = array();
+		$image_data   = array();
 		$thumbnail_id = get_term_meta( $category->term_id, 'thumbnail_id', true );
 		if ( $thumbnail_id ) {
-			$image = wp_get_attachment_image_src( $thumbnail_id, 'full' );
+			$image     = wp_get_attachment_image_src( $thumbnail_id, 'full' );
 			$thumbnail = wp_get_attachment_image_src( $thumbnail_id, 'thumbnail' );
 			if ( $image ) {
 				$image_data = array(
@@ -226,13 +230,15 @@ class GetProductCategory implements RegistersAbility {
 	}
 
 	private static function get_category_products( int $category_id, int $limit ): array {
-		$products = wc_get_products( array(
-			'category' => array( $category_id ),
-			'limit'    => $limit,
-			'status'   => 'publish',
-			'orderby'  => 'date',
-			'order'    => 'DESC',
-		) );
+		$products = wc_get_products(
+			array(
+				'category' => array( $category_id ),
+				'limit'    => $limit,
+				'status'   => 'publish',
+				'orderby'  => 'date',
+				'order'    => 'DESC',
+			)
+		);
 
 		$formatted_products = array();
 		foreach ( $products as $product ) {
@@ -250,11 +256,13 @@ class GetProductCategory implements RegistersAbility {
 	}
 
 	private static function get_category_children( int $category_id ): array {
-		$children_terms = get_terms( array(
-			'taxonomy'   => 'product_cat',
-			'parent'     => $category_id,
-			'hide_empty' => false,
-		) );
+		$children_terms = get_terms(
+			array(
+				'taxonomy'   => 'product_cat',
+				'parent'     => $category_id,
+				'hide_empty' => false,
+			)
+		);
 
 		if ( is_wp_error( $children_terms ) ) {
 			return array();
@@ -281,14 +289,16 @@ class GetProductCategory implements RegistersAbility {
 		$ancestors = array();
 		foreach ( $ancestor_ids as $ancestor_id ) {
 			$ancestor = get_term( $ancestor_id, 'product_cat' );
-			if ( $ancestor && ! is_wp_error( $ancestor ) ) {
-				$ancestors[] = array(
-					'id'   => $ancestor->term_id,
-					'name' => $ancestor->name,
-					'slug' => $ancestor->slug,
-					'link' => get_term_link( $ancestor ),
-				);
+			if ( ! $ancestor || is_wp_error( $ancestor ) ) {
+				continue;
 			}
+
+			$ancestors[] = array(
+				'id'   => $ancestor->term_id,
+				'name' => $ancestor->name,
+				'slug' => $ancestor->slug,
+				'link' => get_term_link( $ancestor ),
+			);
 		}
 
 		return $ancestors;

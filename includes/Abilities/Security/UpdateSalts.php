@@ -13,22 +13,22 @@ class UpdateSalts implements RegistersAbility {
 				'label'               => 'Update Security Salts',
 				'description'         => 'Regenerate WordPress security salts and keys for enhanced security.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
+					'type'                 => 'object',
+					'properties'           => array(
 						'backup_current' => array(
 							'type'        => 'boolean',
 							'description' => 'Create backup of current salts before updating.',
 							'default'     => true,
 						),
-						'force_logout' => array(
+						'force_logout'   => array(
 							'type'        => 'boolean',
 							'description' => 'Force logout all users after updating salts.',
 							'default'     => true,
 						),
-						'custom_salts' => array(
-							'type'        => 'object',
-							'description' => 'Custom salt values to use (leave empty for auto-generation).',
-							'properties'  => array(
+						'custom_salts'   => array(
+							'type'                 => 'object',
+							'description'          => 'Custom salt values to use (leave empty for auto-generation).',
+							'properties'           => array(
 								'AUTH_KEY'         => array( 'type' => 'string' ),
 								'SECURE_AUTH_KEY'  => array( 'type' => 'string' ),
 								'LOGGED_IN_KEY'    => array( 'type' => 'string' ),
@@ -46,27 +46,30 @@ class UpdateSalts implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'salts_updated' => array(
+						'success'           => array( 'type' => 'boolean' ),
+						'salts_updated'     => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
 						),
-						'backup_created' => array( 'type' => 'boolean' ),
-						'backup_location' => array( 'type' => 'string' ),
-						'users_logged_out' => array( 'type' => 'integer' ),
+						'backup_created'    => array( 'type' => 'boolean' ),
+						'backup_location'   => array( 'type' => 'string' ),
+						'users_logged_out'  => array( 'type' => 'integer' ),
 						'wp_config_updated' => array( 'type' => 'boolean' ),
-						'recommendations' => array(
+						'recommendations'   => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'           => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'security',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'security', 'configuration' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.5,
@@ -87,8 +90,8 @@ class UpdateSalts implements RegistersAbility {
 
 	public static function execute( array $input ): array {
 		$backup_current = $input['backup_current'] ?? true;
-		$force_logout = $input['force_logout'] ?? true;
-		$custom_salts = $input['custom_salts'] ?? array();
+		$force_logout   = $input['force_logout'] ?? true;
+		$custom_salts   = $input['custom_salts'] ?? array();
 
 		$result = array(
 			'success'           => false,
@@ -110,15 +113,15 @@ class UpdateSalts implements RegistersAbility {
 
 		// Check if wp-config.php is writable
 		if ( ! is_writable( $wp_config_path ) ) {
-			$result['message'] = 'wp-config.php is not writable. Cannot update salts.';
+			$result['message']           = 'wp-config.php is not writable. Cannot update salts.';
 			$result['recommendations'][] = 'Make wp-config.php temporarily writable to update salts.';
 			return $result;
 		}
 
 		// Create backup if requested
 		if ( $backup_current ) {
-			$backup_result = self::backup_wp_config( $wp_config_path );
-			$result['backup_created'] = $backup_result['success'];
+			$backup_result             = self::backup_wp_config( $wp_config_path );
+			$result['backup_created']  = $backup_result['success'];
 			$result['backup_location'] = $backup_result['location'];
 		}
 
@@ -144,9 +147,9 @@ class UpdateSalts implements RegistersAbility {
 		}
 
 		// Update wp-config.php
-		$update_result = self::update_wp_config_salts( $wp_config_path, $new_salts );
+		$update_result               = self::update_wp_config_salts( $wp_config_path, $new_salts );
 		$result['wp_config_updated'] = $update_result['success'];
-		$result['salts_updated'] = $update_result['updated_keys'];
+		$result['salts_updated']     = $update_result['updated_keys'];
 
 		if ( ! $update_result['success'] ) {
 			$result['message'] = 'Failed to update wp-config.php: ' . $update_result['error'];
@@ -155,7 +158,7 @@ class UpdateSalts implements RegistersAbility {
 
 		// Force logout all users if requested
 		if ( $force_logout ) {
-			$logout_count = self::force_logout_all_users();
+			$logout_count               = self::force_logout_all_users();
 			$result['users_logged_out'] = $logout_count;
 		}
 
@@ -181,7 +184,7 @@ class UpdateSalts implements RegistersAbility {
 
 	private static function find_wp_config(): ?string {
 		$wp_config_path = ABSPATH . 'wp-config.php';
-		
+
 		if ( file_exists( $wp_config_path ) ) {
 			return $wp_config_path;
 		}
@@ -202,7 +205,7 @@ class UpdateSalts implements RegistersAbility {
 		}
 
 		$backup_filename = 'wp-config-backup-' . date( 'Y-m-d-H-i-s' ) . '.php';
-		$backup_path = $backup_dir . '/' . $backup_filename;
+		$backup_path     = $backup_dir . '/' . $backup_filename;
 
 		if ( copy( $wp_config_path, $backup_path ) ) {
 			return array(
@@ -218,8 +221,8 @@ class UpdateSalts implements RegistersAbility {
 	}
 
 	private static function generate_salt( int $length = 64 ): string {
-		$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_ []{}<>~`+=,.;:/?|';
-		$salt = '';
+		$chars        = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_ []{}<>~`+=,.;:/?|';
+		$salt         = '';
 		$chars_length = strlen( $chars );
 
 		for ( $i = 0; $i < $length; $i++ ) {
@@ -239,24 +242,24 @@ class UpdateSalts implements RegistersAbility {
 			);
 		}
 
-		$updated_keys = array();
+		$updated_keys     = array();
 		$original_content = $wp_config_content;
 
 		foreach ( $new_salts as $key => $salt ) {
 			// Pattern to match the define statement
-			$pattern = "/define\s*\(\s*['\"]" . preg_quote( $key, '/' ) . "['\"]\s*,\s*['\"][^'\"]*['\"]\s*\)\s*;/";
+			$pattern     = "/define\s*\(\s*['\"]" . preg_quote( $key, '/' ) . "['\"]\s*,\s*['\"][^'\"]*['\"]\s*\)\s*;/";
 			$replacement = "define( '" . $key . "', '" . addslashes( $salt ) . "' );";
 
 			if ( preg_match( $pattern, $wp_config_content ) ) {
 				$wp_config_content = preg_replace( $pattern, $replacement, $wp_config_content );
-				$updated_keys[] = $key;
+				$updated_keys[]    = $key;
 			} else {
 				// If the salt doesn't exist, add it before the "That's all" comment
 				$insert_pattern = "/\/\*\*#@\+\s*\*\s*That's all, stop editing!/";
 				if ( preg_match( $insert_pattern, $wp_config_content ) ) {
 					$insert_replacement = $replacement . "\n\n/**#@+\n * That's all, stop editing!";
-					$wp_config_content = preg_replace( $insert_pattern, $insert_replacement, $wp_config_content );
-					$updated_keys[] = $key;
+					$wp_config_content  = preg_replace( $insert_pattern, $insert_replacement, $wp_config_content );
+					$updated_keys[]     = $key;
 				}
 			}
 		}

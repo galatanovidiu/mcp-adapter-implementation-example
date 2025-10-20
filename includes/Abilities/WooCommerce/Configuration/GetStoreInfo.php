@@ -13,9 +13,9 @@ class GetStoreInfo implements RegistersAbility {
 				'label'               => 'Get WooCommerce Store Info',
 				'description'         => 'Retrieve comprehensive WooCommerce store information and overview statistics.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'include_stats' => array(
+					'type'                 => 'object',
+					'properties'           => array(
+						'include_stats'           => array(
 							'type'        => 'boolean',
 							'description' => 'Include detailed store statistics.',
 							'default'     => true,
@@ -31,7 +31,7 @@ class GetStoreInfo implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'store_info' => array(
+						'store_info'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'store_name'      => array( 'type' => 'string' ),
@@ -43,13 +43,13 @@ class GetStoreInfo implements RegistersAbility {
 								'setup_status'    => array( 'type' => 'string' ),
 							),
 						),
-						'statistics' => array(
+						'statistics'      => array(
 							'type'       => 'object',
 							'properties' => array(
-								'products'   => array( 'type' => 'object' ),
-								'orders'     => array( 'type' => 'object' ),
-								'customers'  => array( 'type' => 'object' ),
-								'revenue'    => array( 'type' => 'object' ),
+								'products'  => array( 'type' => 'object' ),
+								'orders'    => array( 'type' => 'object' ),
+								'customers' => array( 'type' => 'object' ),
+								'revenue'   => array( 'type' => 'object' ),
 							),
 						),
 						'recent_activity' => array(
@@ -64,14 +64,17 @@ class GetStoreInfo implements RegistersAbility {
 								),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'         => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'information' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
@@ -100,7 +103,7 @@ class GetStoreInfo implements RegistersAbility {
 			);
 		}
 
-		$include_stats = $input['include_stats'] ?? true;
+		$include_stats           = $input['include_stats'] ?? true;
 		$include_recent_activity = $input['include_recent_activity'] ?? true;
 
 		// Get basic store information
@@ -127,7 +130,7 @@ class GetStoreInfo implements RegistersAbility {
 	}
 
 	private static function get_basic_store_info(): array {
-		$currency = get_woocommerce_currency();
+		$currency      = get_woocommerce_currency();
 		$base_location = wc_get_base_location();
 
 		return array(
@@ -149,7 +152,7 @@ class GetStoreInfo implements RegistersAbility {
 	private static function get_store_statistics(): array {
 		// Product statistics
 		$product_counts = wp_count_posts( 'product' );
-		$product_stats = array(
+		$product_stats  = array(
 			'total'     => array_sum( (array) $product_counts ),
 			'published' => $product_counts->publish ?? 0,
 			'draft'     => $product_counts->draft ?? 0,
@@ -158,13 +161,13 @@ class GetStoreInfo implements RegistersAbility {
 
 		// Order statistics
 		$order_counts = wp_count_posts( 'shop_order' );
-		$order_stats = array(
-			'total'     => array_sum( (array) $order_counts ),
-			'completed' => $order_counts->{'wc-completed'} ?? 0,
+		$order_stats  = array(
+			'total'      => array_sum( (array) $order_counts ),
+			'completed'  => $order_counts->{'wc-completed'} ?? 0,
 			'processing' => $order_counts->{'wc-processing'} ?? 0,
-			'pending'   => $order_counts->{'wc-pending'} ?? 0,
-			'cancelled' => $order_counts->{'wc-cancelled'} ?? 0,
-			'refunded'  => $order_counts->{'wc-refunded'} ?? 0,
+			'pending'    => $order_counts->{'wc-pending'} ?? 0,
+			'cancelled'  => $order_counts->{'wc-cancelled'} ?? 0,
+			'refunded'   => $order_counts->{'wc-refunded'} ?? 0,
 		);
 
 		// Customer statistics
@@ -185,10 +188,12 @@ class GetStoreInfo implements RegistersAbility {
 	}
 
 	private static function get_customer_count(): int {
-		$users = get_users( array(
-			'role__in' => array( 'customer', 'shop_manager' ),
-			'fields'   => 'ID',
-		) );
+		$users = get_users(
+			array(
+				'role__in' => array( 'customer', 'shop_manager' ),
+				'fields'   => 'ID',
+			)
+		);
 
 		return count( $users );
 	}
@@ -199,18 +204,20 @@ class GetStoreInfo implements RegistersAbility {
 		$thirty_days_ago = date( 'Y-m-d', strtotime( '-30 days' ) );
 
 		// Get orders from last 30 days
-		$orders = wc_get_orders( array(
-			'status'      => array( 'wc-completed', 'wc-processing' ),
-			'date_after'  => $thirty_days_ago,
-			'limit'       => -1,
-		) );
+		$orders = wc_get_orders(
+			array(
+				'status'     => array( 'wc-completed', 'wc-processing' ),
+				'date_after' => $thirty_days_ago,
+				'limit'      => - 1,
+			)
+		);
 
 		$total_revenue = 0;
-		$order_count = 0;
+		$order_count   = 0;
 
 		foreach ( $orders as $order ) {
 			$total_revenue += (float) $order->get_total();
-			$order_count++;
+			++$order_count;
 		}
 
 		$average_order_value = $order_count > 0 ? $total_revenue / $order_count : 0;
@@ -221,7 +228,7 @@ class GetStoreInfo implements RegistersAbility {
 				'orders_count'        => $order_count,
 				'average_order_value' => number_format( $average_order_value, 2 ),
 			),
-			'currency' => get_woocommerce_currency(),
+			'currency'     => get_woocommerce_currency(),
 		);
 	}
 
@@ -229,11 +236,13 @@ class GetStoreInfo implements RegistersAbility {
 		$activities = array();
 
 		// Get recent orders
-		$recent_orders = wc_get_orders( array(
-			'limit'   => 5,
-			'orderby' => 'date',
-			'order'   => 'DESC',
-		) );
+		$recent_orders = wc_get_orders(
+			array(
+				'limit'   => 5,
+				'orderby' => 'date',
+				'order'   => 'DESC',
+			)
+		);
 
 		foreach ( $recent_orders as $order ) {
 			$activities[] = array(
@@ -245,12 +254,14 @@ class GetStoreInfo implements RegistersAbility {
 		}
 
 		// Get recent products
-		$recent_products = wc_get_products( array(
-			'limit'   => 3,
-			'orderby' => 'date',
-			'order'   => 'DESC',
-			'status'  => 'publish',
-		) );
+		$recent_products = wc_get_products(
+			array(
+				'limit'   => 3,
+				'orderby' => 'date',
+				'order'   => 'DESC',
+				'status'  => 'publish',
+			)
+		);
 
 		foreach ( $recent_products as $product ) {
 			$activities[] = array(
@@ -262,9 +273,12 @@ class GetStoreInfo implements RegistersAbility {
 		}
 
 		// Sort activities by date
-		usort( $activities, function( $a, $b ) {
-			return strcmp( $b['date'], $a['date'] );
-		});
+		usort(
+			$activities,
+			static function ( $a, $b ) {
+				return strcmp( $b['date'], $a['date'] );
+			}
+		);
 
 		return array_slice( $activities, 0, 10 );
 	}

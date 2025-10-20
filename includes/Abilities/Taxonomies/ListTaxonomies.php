@@ -52,8 +52,8 @@ final class ListTaxonomies implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'content',
 				'meta'                => array(
-					'categories' => array( 'content', 'taxonomies' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,

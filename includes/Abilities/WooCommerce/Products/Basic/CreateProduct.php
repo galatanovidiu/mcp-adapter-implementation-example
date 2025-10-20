@@ -13,89 +13,84 @@ class CreateProduct implements RegistersAbility {
 				'label'               => 'Create WooCommerce Product',
 				'description'         => 'Create a new WooCommerce product with specified details and configuration.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'name', 'type' ),
-					'properties' => array(
-						'name' => array(
+					'type'                 => 'object',
+					'required'             => array( 'name', 'type' ),
+					'properties'           => array(
+						'name'               => array(
 							'type'        => 'string',
 							'description' => 'Product name.',
 						),
-						'type' => array(
+						'type'               => array(
 							'type'        => 'string',
 							'description' => 'Product type.',
 							'enum'        => array( 'simple', 'grouped', 'external', 'variable' ),
 							'default'     => 'simple',
 						),
-						'status' => array(
+						'status'             => array(
 							'type'        => 'string',
 							'description' => 'Product status.',
 							'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
 							'default'     => 'publish',
 						),
-						'slug' => array(
+						'slug'               => array(
 							'type'        => 'string',
 							'description' => 'Product slug (auto-generated if not provided).',
 						),
-						'description' => array(
+						'description'        => array(
 							'type'        => 'string',
 							'description' => 'Product description (HTML allowed).',
 						),
-						'short_description' => array(
+						'short_description'  => array(
 							'type'        => 'string',
 							'description' => 'Product short description (HTML allowed).',
 						),
-						'sku' => array(
+						'sku'                => array(
 							'type'        => 'string',
 							'description' => 'Product SKU (must be unique).',
 						),
-						'regular_price' => array(
+						'regular_price'      => array(
 							'type'        => 'string',
 							'description' => 'Product regular price.',
 						),
-						'sale_price' => array(
+						'sale_price'         => array(
 							'type'        => 'string',
 							'description' => 'Product sale price.',
 						),
-						'manage_stock' => array(
+						'manage_stock'       => array(
 							'type'        => 'boolean',
 							'description' => 'Enable stock management.',
 							'default'     => false,
 						),
-						'stock_quantity' => array(
+						'stock_quantity'     => array(
 							'type'        => 'integer',
 							'description' => 'Stock quantity (if manage_stock is true).',
 							'minimum'     => 0,
 						),
-						'stock_status' => array(
+						'stock_status'       => array(
 							'type'        => 'string',
 							'description' => 'Stock status.',
 							'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 							'default'     => 'instock',
 						),
-						'weight' => array(
+						'weight'             => array(
 							'type'        => 'string',
 							'description' => 'Product weight.',
 						),
-						'dimensions' => array(
-							'type'       => 'object',
+						'dimensions'         => array(
+							'type'        => 'object',
 							'description' => 'Product dimensions.',
-							'properties' => array(
+							'properties'  => array(
 								'length' => array( 'type' => 'string' ),
 								'width'  => array( 'type' => 'string' ),
 								'height' => array( 'type' => 'string' ),
 							),
 						),
-						'categories' => array(
-							'type'        => 'array',
-							'description' => 'Product category IDs.',
-							'items'       => array( 'type' => 'integer' ),
-						),
-						'tags' => array(
+						'tags'               => array(
 							'type'        => 'array',
 							'description' => 'Product tag IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'featured' => array(
+						'featured'           => array(
 							'type'        => 'boolean',
 							'description' => 'Mark as featured product.',
 							'default'     => false,
@@ -106,49 +101,49 @@ class CreateProduct implements RegistersAbility {
 							'enum'        => array( 'visible', 'catalog', 'search', 'hidden' ),
 							'default'     => 'visible',
 						),
-						'tax_status' => array(
+						'tax_status'         => array(
 							'type'        => 'string',
 							'description' => 'Tax status.',
 							'enum'        => array( 'taxable', 'shipping', 'none' ),
 							'default'     => 'taxable',
 						),
-						'tax_class' => array(
+						'tax_class'          => array(
 							'type'        => 'string',
 							'description' => 'Tax class.',
 							'default'     => '',
 						),
-						'shipping_class' => array(
+						'shipping_class'     => array(
 							'type'        => 'string',
 							'description' => 'Shipping class slug.',
 						),
-						'external_url' => array(
+						'external_url'       => array(
 							'type'        => 'string',
 							'description' => 'External product URL (for external products).',
 						),
-						'button_text' => array(
+						'button_text'        => array(
 							'type'        => 'string',
 							'description' => 'External product button text.',
 						),
-						'grouped_products' => array(
+						'grouped_products'   => array(
 							'type'        => 'array',
 							'description' => 'Grouped product IDs (for grouped products).',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'upsell_ids' => array(
+						'upsell_ids'         => array(
 							'type'        => 'array',
 							'description' => 'Upsell product IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'cross_sell_ids' => array(
+						'cross_sell_ids'     => array(
 							'type'        => 'array',
 							'description' => 'Cross-sell product IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'image_id' => array(
+						'image_id'           => array(
 							'type'        => 'integer',
 							'description' => 'Featured image attachment ID.',
 						),
-						'gallery_image_ids' => array(
+						'gallery_image_ids'  => array(
 							'type'        => 'array',
 							'description' => 'Gallery image attachment IDs.',
 							'items'       => array( 'type' => 'integer' ),
@@ -177,13 +172,25 @@ class CreateProduct implements RegistersAbility {
 						'message' => array( 'type' => 'string' ),
 					),
 				),
-				'permission_callback' => array( self::class, 'check_permission' ),
-				'execute_callback'    => array( self::class, 'execute' ),
+				'permission_callback' => array(
+					self::class,
+					'check_permission',
+				),
+				'execute_callback'    => array(
+					self::class,
+					'execute',
+				),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'products' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
+						'audience'        => array(
+							'user',
+							'assistant',
+						),
 						'priority'        => 0.8,
 						'readOnlyHint'    => false,
 						'destructiveHint' => false,
@@ -209,8 +216,8 @@ class CreateProduct implements RegistersAbility {
 			);
 		}
 
-		$name = $input['name'];
-		$type = $input['type'] ?? 'simple';
+		$name   = $input['name'];
+		$type   = $input['type'] ?? 'simple';
 		$status = $input['status'] ?? 'publish';
 
 		try {
@@ -397,8 +404,7 @@ class CreateProduct implements RegistersAbility {
 				),
 				'message' => sprintf( 'Successfully created product "%s" with ID %d.', $saved_product->get_name(), $saved_product->get_id() ),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success' => false,
 				'product' => null,

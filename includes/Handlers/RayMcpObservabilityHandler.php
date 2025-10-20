@@ -27,12 +27,13 @@ class RayMcpObservabilityHandler implements McpObservabilityHandlerInterface {
 	/**
 	 * Emit a countable event for tracking.
 	 *
-	 * @param string $event The event name to record.
-	 * @param array  $tags Optional tags to attach to the event.
+	 * @param string     $event The event name to record.
+	 * @param array      $tags Optional tags to attach to the event.
+	 * @param float|null $duration_ms Optional duration in milliseconds for timing measurements.
 	 *
 	 * @return void
 	 */
-	public static function record_event( string $event, array $tags = array() ): void {
+	public function record_event( string $event, array $tags = array(), ?float $duration_ms = null ): void {
 		if ( ! function_exists( 'ray' ) ) {
 			return;
 		}
@@ -43,7 +44,7 @@ class RayMcpObservabilityHandler implements McpObservabilityHandlerInterface {
 		$filtered_events = array(
 			'mcp.component.registered',
 			'mcp.request.duration',
-			'mcp.server.created'
+			'mcp.server.created',
 		);
 
 		if ( in_array( $formatted_event, $filtered_events, true ) ) {
@@ -70,11 +71,13 @@ class RayMcpObservabilityHandler implements McpObservabilityHandlerInterface {
 
 		// Special debugging for initialize requests
 		if ( $formatted_event === 'mcp.request.count' && isset( $tags['method'] ) && $tags['method'] === 'initialize' ) {
-			ray()->orange()->label( 'Initialize Request Debug' )->send( array(
-				'event' => 'initialize_request_received',
-				'tags' => $merged_tags,
-				'full_tags' => $tags,
-			) );
+			ray()->orange()->label( 'Initialize Request Debug' )->send(
+				array(
+					'event'     => 'initialize_request_received',
+					'tags'      => $merged_tags,
+					'full_tags' => $tags,
+				)
+			);
 		}
 
 		ray()->green()->label( 'MCP Event' )->send( $ray_data );

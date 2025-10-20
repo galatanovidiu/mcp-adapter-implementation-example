@@ -49,10 +49,10 @@ final class GetPluginInfo implements RegistersAbility {
 						'update_info'       => array(
 							'type'       => 'object',
 							'properties' => array(
-								'compatibility' => array( 'type' => 'object' ),
+								'compatibility'  => array( 'type' => 'object' ),
 								'upgrade_notice' => array( 'type' => 'string' ),
-								'tested'        => array( 'type' => 'string' ),
-								'requires_php'  => array( 'type' => 'string' ),
+								'tested'         => array( 'type' => 'string' ),
+								'requires_php'   => array( 'type' => 'string' ),
 							),
 						),
 						'file_size'         => array( 'type' => 'integer' ),
@@ -62,9 +62,12 @@ final class GetPluginInfo implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'plugins',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'plugins', 'information' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -158,7 +161,7 @@ final class GetPluginInfo implements RegistersAbility {
 				$update_available = true;
 				$update_data      = $update_plugins->response[ $plugin_file ];
 				$new_version      = $update_data->new_version ?? '';
-				
+
 				$update_info = array(
 					'compatibility'  => $update_data->compatibility ?? new \stdClass(),
 					'upgrade_notice' => $update_data->upgrade_notice ?? '',
@@ -183,10 +186,10 @@ final class GetPluginInfo implements RegistersAbility {
 		$last_modified    = '';
 
 		if ( $plugin_path && \file_exists( $plugin_path ) ) {
-			$file_size = \filesize( $plugin_path );
-			$file_perms = \fileperms( $plugin_path );
+			$file_size        = \filesize( $plugin_path );
+			$file_perms       = \fileperms( $plugin_path );
 			$file_permissions = \substr( \sprintf( '%o', $file_perms ), -4 );
-			$last_modified = \date( 'Y-m-d H:i:s', \filemtime( $plugin_path ) );
+			$last_modified    = \date( 'Y-m-d H:i:s', \filemtime( $plugin_path ) );
 		}
 
 		return array(

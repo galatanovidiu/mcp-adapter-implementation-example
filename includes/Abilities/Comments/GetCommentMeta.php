@@ -21,16 +21,16 @@ final class GetCommentMeta implements RegistersAbility {
 							'type'        => 'integer',
 							'description' => 'The comment ID to get metadata for.',
 						),
-						'meta_key' => array(
+						'meta_key'   => array(
 							'type'        => 'string',
 							'description' => 'Specific meta key to retrieve. If not provided, returns all metadata.',
 						),
-						'single' => array(
+						'single'     => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to return a single value (true) or array of values (false). Default: false.',
 							'default'     => false,
 						),
-						'action' => array(
+						'action'     => array(
 							'type'        => 'string',
 							'description' => 'Action to perform: get, add, update, delete. Default: get.',
 							'enum'        => array( 'get', 'add', 'update', 'delete' ),
@@ -50,11 +50,11 @@ final class GetCommentMeta implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'comment_id' ),
 					'properties' => array(
-						'success'    => array( 'type' => 'boolean' ),
-						'comment_id' => array( 'type' => 'integer' ),
-						'action'     => array( 'type' => 'string' ),
-						'meta_key'   => array( 'type' => 'string' ),
-						'meta_data'  => array(
+						'success'      => array( 'type' => 'boolean' ),
+						'comment_id'   => array( 'type' => 'integer' ),
+						'action'       => array( 'type' => 'string' ),
+						'meta_key'     => array( 'type' => 'string' ),
+						'meta_data'    => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -70,9 +70,12 @@ final class GetCommentMeta implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'engagement', 'metadata' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -94,18 +97,18 @@ final class GetCommentMeta implements RegistersAbility {
 	 */
 	public static function check_permission( array $input ): bool {
 		$action = $input['action'] ?? 'get';
-		
+
 		// Read operations require moderate_comments
 		if ( $action === 'get' ) {
 			return \current_user_can( 'moderate_comments' );
 		}
-		
+
 		// Write operations require edit_comment permission
 		$comment_id = (int) ( $input['comment_id'] ?? 0 );
 		if ( $comment_id > 0 ) {
 			return \current_user_can( 'edit_comment', $comment_id );
 		}
-		
+
 		return \current_user_can( 'moderate_comments' );
 	}
 
@@ -117,9 +120,9 @@ final class GetCommentMeta implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$comment_id = (int) $input['comment_id'];
-		$meta_key = isset( $input['meta_key'] ) ? \sanitize_key( (string) $input['meta_key'] ) : '';
-		$single = (bool) ( $input['single'] ?? false );
-		$action = \sanitize_text_field( (string) ( $input['action'] ?? 'get' ) );
+		$meta_key   = isset( $input['meta_key'] ) ? \sanitize_key( (string) $input['meta_key'] ) : '';
+		$single     = (bool) ( $input['single'] ?? false );
+		$action     = \sanitize_text_field( (string) ( $input['action'] ?? 'get' ) );
 		$meta_value = isset( $input['meta_value'] ) ? \sanitize_text_field( (string) $input['meta_value'] ) : '';
 		$prev_value = isset( $input['prev_value'] ) ? \sanitize_text_field( (string) $input['prev_value'] ) : '';
 
@@ -134,9 +137,9 @@ final class GetCommentMeta implements RegistersAbility {
 			);
 		}
 
-		$result = false;
-		$message = '';
-		$meta_data = array();
+		$result       = false;
+		$message      = '';
+		$meta_data    = array();
 		$single_value = '';
 
 		switch ( $action ) {
@@ -144,10 +147,10 @@ final class GetCommentMeta implements RegistersAbility {
 				if ( ! empty( $meta_key ) ) {
 					// Get specific meta key
 					$value = \get_comment_meta( $comment_id, $meta_key, $single );
-					
+
 					if ( $single ) {
 						$single_value = (string) $value;
-						$meta_data = array(
+						$meta_data    = array(
 							array(
 								'key'   => $meta_key,
 								'value' => $single_value,
@@ -164,14 +167,14 @@ final class GetCommentMeta implements RegistersAbility {
 							}
 						}
 					}
-					
+
 					$message = 'Comment metadata retrieved successfully.';
-					$result = true;
+					$result  = true;
 				} else {
 					// Get all metadata
-					$all_meta = \get_comment_meta( $comment_id );
+					$all_meta  = \get_comment_meta( $comment_id );
 					$meta_data = array();
-					
+
 					foreach ( $all_meta as $key => $values ) {
 						foreach ( $values as $value ) {
 							$meta_data[] = array(
@@ -180,9 +183,9 @@ final class GetCommentMeta implements RegistersAbility {
 							);
 						}
 					}
-					
+
 					$message = 'All comment metadata retrieved successfully.';
-					$result = true;
+					$result  = true;
 				}
 				break;
 
@@ -195,9 +198,9 @@ final class GetCommentMeta implements RegistersAbility {
 						'message'    => 'Meta key is required for add action.',
 					);
 				}
-				
+
 				$result = \add_comment_meta( $comment_id, $meta_key, $meta_value );
-				
+
 				if ( $result ) {
 					$meta_data = array(
 						array(
@@ -205,7 +208,7 @@ final class GetCommentMeta implements RegistersAbility {
 							'value' => $meta_value,
 						),
 					);
-					$message = 'Comment metadata added successfully.';
+					$message   = 'Comment metadata added successfully.';
 				} else {
 					$message = 'Failed to add comment metadata. Key may already exist.';
 				}
@@ -220,13 +223,13 @@ final class GetCommentMeta implements RegistersAbility {
 						'message'    => 'Meta key is required for update action.',
 					);
 				}
-				
+
 				if ( ! empty( $prev_value ) ) {
 					$result = \update_comment_meta( $comment_id, $meta_key, $meta_value, $prev_value );
 				} else {
 					$result = \update_comment_meta( $comment_id, $meta_key, $meta_value );
 				}
-				
+
 				if ( $result ) {
 					$meta_data = array(
 						array(
@@ -234,7 +237,7 @@ final class GetCommentMeta implements RegistersAbility {
 							'value' => $meta_value,
 						),
 					);
-					$message = 'Comment metadata updated successfully.';
+					$message   = 'Comment metadata updated successfully.';
 				} else {
 					$message = 'Failed to update comment metadata. Key may not exist or value unchanged.';
 				}
@@ -249,13 +252,13 @@ final class GetCommentMeta implements RegistersAbility {
 						'message'    => 'Meta key is required for delete action.',
 					);
 				}
-				
+
 				if ( ! empty( $meta_value ) ) {
 					$result = \delete_comment_meta( $comment_id, $meta_key, $meta_value );
 				} else {
 					$result = \delete_comment_meta( $comment_id, $meta_key );
 				}
-				
+
 				if ( $result ) {
 					$message = 'Comment metadata deleted successfully.';
 				} else {

@@ -13,26 +13,26 @@ class ListProductTags implements RegistersAbility {
 				'label'               => 'List Product Tags',
 				'description'         => 'List WooCommerce product tags with product counts and usage statistics.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'limit' => array(
+					'type'                 => 'object',
+					'properties'           => array(
+						'limit'            => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of tags to return.',
 							'default'     => 50,
 							'minimum'     => 1,
 							'maximum'     => 200,
 						),
-						'offset' => array(
+						'offset'           => array(
 							'type'        => 'integer',
 							'description' => 'Number of tags to skip.',
 							'default'     => 0,
 							'minimum'     => 0,
 						),
-						'search' => array(
+						'search'           => array(
 							'type'        => 'string',
 							'description' => 'Search tags by name or description.',
 						),
-						'hide_empty' => array(
+						'hide_empty'       => array(
 							'type'        => 'boolean',
 							'description' => 'Hide tags with no products.',
 							'default'     => false,
@@ -42,18 +42,18 @@ class ListProductTags implements RegistersAbility {
 							'description' => 'Include sample products for each tag.',
 							'default'     => false,
 						),
-						'min_count' => array(
+						'min_count'        => array(
 							'type'        => 'integer',
 							'description' => 'Minimum product count for tags.',
 							'minimum'     => 0,
 						),
-						'orderby' => array(
+						'orderby'          => array(
 							'type'        => 'string',
 							'description' => 'Sort tags by field.',
 							'enum'        => array( 'name', 'count', 'term_id', 'slug' ),
 							'default'     => 'name',
 						),
-						'order' => array(
+						'order'            => array(
 							'type'        => 'string',
 							'description' => 'Sort order.',
 							'enum'        => array( 'asc', 'desc' ),
@@ -65,7 +65,7 @@ class ListProductTags implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'tags' => array(
+						'tags'            => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -80,17 +80,17 @@ class ListProductTags implements RegistersAbility {
 								),
 							),
 						),
-						'statistics' => array(
+						'statistics'      => array(
 							'type'       => 'object',
 							'properties' => array(
-								'total_tags'      => array( 'type' => 'integer' ),
-								'used_tags'       => array( 'type' => 'integer' ),
-								'unused_tags'     => array( 'type' => 'integer' ),
-								'most_used_tag'   => array( 'type' => 'string' ),
-								'average_usage'   => array( 'type' => 'number' ),
+								'total_tags'    => array( 'type' => 'integer' ),
+								'used_tags'     => array( 'type' => 'integer' ),
+								'unused_tags'   => array( 'type' => 'integer' ),
+								'most_used_tag' => array( 'type' => 'string' ),
+								'average_usage' => array( 'type' => 'number' ),
 							),
 						),
-						'pagination' => array(
+						'pagination'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'total'        => array( 'type' => 'integer' ),
@@ -102,14 +102,17 @@ class ListProductTags implements RegistersAbility {
 							),
 						),
 						'filters_applied' => array( 'type' => 'object' ),
-						'message' => array( 'type' => 'string' ),
+						'message'         => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'catalog' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -139,14 +142,14 @@ class ListProductTags implements RegistersAbility {
 			);
 		}
 
-		$limit = $input['limit'] ?? 50;
-		$offset = $input['offset'] ?? 0;
-		$search = $input['search'] ?? '';
-		$hide_empty = $input['hide_empty'] ?? false;
+		$limit            = $input['limit'] ?? 50;
+		$offset           = $input['offset'] ?? 0;
+		$search           = $input['search'] ?? '';
+		$hide_empty       = $input['hide_empty'] ?? false;
 		$include_products = $input['include_products'] ?? false;
-		$min_count = $input['min_count'] ?? null;
-		$orderby = $input['orderby'] ?? 'name';
-		$order = $input['order'] ?? 'asc';
+		$min_count        = $input['min_count'] ?? null;
+		$orderby          = $input['orderby'] ?? 'name';
+		$order            = $input['order'] ?? 'asc';
 
 		// Build query args
 		$args = array(
@@ -184,7 +187,7 @@ class ListProductTags implements RegistersAbility {
 				continue;
 			}
 
-			$formatted_tag = self::format_tag( $tag, $include_products );
+			$formatted_tag    = self::format_tag( $tag, $include_products );
 			$formatted_tags[] = $formatted_tag;
 		}
 
@@ -192,22 +195,24 @@ class ListProductTags implements RegistersAbility {
 		$total_args = $args;
 		unset( $total_args['number'], $total_args['offset'] );
 		$all_tags = get_terms( $total_args );
-		$total = is_wp_error( $all_tags ) ? 0 : count( $all_tags );
+		$total    = is_wp_error( $all_tags ) ? 0 : count( $all_tags );
 
 		// Apply min_count filter to total if needed
 		if ( $min_count !== null ) {
 			$filtered_total = 0;
 			foreach ( $all_tags as $tag ) {
-				if ( $tag->count >= $min_count ) {
-					$filtered_total++;
+				if ( $tag->count < $min_count ) {
+					continue;
 				}
+
+				++$filtered_total;
 			}
 			$total = $filtered_total;
 		}
 
 		// Calculate pagination
 		$current_page = floor( $offset / $limit ) + 1;
-		$total_pages = ceil( $total / $limit );
+		$total_pages  = ceil( $total / $limit );
 
 		$pagination = array(
 			'total'        => $total,
@@ -249,11 +254,13 @@ class ListProductTags implements RegistersAbility {
 
 		// Include sample products if requested
 		if ( $include_products && $tag->count > 0 ) {
-			$products = wc_get_products( array(
-				'tag'    => array( $tag->slug ),
-				'limit'  => 5,
-				'status' => 'publish',
-			) );
+			$products = wc_get_products(
+				array(
+					'tag'    => array( $tag->slug ),
+					'limit'  => 5,
+					'status' => 'publish',
+				)
+			);
 
 			foreach ( $products as $product ) {
 				$data['products'][] = array(
@@ -270,10 +277,12 @@ class ListProductTags implements RegistersAbility {
 
 	private static function get_tag_statistics(): array {
 		// Get all tags
-		$all_tags = get_terms( array(
-			'taxonomy'   => 'product_tag',
-			'hide_empty' => false,
-		) );
+		$all_tags = get_terms(
+			array(
+				'taxonomy'   => 'product_tag',
+				'hide_empty' => false,
+			)
+		);
 
 		if ( is_wp_error( $all_tags ) ) {
 			return array(
@@ -285,24 +294,24 @@ class ListProductTags implements RegistersAbility {
 			);
 		}
 
-		$total_tags = count( $all_tags );
-		$used_tags = 0;
-		$unused_tags = 0;
-		$total_usage = 0;
+		$total_tags    = count( $all_tags );
+		$used_tags     = 0;
+		$unused_tags   = 0;
+		$total_usage   = 0;
 		$most_used_tag = '';
-		$max_count = 0;
+		$max_count     = 0;
 
 		foreach ( $all_tags as $tag ) {
 			if ( $tag->count > 0 ) {
-				$used_tags++;
+				++$used_tags;
 				$total_usage += $tag->count;
-				
+
 				if ( $tag->count > $max_count ) {
-					$max_count = $tag->count;
+					$max_count     = $tag->count;
 					$most_used_tag = $tag->name;
 				}
 			} else {
-				$unused_tags++;
+				++$unused_tags;
 			}
 		}
 

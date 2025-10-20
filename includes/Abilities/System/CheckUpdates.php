@@ -16,12 +16,12 @@ final class CheckUpdates implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'force_check' => array(
+						'force_check'   => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to force a fresh check (bypass cache). Default: false.',
 							'default'     => false,
 						),
-						'check_core' => array(
+						'check_core'    => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to check for WordPress core updates. Default: true.',
 							'default'     => true,
@@ -31,7 +31,7 @@ final class CheckUpdates implements RegistersAbility {
 							'description' => 'Whether to check for plugin updates. Default: true.',
 							'default'     => true,
 						),
-						'check_themes' => array(
+						'check_themes'  => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to check for theme updates. Default: true.',
 							'default'     => true,
@@ -42,16 +42,16 @@ final class CheckUpdates implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'core', 'plugins', 'themes', 'summary' ),
 					'properties' => array(
-						'core' => array(
+						'core'    => array(
 							'type'       => 'object',
 							'properties' => array(
-								'current_version' => array( 'type' => 'string' ),
-								'latest_version'  => array( 'type' => 'string' ),
+								'current_version'  => array( 'type' => 'string' ),
+								'latest_version'   => array( 'type' => 'string' ),
 								'update_available' => array( 'type' => 'boolean' ),
-								'update_type'     => array( 'type' => 'string' ),
-								'download_url'    => array( 'type' => 'string' ),
-								'package_url'     => array( 'type' => 'string' ),
-								'last_checked'    => array( 'type' => 'string' ),
+								'update_type'      => array( 'type' => 'string' ),
+								'download_url'     => array( 'type' => 'string' ),
+								'package_url'      => array( 'type' => 'string' ),
+								'last_checked'     => array( 'type' => 'string' ),
 							),
 						),
 						'plugins' => array(
@@ -59,29 +59,29 @@ final class CheckUpdates implements RegistersAbility {
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'plugin'          => array( 'type' => 'string' ),
-									'name'            => array( 'type' => 'string' ),
-									'current_version' => array( 'type' => 'string' ),
-									'latest_version'  => array( 'type' => 'string' ),
+									'plugin'           => array( 'type' => 'string' ),
+									'name'             => array( 'type' => 'string' ),
+									'current_version'  => array( 'type' => 'string' ),
+									'latest_version'   => array( 'type' => 'string' ),
 									'update_available' => array( 'type' => 'boolean' ),
-									'package_url'     => array( 'type' => 'string' ),
-									'details_url'     => array( 'type' => 'string' ),
-									'compatibility'   => array( 'type' => 'string' ),
+									'package_url'      => array( 'type' => 'string' ),
+									'details_url'      => array( 'type' => 'string' ),
+									'compatibility'    => array( 'type' => 'string' ),
 								),
 							),
 						),
-						'themes' => array(
+						'themes'  => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'theme'           => array( 'type' => 'string' ),
-									'name'            => array( 'type' => 'string' ),
-									'current_version' => array( 'type' => 'string' ),
-									'latest_version'  => array( 'type' => 'string' ),
+									'theme'            => array( 'type' => 'string' ),
+									'name'             => array( 'type' => 'string' ),
+									'current_version'  => array( 'type' => 'string' ),
+									'latest_version'   => array( 'type' => 'string' ),
 									'update_available' => array( 'type' => 'boolean' ),
-									'package_url'     => array( 'type' => 'string' ),
-									'details_url'     => array( 'type' => 'string' ),
+									'package_url'      => array( 'type' => 'string' ),
+									'details_url'      => array( 'type' => 'string' ),
 								),
 							),
 						),
@@ -99,9 +99,12 @@ final class CheckUpdates implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'system',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'system', 'updates' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -132,10 +135,10 @@ final class CheckUpdates implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$force_check = (bool) ( $input['force_check'] ?? false );
-		$check_core = (bool) ( $input['check_core'] ?? true );
+		$force_check   = (bool) ( $input['force_check'] ?? false );
+		$check_core    = (bool) ( $input['check_core'] ?? true );
 		$check_plugins = (bool) ( $input['check_plugins'] ?? true );
-		$check_themes = (bool) ( $input['check_themes'] ?? true );
+		$check_themes  = (bool) ( $input['check_themes'] ?? true );
 
 		// Include necessary files
 		if ( ! function_exists( 'get_core_updates' ) ) {
@@ -168,19 +171,19 @@ final class CheckUpdates implements RegistersAbility {
 			}
 		}
 
-		$core_updates = 0;
+		$core_updates   = 0;
 		$plugin_updates = 0;
-		$theme_updates = 0;
+		$theme_updates  = 0;
 
 		// Check WordPress Core Updates
 		if ( $check_core && \current_user_can( 'update_core' ) ) {
 			$core_update_data = \get_core_updates();
-			$current_version = \get_bloginfo( 'version' );
-			
+			$current_version  = \get_bloginfo( 'version' );
+
 			if ( ! empty( $core_update_data ) && ! empty( $core_update_data[0] ) ) {
-				$update = $core_update_data[0];
+				$update           = $core_update_data[0];
 				$update_available = isset( $update->response ) && $update->response === 'upgrade';
-				
+
 				if ( $update_available ) {
 					$core_updates = 1;
 				}
@@ -210,10 +213,10 @@ final class CheckUpdates implements RegistersAbility {
 		// Check Plugin Updates
 		if ( $check_plugins && \current_user_can( 'update_plugins' ) ) {
 			$plugin_updates_data = \get_plugin_updates();
-			
+
 			foreach ( $plugin_updates_data as $plugin_file => $plugin_data ) {
-				$plugin_updates++;
-				
+				++$plugin_updates;
+
 				$result['plugins'][] = array(
 					'plugin'           => $plugin_file,
 					'name'             => $plugin_data->Name,
@@ -230,10 +233,10 @@ final class CheckUpdates implements RegistersAbility {
 		// Check Theme Updates
 		if ( $check_themes && \current_user_can( 'update_themes' ) ) {
 			$theme_updates_data = \get_theme_updates();
-			
+
 			foreach ( $theme_updates_data as $theme_slug => $theme_data ) {
-				$theme_updates++;
-				
+				++$theme_updates;
+
 				$result['themes'][] = array(
 					'theme'            => $theme_slug,
 					'name'             => $theme_data->get( 'Name' ),

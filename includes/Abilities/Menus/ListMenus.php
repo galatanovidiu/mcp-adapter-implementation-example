@@ -16,7 +16,7 @@ final class ListMenus implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'include_items' => array(
+						'include_items'     => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include menu items for each menu. Default: false.',
 							'default'     => false,
@@ -26,11 +26,11 @@ final class ListMenus implements RegistersAbility {
 							'description' => 'Whether to include theme menu locations. Default: true.',
 							'default'     => true,
 						),
-						'menu_id' => array(
+						'menu_id'           => array(
 							'type'        => 'integer',
 							'description' => 'Filter by specific menu ID.',
 						),
-						'menu_slug' => array(
+						'menu_slug'         => array(
 							'type'        => 'string',
 							'description' => 'Filter by specific menu slug.',
 						),
@@ -40,7 +40,7 @@ final class ListMenus implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'menus', 'total_count' ),
 					'properties' => array(
-						'menus' => array(
+						'menus'       => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -60,27 +60,27 @@ final class ListMenus implements RegistersAbility {
 										'items' => array(
 											'type'       => 'object',
 											'properties' => array(
-												'ID'               => array( 'type' => 'integer' ),
-												'title'            => array( 'type' => 'string' ),
-												'url'              => array( 'type' => 'string' ),
-												'target'           => array( 'type' => 'string' ),
-												'attr_title'       => array( 'type' => 'string' ),
-												'description'      => array( 'type' => 'string' ),
-												'classes'          => array( 'type' => 'string' ),
-												'xfn'              => array( 'type' => 'string' ),
-												'menu_order'       => array( 'type' => 'integer' ),
-												'object'           => array( 'type' => 'string' ),
-												'object_id'        => array( 'type' => 'integer' ),
-												'type'             => array( 'type' => 'string' ),
-												'type_label'       => array( 'type' => 'string' ),
-												'parent_id'        => array( 'type' => 'integer' ),
+												'ID'      => array( 'type' => 'integer' ),
+												'title'   => array( 'type' => 'string' ),
+												'url'     => array( 'type' => 'string' ),
+												'target'  => array( 'type' => 'string' ),
+												'attr_title' => array( 'type' => 'string' ),
+												'description' => array( 'type' => 'string' ),
+												'classes' => array( 'type' => 'string' ),
+												'xfn'     => array( 'type' => 'string' ),
+												'menu_order' => array( 'type' => 'integer' ),
+												'object'  => array( 'type' => 'string' ),
+												'object_id' => array( 'type' => 'integer' ),
+												'type'    => array( 'type' => 'string' ),
+												'type_label' => array( 'type' => 'string' ),
+												'parent_id' => array( 'type' => 'integer' ),
 											),
 										),
 									),
 								),
 							),
 						),
-						'locations' => array(
+						'locations'   => array(
 							'type'       => 'object',
 							'properties' => array(
 								'registered' => array(
@@ -94,7 +94,7 @@ final class ListMenus implements RegistersAbility {
 										),
 									),
 								),
-								'assigned' => array(
+								'assigned'   => array(
 									'type'                 => 'object',
 									'additionalProperties' => array( 'type' => 'integer' ),
 								),
@@ -105,9 +105,12 @@ final class ListMenus implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'content',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'content', 'menus' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -138,10 +141,10 @@ final class ListMenus implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$include_items = (bool) ( $input['include_items'] ?? false );
+		$include_items     = (bool) ( $input['include_items'] ?? false );
 		$include_locations = (bool) ( $input['include_locations'] ?? true );
-		$menu_id = isset( $input['menu_id'] ) ? (int) $input['menu_id'] : 0;
-		$menu_slug = isset( $input['menu_slug'] ) ? \sanitize_title( (string) $input['menu_slug'] ) : '';
+		$menu_id           = isset( $input['menu_id'] ) ? (int) $input['menu_id'] : 0;
+		$menu_slug         = isset( $input['menu_slug'] ) ? \sanitize_title( (string) $input['menu_slug'] ) : '';
 
 		// Get all menus
 		$menu_args = array();
@@ -152,18 +155,18 @@ final class ListMenus implements RegistersAbility {
 			$menu_args['slug'] = $menu_slug;
 		}
 
-		$menus = \wp_get_nav_menus( $menu_args );
+		$menus      = \wp_get_nav_menus( $menu_args );
 		$menus_data = array();
 
 		// Get menu locations
 		$locations_data = array();
 		if ( $include_locations ) {
 			$registered_locations = \get_registered_nav_menus();
-			$assigned_locations = \get_nav_menu_locations();
+			$assigned_locations   = \get_nav_menu_locations();
 
 			$registered_data = array();
 			foreach ( $registered_locations as $location => $name ) {
-				$assigned_menu_id = isset( $assigned_locations[ $location ] ) ? (int) $assigned_locations[ $location ] : 0;
+				$assigned_menu_id  = isset( $assigned_locations[ $location ] ) ? (int) $assigned_locations[ $location ] : 0;
 				$registered_data[] = array(
 					'location' => $location,
 					'name'     => $name,
@@ -183,9 +186,11 @@ final class ListMenus implements RegistersAbility {
 			if ( $include_locations ) {
 				$assigned_locations = \get_nav_menu_locations();
 				foreach ( $assigned_locations as $location => $assigned_menu_id ) {
-					if ( (int) $assigned_menu_id === (int) $menu->term_id ) {
-						$menu_locations[] = $location;
+					if ( (int) $assigned_menu_id !== (int) $menu->term_id ) {
+						continue;
 					}
+
+					$menu_locations[] = $location;
 				}
 			}
 

@@ -17,7 +17,7 @@ final class CreateMenu implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'menu_name' ),
 					'properties' => array(
-						'menu_name' => array(
+						'menu_name'        => array(
 							'type'        => 'string',
 							'description' => 'The name of the menu to create.',
 						),
@@ -25,25 +25,61 @@ final class CreateMenu implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Optional description for the menu.',
 						),
-						'menu_items' => array(
+						'menu_items'       => array(
 							'type'        => 'array',
 							'description' => 'Optional array of menu items to add to the menu.',
 							'items'       => array(
 								'type'       => 'object',
 								'required'   => array( 'title', 'url' ),
 								'properties' => array(
-									'title'       => array( 'type' => 'string', 'description' => 'Menu item title' ),
-									'url'         => array( 'type' => 'string', 'description' => 'Menu item URL' ),
-									'target'      => array( 'type' => 'string', 'description' => 'Link target (_blank, _self, etc.)' ),
-									'attr_title'  => array( 'type' => 'string', 'description' => 'Title attribute for the link' ),
-									'description' => array( 'type' => 'string', 'description' => 'Menu item description' ),
-									'classes'     => array( 'type' => 'string', 'description' => 'CSS classes for the menu item' ),
-									'xfn'         => array( 'type' => 'string', 'description' => 'XFN relationship' ),
-									'menu_order'  => array( 'type' => 'integer', 'description' => 'Menu item order' ),
-									'parent_id'   => array( 'type' => 'integer', 'description' => 'Parent menu item ID for sub-items' ),
-									'object_id'   => array( 'type' => 'integer', 'description' => 'Object ID for post/page/category items' ),
-									'object'      => array( 'type' => 'string', 'description' => 'Object type (post, page, category, etc.)' ),
-									'type'        => array( 'type' => 'string', 'description' => 'Menu item type (custom, post_type, taxonomy)' ),
+									'title'       => array(
+										'type'        => 'string',
+										'description' => 'Menu item title',
+									),
+									'url'         => array(
+										'type'        => 'string',
+										'description' => 'Menu item URL',
+									),
+									'target'      => array(
+										'type'        => 'string',
+										'description' => 'Link target (_blank, _self, etc.)',
+									),
+									'attr_title'  => array(
+										'type'        => 'string',
+										'description' => 'Title attribute for the link',
+									),
+									'description' => array(
+										'type'        => 'string',
+										'description' => 'Menu item description',
+									),
+									'classes'     => array(
+										'type'        => 'string',
+										'description' => 'CSS classes for the menu item',
+									),
+									'xfn'         => array(
+										'type'        => 'string',
+										'description' => 'XFN relationship',
+									),
+									'menu_order'  => array(
+										'type'        => 'integer',
+										'description' => 'Menu item order',
+									),
+									'parent_id'   => array(
+										'type'        => 'integer',
+										'description' => 'Parent menu item ID for sub-items',
+									),
+									'object_id'   => array(
+										'type'        => 'integer',
+										'description' => 'Object ID for post/page/category items',
+									),
+									'object'      => array(
+										'type'        => 'string',
+										'description' => 'Object type (post, page, category, etc.)',
+									),
+									'type'        => array(
+										'type'        => 'string',
+										'description' => 'Menu item type (custom, post_type, taxonomy)',
+									),
 								),
 							),
 						),
@@ -74,8 +110,12 @@ final class CreateMenu implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'content',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -106,9 +146,9 @@ final class CreateMenu implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$menu_name = \sanitize_text_field( (string) $input['menu_name'] );
+		$menu_name        = \sanitize_text_field( (string) $input['menu_name'] );
 		$menu_description = isset( $input['menu_description'] ) ? \sanitize_textarea_field( (string) $input['menu_description'] ) : '';
-		$menu_items = $input['menu_items'] ?? array();
+		$menu_items       = $input['menu_items'] ?? array();
 
 		// Validate menu name
 		if ( empty( $menu_name ) ) {
@@ -142,9 +182,13 @@ final class CreateMenu implements RegistersAbility {
 
 		// Update menu description if provided
 		if ( ! empty( $menu_description ) ) {
-			\wp_update_term( $menu_id, 'nav_menu', array(
-				'description' => $menu_description,
-			) );
+			\wp_update_term(
+				$menu_id,
+				'nav_menu',
+				array(
+					'description' => $menu_description,
+				)
+			);
 		}
 
 		// Get the created menu object
@@ -187,16 +231,16 @@ final class CreateMenu implements RegistersAbility {
 
 		foreach ( $menu_items as $item_data ) {
 			$title = \sanitize_text_field( (string) ( $item_data['title'] ?? '' ) );
-			$url = \esc_url_raw( (string) ( $item_data['url'] ?? '' ) );
+			$url   = \esc_url_raw( (string) ( $item_data['url'] ?? '' ) );
 
 			if ( empty( $title ) || empty( $url ) ) {
 				continue; // Skip invalid items
 			}
 
 			$menu_item_args = array(
-				'menu-item-title'       => $title,
-				'menu-item-url'         => $url,
-				'menu-item-status'      => 'publish',
+				'menu-item-title'  => $title,
+				'menu-item-url'    => $url,
+				'menu-item-status' => 'publish',
 			);
 
 			// Optional fields
@@ -241,9 +285,11 @@ final class CreateMenu implements RegistersAbility {
 			// Add the menu item
 			$item_id = \wp_update_nav_menu_item( $menu_id, 0, $menu_item_args );
 
-			if ( ! \is_wp_error( $item_id ) && $item_id > 0 ) {
-				$items_added[] = $item_id;
+			if ( \is_wp_error( $item_id ) || $item_id <= 0 ) {
+				continue;
 			}
+
+			$items_added[] = $item_id;
 		}
 
 		return $items_added;

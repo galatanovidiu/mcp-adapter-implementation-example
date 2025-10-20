@@ -17,11 +17,11 @@ final class UpdateMenu implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'menu_identifier' ),
 					'properties' => array(
-						'menu_identifier' => array(
+						'menu_identifier'  => array(
 							'type'        => 'string',
 							'description' => 'Menu ID, slug, or name to update.',
 						),
-						'menu_name' => array(
+						'menu_name'        => array(
 							'type'        => 'string',
 							'description' => 'New menu name.',
 						),
@@ -29,7 +29,7 @@ final class UpdateMenu implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'New menu description.',
 						),
-						'add_items' => array(
+						'add_items'        => array(
 							'type'        => 'array',
 							'description' => 'Array of menu items to add.',
 							'items'       => array(
@@ -51,7 +51,7 @@ final class UpdateMenu implements RegistersAbility {
 								),
 							),
 						),
-						'update_items' => array(
+						'update_items'     => array(
 							'type'        => 'array',
 							'description' => 'Array of existing menu items to update.',
 							'items'       => array(
@@ -71,7 +71,7 @@ final class UpdateMenu implements RegistersAbility {
 								),
 							),
 						),
-						'remove_items' => array(
+						'remove_items'     => array(
 							'type'        => 'array',
 							'description' => 'Array of menu item IDs to remove.',
 							'items'       => array( 'type' => 'integer' ),
@@ -82,9 +82,9 @@ final class UpdateMenu implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'menu_id' ),
 					'properties' => array(
-						'success'       => array( 'type' => 'boolean' ),
-						'menu_id'       => array( 'type' => 'integer' ),
-						'menu'          => array(
+						'success'        => array( 'type' => 'boolean' ),
+						'menu_id'        => array( 'type' => 'integer' ),
+						'menu'           => array(
 							'type'       => 'object',
 							'properties' => array(
 								'term_id'     => array( 'type' => 'integer' ),
@@ -94,15 +94,15 @@ final class UpdateMenu implements RegistersAbility {
 								'count'       => array( 'type' => 'integer' ),
 							),
 						),
-						'items_added'   => array(
+						'items_added'    => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'integer' ),
 						),
-						'items_updated' => array(
+						'items_updated'  => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'integer' ),
 						),
-						'items_removed' => array(
+						'items_removed'  => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'integer' ),
 						),
@@ -110,14 +110,17 @@ final class UpdateMenu implements RegistersAbility {
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
 						),
-						'message'       => array( 'type' => 'string' ),
+						'message'        => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'content',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'content', 'menus' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -148,12 +151,12 @@ final class UpdateMenu implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$menu_identifier = \sanitize_text_field( (string) $input['menu_identifier'] );
-		$menu_name = isset( $input['menu_name'] ) ? \sanitize_text_field( (string) $input['menu_name'] ) : '';
+		$menu_identifier  = \sanitize_text_field( (string) $input['menu_identifier'] );
+		$menu_name        = isset( $input['menu_name'] ) ? \sanitize_text_field( (string) $input['menu_name'] ) : '';
 		$menu_description = isset( $input['menu_description'] ) ? \sanitize_textarea_field( (string) $input['menu_description'] ) : '';
-		$add_items = $input['add_items'] ?? array();
-		$update_items = $input['update_items'] ?? array();
-		$remove_items = $input['remove_items'] ?? array();
+		$add_items        = $input['add_items'] ?? array();
+		$update_items     = $input['update_items'] ?? array();
+		$remove_items     = $input['remove_items'] ?? array();
 
 		// Get the menu
 		$menu = \wp_get_nav_menu_object( $menu_identifier );
@@ -165,19 +168,19 @@ final class UpdateMenu implements RegistersAbility {
 			);
 		}
 
-		$menu_id = $menu->term_id;
+		$menu_id        = $menu->term_id;
 		$updated_fields = array();
 
 		// Update menu name and description
 		$update_args = array();
 		if ( ! empty( $menu_name ) && $menu_name !== $menu->name ) {
 			$update_args['name'] = $menu_name;
-			$updated_fields[] = 'name';
+			$updated_fields[]    = 'name';
 		}
 
 		if ( isset( $input['menu_description'] ) && $menu_description !== $menu->description ) {
 			$update_args['description'] = $menu_description;
-			$updated_fields[] = 'description';
+			$updated_fields[]           = 'description';
 		}
 
 		if ( ! empty( $update_args ) ) {
@@ -191,7 +194,7 @@ final class UpdateMenu implements RegistersAbility {
 			}
 		}
 
-		$items_added = array();
+		$items_added   = array();
 		$items_updated = array();
 		$items_removed = array();
 
@@ -199,12 +202,16 @@ final class UpdateMenu implements RegistersAbility {
 		if ( ! empty( $remove_items ) && is_array( $remove_items ) ) {
 			foreach ( $remove_items as $item_id ) {
 				$item_id = (int) $item_id;
-				if ( $item_id > 0 ) {
-					$result = \wp_delete_post( $item_id, true );
-					if ( $result ) {
-						$items_removed[] = $item_id;
-					}
+				if ( $item_id <= 0 ) {
+					continue;
 				}
+
+				$result = \wp_delete_post( $item_id, true );
+				if ( ! $result ) {
+					continue;
+				}
+
+				$items_removed[] = $item_id;
 			}
 		}
 
@@ -250,12 +257,16 @@ final class UpdateMenu implements RegistersAbility {
 					$menu_item_args['menu-item-parent-id'] = (int) $item_data['parent_id'];
 				}
 
-				if ( ! empty( $menu_item_args ) ) {
-					$result = \wp_update_nav_menu_item( $menu_id, $item_id, $menu_item_args );
-					if ( ! \is_wp_error( $result ) && $result > 0 ) {
-						$items_updated[] = $item_id;
-					}
+				if ( empty( $menu_item_args ) ) {
+					continue;
 				}
+
+				$result = \wp_update_nav_menu_item( $menu_id, $item_id, $menu_item_args );
+				if ( \is_wp_error( $result ) || $result <= 0 ) {
+					continue;
+				}
+
+				$items_updated[] = $item_id;
 			}
 		}
 
@@ -263,7 +274,7 @@ final class UpdateMenu implements RegistersAbility {
 		if ( ! empty( $add_items ) && is_array( $add_items ) ) {
 			foreach ( $add_items as $item_data ) {
 				$title = \sanitize_text_field( (string) ( $item_data['title'] ?? '' ) );
-				$url = \esc_url_raw( (string) ( $item_data['url'] ?? '' ) );
+				$url   = \esc_url_raw( (string) ( $item_data['url'] ?? '' ) );
 
 				if ( empty( $title ) || empty( $url ) ) {
 					continue;
@@ -310,9 +321,11 @@ final class UpdateMenu implements RegistersAbility {
 				}
 
 				$item_id = \wp_update_nav_menu_item( $menu_id, 0, $menu_item_args );
-				if ( ! \is_wp_error( $item_id ) && $item_id > 0 ) {
-					$items_added[] = $item_id;
+				if ( \is_wp_error( $item_id ) || $item_id <= 0 ) {
+					continue;
 				}
+
+				$items_added[] = $item_id;
 			}
 		}
 

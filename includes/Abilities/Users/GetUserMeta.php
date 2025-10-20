@@ -17,11 +17,11 @@ final class GetUserMeta implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'user_id' ),
 					'properties' => array(
-						'user_id' => array(
+						'user_id'         => array(
 							'type'        => 'integer',
 							'description' => 'User ID.',
 						),
-						'meta_keys' => array(
+						'meta_keys'       => array(
 							'type'        => 'array',
 							'description' => 'Specific meta keys to retrieve. If not provided, all meta will be returned.',
 							'items'       => array( 'type' => 'string' ),
@@ -46,9 +46,12 @@ final class GetUserMeta implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'metadata' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -69,7 +72,7 @@ final class GetUserMeta implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$user_id = (int) ( $input['user_id'] ?? 0 );
+		$user_id         = (int) ( $input['user_id'] ?? 0 );
 		$current_user_id = \get_current_user_id();
 
 		// Users can view their own meta
@@ -102,7 +105,7 @@ final class GetUserMeta implements RegistersAbility {
 		}
 
 		$include_private = ! empty( $input['include_private'] );
-		$requested_keys = ! empty( $input['meta_keys'] ) && \is_array( $input['meta_keys'] ) 
+		$requested_keys  = ! empty( $input['meta_keys'] ) && \is_array( $input['meta_keys'] )
 			? array_map( 'sanitize_key', $input['meta_keys'] )
 			: array();
 

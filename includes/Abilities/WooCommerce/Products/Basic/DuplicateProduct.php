@@ -13,23 +13,23 @@ class DuplicateProduct implements RegistersAbility {
 				'label'               => 'Duplicate WooCommerce Product',
 				'description'         => 'Create a copy of an existing WooCommerce product with optional modifications.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'id' ),
-					'properties' => array(
-						'id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'id' ),
+					'properties'           => array(
+						'id'                 => array(
 							'type'        => 'integer',
 							'description' => 'Product ID to duplicate.',
 							'minimum'     => 1,
 						),
-						'name' => array(
+						'name'               => array(
 							'type'        => 'string',
 							'description' => 'New product name (defaults to "Copy of [Original Name]").',
 						),
-						'sku' => array(
+						'sku'                => array(
 							'type'        => 'string',
 							'description' => 'New product SKU (must be unique).',
 						),
-						'status' => array(
+						'status'             => array(
 							'type'        => 'string',
 							'description' => 'New product status.',
 							'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
@@ -40,12 +40,12 @@ class DuplicateProduct implements RegistersAbility {
 							'description' => 'Include variations when duplicating variable products.',
 							'default'     => true,
 						),
-						'include_images' => array(
+						'include_images'     => array(
 							'type'        => 'boolean',
 							'description' => 'Include product images in the duplicate.',
 							'default'     => true,
 						),
-						'include_reviews' => array(
+						'include_reviews'    => array(
 							'type'        => 'boolean',
 							'description' => 'Include product reviews in the duplicate.',
 							'default'     => false,
@@ -56,8 +56,8 @@ class DuplicateProduct implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'original_product' => array(
+						'success'               => array( 'type' => 'boolean' ),
+						'original_product'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'   => array( 'type' => 'integer' ),
@@ -66,7 +66,7 @@ class DuplicateProduct implements RegistersAbility {
 								'type' => array( 'type' => 'string' ),
 							),
 						),
-						'duplicated_product' => array(
+						'duplicated_product'    => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'           => array( 'type' => 'integer' ),
@@ -80,15 +80,18 @@ class DuplicateProduct implements RegistersAbility {
 							),
 						),
 						'duplicated_variations' => array( 'type' => 'integer' ),
-						'duplicated_images' => array( 'type' => 'integer' ),
-						'message' => array( 'type' => 'string' ),
+						'duplicated_images'     => array( 'type' => 'integer' ),
+						'message'               => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'products' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -110,33 +113,33 @@ class DuplicateProduct implements RegistersAbility {
 		// Check if WooCommerce is active
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			return array(
-				'success' => false,
-				'original_product' => null,
-				'duplicated_product' => null,
+				'success'               => false,
+				'original_product'      => null,
+				'duplicated_product'    => null,
 				'duplicated_variations' => 0,
-				'duplicated_images' => 0,
-				'message' => 'WooCommerce is not active.',
+				'duplicated_images'     => 0,
+				'message'               => 'WooCommerce is not active.',
 			);
 		}
 
-		$product_id = $input['id'];
-		$new_name = $input['name'] ?? '';
-		$new_sku = $input['sku'] ?? '';
-		$new_status = $input['status'] ?? 'draft';
+		$product_id         = $input['id'];
+		$new_name           = $input['name'] ?? '';
+		$new_sku            = $input['sku'] ?? '';
+		$new_status         = $input['status'] ?? 'draft';
 		$include_variations = $input['include_variations'] ?? true;
-		$include_images = $input['include_images'] ?? true;
-		$include_reviews = $input['include_reviews'] ?? false;
+		$include_images     = $input['include_images'] ?? true;
+		$include_reviews    = $input['include_reviews'] ?? false;
 
 		$original_product = wc_get_product( $product_id );
 
 		if ( ! $original_product || ! $original_product instanceof \WC_Product ) {
 			return array(
-				'success' => false,
-				'original_product' => null,
-				'duplicated_product' => null,
+				'success'               => false,
+				'original_product'      => null,
+				'duplicated_product'    => null,
 				'duplicated_variations' => 0,
-				'duplicated_images' => 0,
-				'message' => 'Product not found.',
+				'duplicated_images'     => 0,
+				'message'               => 'Product not found.',
 			);
 		}
 
@@ -180,23 +183,23 @@ class DuplicateProduct implements RegistersAbility {
 				$existing_product_id = wc_get_product_id_by_sku( $new_sku );
 				if ( $existing_product_id ) {
 					return array(
-						'success' => false,
-						'original_product' => $original_info,
-						'duplicated_product' => null,
+						'success'               => false,
+						'original_product'      => $original_info,
+						'duplicated_product'    => null,
 						'duplicated_variations' => 0,
-						'duplicated_images' => 0,
-						'message' => 'SKU already exists.',
+						'duplicated_images'     => 0,
+						'message'               => 'SKU already exists.',
 					);
 				}
 				$new_product->set_sku( $new_sku );
 			} elseif ( $original_product->get_sku() ) {
 				// Generate new SKU based on original
 				$base_sku = $original_product->get_sku();
-				$counter = 1;
-				$new_sku = $base_sku . '-copy';
-				
+				$counter  = 1;
+				$new_sku  = $base_sku . '-copy';
+
 				while ( wc_get_product_id_by_sku( $new_sku ) ) {
-					$counter++;
+					++$counter;
 					$new_sku = $base_sku . '-copy-' . $counter;
 				}
 				$new_product->set_sku( $new_sku );
@@ -249,7 +252,7 @@ class DuplicateProduct implements RegistersAbility {
 			if ( $include_images ) {
 				if ( $original_product->get_image_id() ) {
 					$new_product->set_image_id( $original_product->get_image_id() );
-					$duplicated_images++;
+					++$duplicated_images;
 				}
 
 				$gallery_ids = $original_product->get_gallery_image_ids();
@@ -267,12 +270,12 @@ class DuplicateProduct implements RegistersAbility {
 
 			if ( ! $new_product_id ) {
 				return array(
-					'success' => false,
-					'original_product' => $original_info,
-					'duplicated_product' => null,
+					'success'               => false,
+					'original_product'      => $original_info,
+					'duplicated_product'    => null,
 					'duplicated_variations' => 0,
-					'duplicated_images' => 0,
-					'message' => 'Failed to save duplicated product.',
+					'duplicated_images'     => 0,
+					'message'               => 'Failed to save duplicated product.',
 				);
 			}
 
@@ -283,43 +286,45 @@ class DuplicateProduct implements RegistersAbility {
 				$variation_ids = $original_product->get_children();
 				foreach ( $variation_ids as $variation_id ) {
 					$original_variation = wc_get_product( $variation_id );
-					if ( $original_variation ) {
-						$new_variation = new \WC_Product_Variation();
-						$new_variation->set_parent_id( $new_product_id );
-						
-						// Copy variation properties
-						$new_variation->set_regular_price( $original_variation->get_regular_price() );
-						$new_variation->set_sale_price( $original_variation->get_sale_price() );
-						$new_variation->set_manage_stock( $original_variation->get_manage_stock() );
-						$new_variation->set_stock_quantity( $original_variation->get_stock_quantity() );
-						$new_variation->set_stock_status( $original_variation->get_stock_status() );
-						$new_variation->set_weight( $original_variation->get_weight() );
-						$new_variation->set_length( $original_variation->get_length() );
-						$new_variation->set_width( $original_variation->get_width() );
-						$new_variation->set_height( $original_variation->get_height() );
-						$new_variation->set_attributes( $original_variation->get_variation_attributes() );
-
-						// Generate new SKU for variation if original has one
-						if ( $original_variation->get_sku() ) {
-							$base_variation_sku = $original_variation->get_sku();
-							$counter = 1;
-							$new_variation_sku = $base_variation_sku . '-copy';
-							
-							while ( wc_get_product_id_by_sku( $new_variation_sku ) ) {
-								$counter++;
-								$new_variation_sku = $base_variation_sku . '-copy-' . $counter;
-							}
-							$new_variation->set_sku( $new_variation_sku );
-						}
-
-						// Copy variation image
-						if ( $include_images && $original_variation->get_image_id() ) {
-							$new_variation->set_image_id( $original_variation->get_image_id() );
-						}
-
-						$new_variation->save();
-						$duplicated_variations++;
+					if ( ! $original_variation ) {
+						continue;
 					}
+
+					$new_variation = new \WC_Product_Variation();
+					$new_variation->set_parent_id( $new_product_id );
+
+					// Copy variation properties
+					$new_variation->set_regular_price( $original_variation->get_regular_price() );
+					$new_variation->set_sale_price( $original_variation->get_sale_price() );
+					$new_variation->set_manage_stock( $original_variation->get_manage_stock() );
+					$new_variation->set_stock_quantity( $original_variation->get_stock_quantity() );
+					$new_variation->set_stock_status( $original_variation->get_stock_status() );
+					$new_variation->set_weight( $original_variation->get_weight() );
+					$new_variation->set_length( $original_variation->get_length() );
+					$new_variation->set_width( $original_variation->get_width() );
+					$new_variation->set_height( $original_variation->get_height() );
+					$new_variation->set_attributes( $original_variation->get_variation_attributes() );
+
+					// Generate new SKU for variation if original has one
+					if ( $original_variation->get_sku() ) {
+						$base_variation_sku = $original_variation->get_sku();
+						$counter            = 1;
+						$new_variation_sku  = $base_variation_sku . '-copy';
+
+						while ( wc_get_product_id_by_sku( $new_variation_sku ) ) {
+							++$counter;
+							$new_variation_sku = $base_variation_sku . '-copy-' . $counter;
+						}
+						$new_variation->set_sku( $new_variation_sku );
+					}
+
+					// Copy variation image
+					if ( $include_images && $original_variation->get_image_id() ) {
+						$new_variation->set_image_id( $original_variation->get_image_id() );
+					}
+
+					$new_variation->save();
+					++$duplicated_variations;
 				}
 			}
 
@@ -332,9 +337,9 @@ class DuplicateProduct implements RegistersAbility {
 			$duplicated_product = wc_get_product( $new_product_id );
 
 			return array(
-				'success' => true,
-				'original_product' => $original_info,
-				'duplicated_product' => array(
+				'success'               => true,
+				'original_product'      => $original_info,
+				'duplicated_product'    => array(
 					'id'           => $duplicated_product->get_id(),
 					'name'         => $duplicated_product->get_name(),
 					'slug'         => $duplicated_product->get_slug(),
@@ -345,8 +350,8 @@ class DuplicateProduct implements RegistersAbility {
 					'date_created' => $duplicated_product->get_date_created() ? $duplicated_product->get_date_created()->date( 'Y-m-d H:i:s' ) : null,
 				),
 				'duplicated_variations' => $duplicated_variations,
-				'duplicated_images' => $duplicated_images,
-				'message' => sprintf(
+				'duplicated_images'     => $duplicated_images,
+				'message'               => sprintf(
 					'Successfully duplicated product "%s" as "%s" (ID: %d)%s%s.',
 					$original_info['name'],
 					$duplicated_product->get_name(),
@@ -355,15 +360,14 @@ class DuplicateProduct implements RegistersAbility {
 					$duplicated_images > 0 ? " and {$duplicated_images} images" : ''
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
-				'success' => false,
-				'original_product' => $original_info,
-				'duplicated_product' => null,
+				'success'               => false,
+				'original_product'      => $original_info,
+				'duplicated_product'    => null,
 				'duplicated_variations' => 0,
-				'duplicated_images' => 0,
-				'message' => 'Error duplicating product: ' . $e->getMessage(),
+				'duplicated_images'     => 0,
+				'message'               => 'Error duplicating product: ' . $e->getMessage(),
 			);
 		}
 	}
@@ -372,11 +376,13 @@ class DuplicateProduct implements RegistersAbility {
 		global $wpdb;
 
 		// Get original product reviews
-		$reviews = get_comments( array(
-			'post_id' => $original_product_id,
-			'type'    => 'review',
-			'status'  => 'approve',
-		) );
+		$reviews = get_comments(
+			array(
+				'post_id' => $original_product_id,
+				'type'    => 'review',
+				'status'  => 'approve',
+			)
+		);
 
 		foreach ( $reviews as $review ) {
 			// Create duplicate review
@@ -397,19 +403,23 @@ class DuplicateProduct implements RegistersAbility {
 
 			$new_comment_id = wp_insert_comment( $review_data );
 
-			if ( $new_comment_id ) {
-				// Copy review rating
-				$rating = get_comment_meta( $review->comment_ID, 'rating', true );
-				if ( $rating ) {
-					update_comment_meta( $new_comment_id, 'rating', $rating );
-				}
-
-				// Copy other review meta
-				$verified = get_comment_meta( $review->comment_ID, 'verified', true );
-				if ( $verified ) {
-					update_comment_meta( $new_comment_id, 'verified', $verified );
-				}
+			if ( ! $new_comment_id ) {
+				continue;
 			}
+
+			// Copy review rating
+			$rating = get_comment_meta( $review->comment_ID, 'rating', true );
+			if ( $rating ) {
+				update_comment_meta( $new_comment_id, 'rating', $rating );
+			}
+
+			// Copy other review meta
+			$verified = get_comment_meta( $review->comment_ID, 'verified', true );
+			if ( ! $verified ) {
+				continue;
+			}
+
+			update_comment_meta( $new_comment_id, 'verified', $verified );
 		}
 	}
 }

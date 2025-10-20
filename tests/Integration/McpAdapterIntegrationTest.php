@@ -119,7 +119,6 @@ final class McpAdapterIntegrationTest extends TestCase {
 	public function test_rest_api_endpoints_registered(): void {
 		$adapter = $this->get_mcp_adapter();
 
-
 		$server = rest_get_server();
 		$routes = $server->get_routes();
 

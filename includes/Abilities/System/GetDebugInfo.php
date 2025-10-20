@@ -16,7 +16,7 @@ final class GetDebugInfo implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'include_php_info' => array(
+						'include_php_info'  => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include PHP configuration info. Default: false.',
 							'default'     => false,
@@ -26,7 +26,7 @@ final class GetDebugInfo implements RegistersAbility {
 							'description' => 'Whether to include recent error log entries. Default: false.',
 							'default'     => false,
 						),
-						'error_log_lines' => array(
+						'error_log_lines'   => array(
 							'type'        => 'integer',
 							'description' => 'Number of recent error log lines to include. Default: 50.',
 							'default'     => 50,
@@ -42,23 +42,23 @@ final class GetDebugInfo implements RegistersAbility {
 						'debug_status' => array(
 							'type'       => 'object',
 							'properties' => array(
-								'wp_debug'         => array( 'type' => 'boolean' ),
-								'wp_debug_log'     => array( 'type' => 'boolean' ),
-								'wp_debug_display' => array( 'type' => 'boolean' ),
-								'script_debug'     => array( 'type' => 'boolean' ),
-								'log_file_exists'  => array( 'type' => 'boolean' ),
-								'log_file_size'    => array( 'type' => 'string' ),
+								'wp_debug'          => array( 'type' => 'boolean' ),
+								'wp_debug_log'      => array( 'type' => 'boolean' ),
+								'wp_debug_display'  => array( 'type' => 'boolean' ),
+								'script_debug'      => array( 'type' => 'boolean' ),
+								'log_file_exists'   => array( 'type' => 'boolean' ),
+								'log_file_size'     => array( 'type' => 'string' ),
 								'log_file_writable' => array( 'type' => 'boolean' ),
 							),
 						),
 						'health_check' => array(
 							'type'       => 'object',
 							'properties' => array(
-								'overall_status' => array( 'type' => 'string' ),
-								'critical_issues' => array( 'type' => 'integer' ),
+								'overall_status'           => array( 'type' => 'string' ),
+								'critical_issues'          => array( 'type' => 'integer' ),
 								'recommended_improvements' => array( 'type' => 'integer' ),
-								'good_checks'    => array( 'type' => 'integer' ),
-								'tests'          => array(
+								'good_checks'              => array( 'type' => 'integer' ),
+								'tests'                    => array(
 									'type'  => 'array',
 									'items' => array(
 										'type'       => 'object',
@@ -72,21 +72,21 @@ final class GetDebugInfo implements RegistersAbility {
 								),
 							),
 						),
-						'php_info' => array(
+						'php_info'     => array(
 							'type'       => 'object',
 							'properties' => array(
-								'version'          => array( 'type' => 'string' ),
-								'memory_limit'     => array( 'type' => 'string' ),
-								'max_execution_time' => array( 'type' => 'string' ),
+								'version'             => array( 'type' => 'string' ),
+								'memory_limit'        => array( 'type' => 'string' ),
+								'max_execution_time'  => array( 'type' => 'string' ),
 								'upload_max_filesize' => array( 'type' => 'string' ),
-								'post_max_size'    => array( 'type' => 'string' ),
-								'extensions'       => array(
+								'post_max_size'       => array( 'type' => 'string' ),
+								'extensions'          => array(
 									'type'  => 'array',
 									'items' => array( 'type' => 'string' ),
 								),
 							),
 						),
-						'error_log' => array(
+						'error_log'    => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -101,9 +101,12 @@ final class GetDebugInfo implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'system',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'system', 'debugging' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -134,9 +137,9 @@ final class GetDebugInfo implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$include_php_info = (bool) ( $input['include_php_info'] ?? false );
+		$include_php_info  = (bool) ( $input['include_php_info'] ?? false );
 		$include_error_log = (bool) ( $input['include_error_log'] ?? false );
-		$error_log_lines = (int) ( $input['error_log_lines'] ?? 50 );
+		$error_log_lines   = (int) ( $input['error_log_lines'] ?? 50 );
 
 		$result = array();
 
@@ -195,47 +198,49 @@ final class GetDebugInfo implements RegistersAbility {
 		}
 
 		$health_check = \WP_Site_Health::get_instance();
-		
+
 		// Get basic health info
-		$critical_issues = 0;
+		$critical_issues          = 0;
 		$recommended_improvements = 0;
-		$good_checks = 0;
-		$tests = array();
+		$good_checks              = 0;
+		$tests                    = array();
 
 		// Try to get health check tests
 		if ( method_exists( $health_check, 'get_tests' ) ) {
 			$all_tests = $health_check->get_tests();
-			
+
 			// Run direct tests
 			if ( isset( $all_tests['direct'] ) ) {
 				foreach ( $all_tests['direct'] as $test_name => $test_data ) {
-					if ( isset( $test_data['test'] ) && is_callable( $test_data['test'] ) ) {
-						try {
-							$test_result = call_user_func( $test_data['test'] );
-							if ( is_array( $test_result ) ) {
-								$status = $test_result['status'] ?? 'unknown';
-								$tests[] = array(
-									'test'        => $test_name,
-									'status'      => $status,
-									'label'       => $test_result['label'] ?? $test_name,
-									'description' => $test_result['description'] ?? '',
-								);
+					if ( ! isset( $test_data['test'] ) || ! is_callable( $test_data['test'] ) ) {
+						continue;
+					}
 
-								switch ( $status ) {
-									case 'critical':
-										$critical_issues++;
-										break;
-									case 'recommended':
-										$recommended_improvements++;
-										break;
-									case 'good':
-										$good_checks++;
-										break;
-								}
+					try {
+						$test_result = call_user_func( $test_data['test'] );
+						if ( is_array( $test_result ) ) {
+							$status  = $test_result['status'] ?? 'unknown';
+							$tests[] = array(
+								'test'        => $test_name,
+								'status'      => $status,
+								'label'       => $test_result['label'] ?? $test_name,
+								'description' => $test_result['description'] ?? '',
+							);
+
+							switch ( $status ) {
+								case 'critical':
+									++$critical_issues;
+									break;
+								case 'recommended':
+									++$recommended_improvements;
+									break;
+								case 'good':
+									++$good_checks;
+									break;
 							}
-						} catch ( \Exception $e ) {
-							// Skip failed tests
 						}
+					} catch ( \Throwable $e ) {
+						// Skip failed tests
 					}
 				}
 			}
@@ -270,9 +275,9 @@ final class GetDebugInfo implements RegistersAbility {
 			return array();
 		}
 
-		$entries = array();
+		$entries    = array();
 		$file_lines = file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES );
-		
+
 		if ( $file_lines === false ) {
 			return array();
 		}

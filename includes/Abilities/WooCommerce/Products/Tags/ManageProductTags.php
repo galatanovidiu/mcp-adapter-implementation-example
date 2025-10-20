@@ -13,15 +13,15 @@ class ManageProductTags implements RegistersAbility {
 				'label'               => 'Manage Product Tags',
 				'description'         => 'Create, update, or delete WooCommerce product tags with batch operations support.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'operation' ),
-					'properties' => array(
-						'operation' => array(
+					'type'                 => 'object',
+					'required'             => array( 'operation' ),
+					'properties'           => array(
+						'operation'        => array(
 							'type'        => 'string',
 							'description' => 'Operation to perform.',
 							'enum'        => array( 'create', 'update', 'delete', 'batch' ),
 						),
-						'tag_data' => array(
+						'tag_data'         => array(
 							'type'        => 'object',
 							'description' => 'Tag data for create/update operations.',
 							'properties'  => array(
@@ -30,7 +30,7 @@ class ManageProductTags implements RegistersAbility {
 								'description' => array( 'type' => 'string' ),
 							),
 						),
-						'tag_id' => array(
+						'tag_id'           => array(
 							'type'        => 'integer',
 							'description' => 'Tag ID for update/delete operations.',
 							'minimum'     => 1,
@@ -46,12 +46,12 @@ class ManageProductTags implements RegistersAbility {
 										'type' => 'string',
 										'enum' => array( 'create', 'update', 'delete' ),
 									),
-									'tag_data' => array( 'type' => 'object' ),
-									'tag_id'   => array( 'type' => 'integer' ),
+									'tag_data'  => array( 'type' => 'object' ),
+									'tag_id'    => array( 'type' => 'integer' ),
 								),
 							),
 						),
-						'force_delete' => array(
+						'force_delete'     => array(
 							'type'        => 'boolean',
 							'description' => 'Force delete tags even if they have products.',
 							'default'     => false,
@@ -62,9 +62,9 @@ class ManageProductTags implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'operation' => array( 'type' => 'string' ),
-						'tag' => array(
+						'success'       => array( 'type' => 'boolean' ),
+						'operation'     => array( 'type' => 'string' ),
+						'tag'           => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'          => array( 'type' => 'integer' ),
@@ -87,15 +87,18 @@ class ManageProductTags implements RegistersAbility {
 								),
 							),
 						),
-						'changes_made' => array( 'type' => 'array' ),
-						'message' => array( 'type' => 'string' ),
+						'changes_made'  => array( 'type' => 'array' ),
+						'message'       => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'catalog' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -167,15 +170,19 @@ class ManageProductTags implements RegistersAbility {
 			);
 		}
 
-		$name = $tag_data['name'];
-		$slug = $tag_data['slug'] ?? sanitize_title( $name );
+		$name        = $tag_data['name'];
+		$slug        = $tag_data['slug'] ?? sanitize_title( $name );
 		$description = $tag_data['description'] ?? '';
 
 		try {
-			$result = wp_insert_term( $name, 'product_tag', array(
-				'slug'        => $slug,
-				'description' => $description,
-			) );
+			$result = wp_insert_term(
+				$name,
+				'product_tag',
+				array(
+					'slug'        => $slug,
+					'description' => $description,
+				)
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return array(
@@ -205,8 +212,7 @@ class ManageProductTags implements RegistersAbility {
 				'changes_made'  => array( 'created' ),
 				'message'       => sprintf( 'Successfully created tag "%s".', $name ),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'       => false,
 				'operation'     => 'create',
@@ -219,7 +225,7 @@ class ManageProductTags implements RegistersAbility {
 	}
 
 	private static function update_tag( array $input ): array {
-		$tag_id = $input['tag_id'] ?? 0;
+		$tag_id   = $input['tag_id'] ?? 0;
 		$tag_data = $input['tag_data'] ?? array();
 
 		if ( empty( $tag_id ) ) {
@@ -246,21 +252,21 @@ class ManageProductTags implements RegistersAbility {
 		}
 
 		$changes_made = array();
-		$update_args = array();
+		$update_args  = array();
 
 		if ( isset( $tag_data['name'] ) ) {
 			$update_args['name'] = $tag_data['name'];
-			$changes_made[] = 'name';
+			$changes_made[]      = 'name';
 		}
 
 		if ( isset( $tag_data['slug'] ) ) {
 			$update_args['slug'] = $tag_data['slug'];
-			$changes_made[] = 'slug';
+			$changes_made[]      = 'slug';
 		}
 
 		if ( isset( $tag_data['description'] ) ) {
 			$update_args['description'] = $tag_data['description'];
-			$changes_made[] = 'description';
+			$changes_made[]             = 'description';
 		}
 
 		if ( empty( $update_args ) ) {
@@ -305,8 +311,7 @@ class ManageProductTags implements RegistersAbility {
 				'changes_made'  => $changes_made,
 				'message'       => sprintf( 'Successfully updated tag "%s". Changes: %s', $updated_tag->name, implode( ', ', $changes_made ) ),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'       => false,
 				'operation'     => 'update',
@@ -319,7 +324,7 @@ class ManageProductTags implements RegistersAbility {
 	}
 
 	private static function delete_tag( array $input ): array {
-		$tag_id = $input['tag_id'] ?? 0;
+		$tag_id       = $input['tag_id'] ?? 0;
 		$force_delete = $input['force_delete'] ?? false;
 
 		if ( empty( $tag_id ) ) {
@@ -392,8 +397,7 @@ class ManageProductTags implements RegistersAbility {
 				'changes_made'  => array( 'deleted' ),
 				'message'       => sprintf( 'Successfully deleted tag "%s".', $tag_info['name'] ),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'       => false,
 				'operation'     => 'delete',
@@ -421,7 +425,7 @@ class ManageProductTags implements RegistersAbility {
 
 		$batch_results = array();
 		$total_success = 0;
-		$total_errors = 0;
+		$total_errors  = 0;
 
 		foreach ( $operations as $op ) {
 			$op_input = array(
@@ -444,19 +448,21 @@ class ManageProductTags implements RegistersAbility {
 					break;
 			}
 
-			if ( $result ) {
-				$batch_results[] = array(
-					'operation' => $op['operation'],
-					'success'   => $result['success'],
-					'tag_id'    => $result['tag'] ? $result['tag']['id'] : 0,
-					'message'   => $result['message'],
-				);
+			if ( ! $result ) {
+				continue;
+			}
 
-				if ( $result['success'] ) {
-					$total_success++;
-				} else {
-					$total_errors++;
-				}
+			$batch_results[] = array(
+				'operation' => $op['operation'],
+				'success'   => $result['success'],
+				'tag_id'    => $result['tag'] ? $result['tag']['id'] : 0,
+				'message'   => $result['message'],
+			);
+
+			if ( $result['success'] ) {
+				++$total_success;
+			} else {
+				++$total_errors;
 			}
 		}
 

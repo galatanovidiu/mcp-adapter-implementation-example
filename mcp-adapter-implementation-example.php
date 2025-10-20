@@ -22,11 +22,9 @@ declare( strict_types=1 );
 
 
 use OvidiuGalatan\McpAdapterExample\Abilities\BootstrapAbilities;
-use WP\MCP\Core\McpAdapter;
 use OvidiuGalatan\McpAdapterExample\Handlers\RayMcpErrorHandler;
 use OvidiuGalatan\McpAdapterExample\Handlers\RayMcpObservabilityHandler;
-use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
-use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
+use WP\MCP\Core\McpAdapter;
 use WP\MCP\Transport\HttpTransport;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -172,32 +170,32 @@ add_action(
 				'core/update-user',
 				'core/update-user-meta',
 				'core/upload-media',
-				
+
 				// WooCommerce abilities
-				 'woo/create-product',
-				 'woo/create-product-attribute',
-				 'woo/create-product-category',
-				 'woo/create-product-variation',
-				 'woo/delete-product',
-				 'woo/delete-product-category',
-				 'woo/delete-product-variation',
-				 'woo/duplicate-product',
-				 'woo/get-product',
-				 'woo/get-product-category',
-				 'woo/get-product-variation',
-				 'woo/get-store-info',
-				 'woo/get-store-settings',
-				 'woo/get-store-status',
-				 'woo/list-product-attributes',
-				 'woo/list-product-categories',
-				 'woo/list-product-tags',
-				 'woo/list-product-variations',
-				 'woo/list-products',
-				 'woo/manage-product-tags',
-				 'woo/update-product',
-				 'woo/update-product-attribute',
-				 'woo/update-product-category',
-				 'woo/update-product-variation',
+				'woo/create-product',
+				'woo/create-product-attribute',
+				'woo/create-product-category',
+				'woo/create-product-variation',
+				'woo/delete-product',
+				'woo/delete-product-category',
+				'woo/delete-product-variation',
+				'woo/duplicate-product',
+				'woo/get-product',
+				'woo/get-product-category',
+				'woo/get-product-variation',
+				'woo/get-store-info',
+				'woo/get-store-settings',
+				'woo/get-store-status',
+				'woo/list-product-attributes',
+				'woo/list-product-categories',
+				'woo/list-product-tags',
+				'woo/list-product-variations',
+				'woo/list-products',
+				'woo/manage-product-tags',
+				'woo/update-product',
+				'woo/update-product-attribute',
+				'woo/update-product-category',
+				'woo/update-product-variation',
 			),
 			array(),
 			array()

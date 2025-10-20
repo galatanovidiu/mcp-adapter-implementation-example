@@ -17,15 +17,15 @@ final class UpdateComment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'comment_ID' ),
 					'properties' => array(
-						'comment_ID' => array(
+						'comment_ID'           => array(
 							'type'        => 'integer',
 							'description' => 'The comment ID to update.',
 						),
-						'comment_content' => array(
+						'comment_content'      => array(
 							'type'        => 'string',
 							'description' => 'The updated comment content.',
 						),
-						'comment_author' => array(
+						'comment_author'       => array(
 							'type'        => 'string',
 							'description' => 'The updated comment author name.',
 						),
@@ -33,26 +33,26 @@ final class UpdateComment implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'The updated comment author email address.',
 						),
-						'comment_author_url' => array(
+						'comment_author_url'   => array(
 							'type'        => 'string',
 							'description' => 'The updated comment author website URL.',
 						),
-						'comment_approved' => array(
+						'comment_approved'     => array(
 							'type'        => 'string',
 							'description' => 'Comment approval status (1, 0, spam, trash).',
 							'enum'        => array( '1', '0', 'spam', 'trash' ),
 						),
-						'comment_type' => array(
+						'comment_type'         => array(
 							'type'        => 'string',
 							'description' => 'Comment type.',
 						),
-						'comment_parent' => array(
+						'comment_parent'       => array(
 							'type'        => 'integer',
 							'description' => 'Parent comment ID.',
 						),
-						'comment_meta' => array(
-							'type'        => 'object',
-							'description' => 'Comment metadata to update as key-value pairs.',
+						'comment_meta'         => array(
+							'type'                 => 'object',
+							'description'          => 'Comment metadata to update as key-value pairs.',
 							'additionalProperties' => array( 'type' => 'string' ),
 						),
 					),
@@ -61,9 +61,9 @@ final class UpdateComment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'comment_id' ),
 					'properties' => array(
-						'success'    => array( 'type' => 'boolean' ),
-						'comment_id' => array( 'type' => 'integer' ),
-						'comment'    => array(
+						'success'        => array( 'type' => 'boolean' ),
+						'comment_id'     => array( 'type' => 'integer' ),
+						'comment'        => array(
 							'type'       => 'object',
 							'properties' => array(
 								'comment_ID'           => array( 'type' => 'integer' ),
@@ -89,9 +89,12 @@ final class UpdateComment implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'engagement', 'comments' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -113,11 +116,11 @@ final class UpdateComment implements RegistersAbility {
 	 */
 	public static function check_permission( array $input ): bool {
 		$comment_id = (int) ( $input['comment_ID'] ?? 0 );
-		
+
 		if ( $comment_id > 0 ) {
 			return \current_user_can( 'edit_comment', $comment_id );
 		}
-		
+
 		return \current_user_can( 'moderate_comments' );
 	}
 
@@ -128,7 +131,7 @@ final class UpdateComment implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$comment_id = (int) $input['comment_ID'];
+		$comment_id   = (int) $input['comment_ID'];
 		$comment_meta = $input['comment_meta'] ?? array();
 
 		// Get the existing comment
@@ -153,7 +156,7 @@ final class UpdateComment implements RegistersAbility {
 			$comment_content = \sanitize_textarea_field( (string) $input['comment_content'] );
 			if ( ! empty( $comment_content ) ) {
 				$update_data['comment_content'] = $comment_content;
-				$updated_fields[] = 'comment_content';
+				$updated_fields[]               = 'comment_content';
 			}
 		}
 
@@ -162,7 +165,7 @@ final class UpdateComment implements RegistersAbility {
 			$comment_author = \sanitize_text_field( (string) $input['comment_author'] );
 			if ( ! empty( $comment_author ) ) {
 				$update_data['comment_author'] = $comment_author;
-				$updated_fields[] = 'comment_author';
+				$updated_fields[]              = 'comment_author';
 			}
 		}
 
@@ -171,15 +174,15 @@ final class UpdateComment implements RegistersAbility {
 			$comment_author_email = \sanitize_email( (string) $input['comment_author_email'] );
 			if ( ! empty( $comment_author_email ) && \is_email( $comment_author_email ) ) {
 				$update_data['comment_author_email'] = $comment_author_email;
-				$updated_fields[] = 'comment_author_email';
+				$updated_fields[]                    = 'comment_author_email';
 			}
 		}
 
 		// Update comment author URL
 		if ( isset( $input['comment_author_url'] ) ) {
-			$comment_author_url = \esc_url_raw( (string) $input['comment_author_url'] );
+			$comment_author_url                = \esc_url_raw( (string) $input['comment_author_url'] );
 			$update_data['comment_author_url'] = $comment_author_url;
-			$updated_fields[] = 'comment_author_url';
+			$updated_fields[]                  = 'comment_author_url';
 		}
 
 		// Update comment approval status
@@ -187,21 +190,21 @@ final class UpdateComment implements RegistersAbility {
 			$comment_approved = \sanitize_text_field( (string) $input['comment_approved'] );
 			if ( in_array( $comment_approved, array( '1', '0', 'spam', 'trash' ), true ) ) {
 				$update_data['comment_approved'] = $comment_approved;
-				$updated_fields[] = 'comment_approved';
+				$updated_fields[]                = 'comment_approved';
 			}
 		}
 
 		// Update comment type
 		if ( isset( $input['comment_type'] ) ) {
-			$comment_type = \sanitize_text_field( (string) $input['comment_type'] );
+			$comment_type                = \sanitize_text_field( (string) $input['comment_type'] );
 			$update_data['comment_type'] = $comment_type;
-			$updated_fields[] = 'comment_type';
+			$updated_fields[]            = 'comment_type';
 		}
 
 		// Update comment parent
 		if ( isset( $input['comment_parent'] ) ) {
 			$comment_parent = (int) $input['comment_parent'];
-			
+
 			// Validate parent comment exists if not 0
 			if ( $comment_parent > 0 ) {
 				$parent_comment = \get_comment( $comment_parent );
@@ -212,7 +215,7 @@ final class UpdateComment implements RegistersAbility {
 						'message'    => 'Parent comment not found.',
 					);
 				}
-				
+
 				// Ensure parent comment is on the same post
 				if ( (int) $parent_comment->comment_post_ID !== (int) $existing_comment->comment_post_ID ) {
 					return array(
@@ -222,9 +225,9 @@ final class UpdateComment implements RegistersAbility {
 					);
 				}
 			}
-			
+
 			$update_data['comment_parent'] = $comment_parent;
-			$updated_fields[] = 'comment_parent';
+			$updated_fields[]              = 'comment_parent';
 		}
 
 		// Only proceed with update if there are fields to update
@@ -254,7 +257,7 @@ final class UpdateComment implements RegistersAbility {
 		} else {
 			// Update the comment
 			$result = \wp_update_comment( $update_data );
-			
+
 			if ( is_wp_error( $result ) ) {
 				return array(
 					'success'    => false,
@@ -262,7 +265,7 @@ final class UpdateComment implements RegistersAbility {
 					'message'    => 'Failed to update comment: ' . $result->get_error_message(),
 				);
 			}
-			
+
 			if ( ! $result ) {
 				return array(
 					'success'    => false,
@@ -275,7 +278,7 @@ final class UpdateComment implements RegistersAbility {
 		// Update comment metadata
 		if ( ! empty( $comment_meta ) && is_array( $comment_meta ) ) {
 			foreach ( $comment_meta as $key => $value ) {
-				$sanitized_key = \sanitize_key( $key );
+				$sanitized_key   = \sanitize_key( $key );
 				$sanitized_value = \sanitize_text_field( $value );
 				\update_comment_meta( $comment_id, $sanitized_key, $sanitized_value );
 				$updated_fields[] = "meta:{$sanitized_key}";

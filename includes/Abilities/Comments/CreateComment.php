@@ -17,15 +17,15 @@ final class CreateComment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'comment_post_ID', 'comment_content', 'comment_author', 'comment_author_email' ),
 					'properties' => array(
-						'comment_post_ID' => array(
+						'comment_post_ID'      => array(
 							'type'        => 'integer',
 							'description' => 'The post ID to comment on.',
 						),
-						'comment_content' => array(
+						'comment_content'      => array(
 							'type'        => 'string',
 							'description' => 'The comment content.',
 						),
-						'comment_author' => array(
+						'comment_author'       => array(
 							'type'        => 'string',
 							'description' => 'The comment author name.',
 						),
@@ -33,34 +33,34 @@ final class CreateComment implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'The comment author email address.',
 						),
-						'comment_author_url' => array(
+						'comment_author_url'   => array(
 							'type'        => 'string',
 							'description' => 'The comment author website URL.',
 						),
-						'comment_parent' => array(
+						'comment_parent'       => array(
 							'type'        => 'integer',
 							'description' => 'Parent comment ID for replies. Default: 0.',
 							'default'     => 0,
 						),
-						'user_id' => array(
+						'user_id'              => array(
 							'type'        => 'integer',
 							'description' => 'User ID if comment is from a registered user. Default: 0.',
 							'default'     => 0,
 						),
-						'comment_approved' => array(
+						'comment_approved'     => array(
 							'type'        => 'string',
 							'description' => 'Comment approval status (1, 0, spam, trash). Default: 0 (pending).',
 							'enum'        => array( '1', '0', 'spam', 'trash' ),
 							'default'     => '0',
 						),
-						'comment_type' => array(
+						'comment_type'         => array(
 							'type'        => 'string',
 							'description' => 'Comment type. Default: comment.',
 							'default'     => 'comment',
 						),
-						'comment_meta' => array(
-							'type'        => 'object',
-							'description' => 'Comment metadata as key-value pairs.',
+						'comment_meta'         => array(
+							'type'                 => 'object',
+							'description'          => 'Comment metadata as key-value pairs.',
 							'additionalProperties' => array( 'type' => 'string' ),
 						),
 					),
@@ -93,8 +93,12 @@ final class CreateComment implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -126,16 +130,16 @@ final class CreateComment implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$comment_post_ID = (int) $input['comment_post_ID'];
-		$comment_content = \sanitize_textarea_field( (string) $input['comment_content'] );
-		$comment_author = \sanitize_text_field( (string) $input['comment_author'] );
+		$comment_post_ID      = (int) $input['comment_post_ID'];
+		$comment_content      = \sanitize_textarea_field( (string) $input['comment_content'] );
+		$comment_author       = \sanitize_text_field( (string) $input['comment_author'] );
 		$comment_author_email = \sanitize_email( (string) $input['comment_author_email'] );
-		$comment_author_url = \esc_url_raw( (string) ( $input['comment_author_url'] ?? '' ) );
-		$comment_parent = (int) ( $input['comment_parent'] ?? 0 );
-		$user_id = (int) ( $input['user_id'] ?? 0 );
-		$comment_approved = \sanitize_text_field( (string) ( $input['comment_approved'] ?? '0' ) );
-		$comment_type = \sanitize_text_field( (string) ( $input['comment_type'] ?? 'comment' ) );
-		$comment_meta = $input['comment_meta'] ?? array();
+		$comment_author_url   = \esc_url_raw( (string) ( $input['comment_author_url'] ?? '' ) );
+		$comment_parent       = (int) ( $input['comment_parent'] ?? 0 );
+		$user_id              = (int) ( $input['user_id'] ?? 0 );
+		$comment_approved     = \sanitize_text_field( (string) ( $input['comment_approved'] ?? '0' ) );
+		$comment_type         = \sanitize_text_field( (string) ( $input['comment_type'] ?? 'comment' ) );
+		$comment_meta         = $input['comment_meta'] ?? array();
 
 		// Validate required fields
 		if ( empty( $comment_content ) ) {

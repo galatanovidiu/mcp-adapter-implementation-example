@@ -17,11 +17,11 @@ final class DeleteUser implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'id' ),
 					'properties' => array(
-						'id' => array(
+						'id'                   => array(
 							'type'        => 'integer',
 							'description' => 'User ID to delete.',
 						),
-						'reassign_to' => array(
+						'reassign_to'          => array(
 							'type'        => 'integer',
 							'description' => 'User ID to reassign content to. If not provided, content will be deleted.',
 						),
@@ -36,17 +36,20 @@ final class DeleteUser implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'deleted' ),
 					'properties' => array(
-						'deleted'         => array( 'type' => 'boolean' ),
-						'message'         => array( 'type' => 'string' ),
-						'content_action'  => array( 'type' => 'string' ),
-						'reassigned_to'   => array( 'type' => 'integer' ),
+						'deleted'        => array( 'type' => 'boolean' ),
+						'message'        => array( 'type' => 'string' ),
+						'content_action' => array( 'type' => 'string' ),
+						'reassigned_to'  => array( 'type' => 'integer' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'management' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.5,
@@ -68,7 +71,7 @@ final class DeleteUser implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$user_id = (int) ( $input['id'] ?? 0 );
+		$user_id         = (int) ( $input['id'] ?? 0 );
 		$current_user_id = \get_current_user_id();
 
 		// Users cannot delete themselves
@@ -83,11 +86,7 @@ final class DeleteUser implements RegistersAbility {
 
 		// Additional check: cannot delete users with higher capabilities
 		$target_user = \get_user_by( 'ID', $user_id );
-		if ( $target_user && ! \current_user_can( 'delete_user', $user_id ) ) {
-			return false;
-		}
-
-		return true;
+		return ! $target_user || \current_user_can( 'delete_user', $user_id );
 	}
 
 	/**
@@ -97,7 +96,7 @@ final class DeleteUser implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$user_id = (int) $input['id'];
+		$user_id         = (int) $input['id'];
 		$current_user_id = \get_current_user_id();
 
 		// Prevent self-deletion
@@ -122,13 +121,13 @@ final class DeleteUser implements RegistersAbility {
 		}
 
 		// Handle content reassignment
-		$reassign_to = null;
+		$reassign_to          = null;
 		$force_delete_content = ! empty( $input['force_delete_content'] );
-		$content_action = 'deleted';
+		$content_action       = 'deleted';
 
 		if ( ! $force_delete_content && ! empty( $input['reassign_to'] ) ) {
 			$reassign_to = (int) $input['reassign_to'];
-			
+
 			// Validate reassign target user exists
 			$reassign_user = \get_user_by( 'ID', $reassign_to );
 			if ( ! $reassign_user ) {
@@ -139,7 +138,7 @@ final class DeleteUser implements RegistersAbility {
 					),
 				);
 			}
-			
+
 			// Cannot reassign to the user being deleted
 			if ( $reassign_to === $user_id ) {
 				return array(
@@ -149,16 +148,18 @@ final class DeleteUser implements RegistersAbility {
 					),
 				);
 			}
-			
+
 			$content_action = 'reassigned';
 		}
 
 		// Check if user has any content that would be affected
-		$post_count = \count_user_posts( $user_id );
-		$comment_count = \get_comments( array(
-			'user_id' => $user_id,
-			'count'   => true,
-		) );
+		$post_count    = \count_user_posts( $user_id );
+		$comment_count = \get_comments(
+			array(
+				'user_id' => $user_id,
+				'count'   => true,
+			)
+		);
 
 		// Perform the deletion
 		$deleted = \wp_delete_user( $user_id, $reassign_to );
@@ -174,11 +175,11 @@ final class DeleteUser implements RegistersAbility {
 
 		// Build response message
 		$message = "User '{$user->user_login}' deleted successfully.";
-		
+
 		if ( $post_count > 0 || $comment_count > 0 ) {
 			if ( $content_action === 'reassigned' ) {
 				$reassign_user_login = $reassign_user->user_login;
-				$message .= " Content ({$post_count} posts, {$comment_count} comments) reassigned to '{$reassign_user_login}'.";
+				$message            .= " Content ({$post_count} posts, {$comment_count} comments) reassigned to '{$reassign_user_login}'.";
 			} else {
 				$message .= " Associated content ({$post_count} posts, {$comment_count} comments) was deleted.";
 			}

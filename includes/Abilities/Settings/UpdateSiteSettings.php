@@ -13,11 +13,12 @@ final class UpdateSiteSettings implements RegistersAbility {
 			array(
 				'label'               => 'Update Site Settings',
 				'description'         => 'Update WordPress site settings. Only allows updating safe, commonly modified settings to prevent site breakage.',
+				'category'            => 'settings',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'required'   => array( 'settings' ),
 					'properties' => array(
-						'settings' => array(
+						'settings'      => array(
 							'type'                 => 'object',
 							'description'          => 'Settings to update, organized by category or as flat key-value pairs.',
 							'additionalProperties' => true,
@@ -33,7 +34,7 @@ final class UpdateSiteSettings implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'updated_settings' ),
 					'properties' => array(
-						'updated_settings' => array(
+						'updated_settings'  => array(
 							'type'        => 'array',
 							'description' => 'List of setting keys that were successfully updated.',
 							'items'       => array( 'type' => 'string' ),
@@ -53,9 +54,12 @@ final class UpdateSiteSettings implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'settings',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'settings', 'configuration' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,

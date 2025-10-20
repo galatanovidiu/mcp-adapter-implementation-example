@@ -16,7 +16,7 @@ final class GetMenuLocations implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'include_unassigned' => array(
+						'include_unassigned'   => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include unassigned locations. Default: true.',
 							'default'     => true,
@@ -32,7 +32,7 @@ final class GetMenuLocations implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'locations', 'total_locations' ),
 					'properties' => array(
-						'locations' => array(
+						'locations'        => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -55,20 +55,23 @@ final class GetMenuLocations implements RegistersAbility {
 								),
 							),
 						),
-						'assignments' => array(
+						'assignments'      => array(
 							'type'                 => 'object',
 							'additionalProperties' => array( 'type' => 'integer' ),
 						),
-						'total_locations'   => array( 'type' => 'integer' ),
-						'assigned_count'    => array( 'type' => 'integer' ),
-						'unassigned_count'  => array( 'type' => 'integer' ),
+						'total_locations'  => array( 'type' => 'integer' ),
+						'assigned_count'   => array( 'type' => 'integer' ),
+						'unassigned_count' => array( 'type' => 'integer' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'appearance',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'appearance', 'navigation' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -99,25 +102,25 @@ final class GetMenuLocations implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$include_unassigned = (bool) ( $input['include_unassigned'] ?? true );
+		$include_unassigned   = (bool) ( $input['include_unassigned'] ?? true );
 		$include_menu_details = (bool) ( $input['include_menu_details'] ?? true );
 
 		// Get registered menu locations
 		$registered_locations = \get_registered_nav_menus();
-		$assigned_locations = \get_nav_menu_locations();
+		$assigned_locations   = \get_nav_menu_locations();
 
-		$locations_data = array();
-		$assigned_count = 0;
+		$locations_data   = array();
+		$assigned_count   = 0;
 		$unassigned_count = 0;
 
 		foreach ( $registered_locations as $location => $name ) {
 			$is_assigned = isset( $assigned_locations[ $location ] ) && $assigned_locations[ $location ] > 0;
-			$menu_id = $is_assigned ? (int) $assigned_locations[ $location ] : 0;
+			$menu_id     = $is_assigned ? (int) $assigned_locations[ $location ] : 0;
 
 			if ( $is_assigned ) {
-				$assigned_count++;
+				++$assigned_count;
 			} else {
-				$unassigned_count++;
+				++$unassigned_count;
 				if ( ! $include_unassigned ) {
 					continue;
 				}

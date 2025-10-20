@@ -13,30 +13,30 @@ class ListProductCategories implements RegistersAbility {
 				'label'               => 'List Product Categories',
 				'description'         => 'List WooCommerce product categories with hierarchy, product counts, and filtering options.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'limit' => array(
+					'type'                 => 'object',
+					'properties'           => array(
+						'limit'             => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of categories to return.',
 							'default'     => 50,
 							'minimum'     => 1,
 							'maximum'     => 200,
 						),
-						'offset' => array(
+						'offset'            => array(
 							'type'        => 'integer',
 							'description' => 'Number of categories to skip.',
 							'default'     => 0,
 							'minimum'     => 0,
 						),
-						'search' => array(
+						'search'            => array(
 							'type'        => 'string',
 							'description' => 'Search categories by name or description.',
 						),
-						'parent' => array(
+						'parent'            => array(
 							'type'        => 'integer',
 							'description' => 'Filter by parent category ID (0 for top-level).',
 						),
-						'hide_empty' => array(
+						'hide_empty'        => array(
 							'type'        => 'boolean',
 							'description' => 'Hide categories with no products.',
 							'default'     => false,
@@ -46,13 +46,13 @@ class ListProductCategories implements RegistersAbility {
 							'description' => 'Include hierarchical structure with children.',
 							'default'     => true,
 						),
-						'orderby' => array(
+						'orderby'           => array(
 							'type'        => 'string',
 							'description' => 'Sort categories by field.',
 							'enum'        => array( 'name', 'count', 'term_id', 'slug', 'term_group' ),
 							'default'     => 'name',
 						),
-						'order' => array(
+						'order'             => array(
 							'type'        => 'string',
 							'description' => 'Sort order.',
 							'enum'        => array( 'asc', 'desc' ),
@@ -64,7 +64,7 @@ class ListProductCategories implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'categories' => array(
+						'categories'      => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -84,7 +84,7 @@ class ListProductCategories implements RegistersAbility {
 								),
 							),
 						),
-						'hierarchy' => array(
+						'hierarchy'       => array(
 							'type'       => 'object',
 							'properties' => array(
 								'total_categories' => array( 'type' => 'integer' ),
@@ -93,7 +93,7 @@ class ListProductCategories implements RegistersAbility {
 								'max_depth'        => array( 'type' => 'integer' ),
 							),
 						),
-						'pagination' => array(
+						'pagination'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'total'        => array( 'type' => 'integer' ),
@@ -105,14 +105,17 @@ class ListProductCategories implements RegistersAbility {
 							),
 						),
 						'filters_applied' => array( 'type' => 'object' ),
-						'message' => array( 'type' => 'string' ),
+						'message'         => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'catalog' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -142,14 +145,14 @@ class ListProductCategories implements RegistersAbility {
 			);
 		}
 
-		$limit = $input['limit'] ?? 50;
-		$offset = $input['offset'] ?? 0;
-		$search = $input['search'] ?? '';
-		$parent = $input['parent'] ?? null;
-		$hide_empty = $input['hide_empty'] ?? false;
+		$limit             = $input['limit'] ?? 50;
+		$offset            = $input['offset'] ?? 0;
+		$search            = $input['search'] ?? '';
+		$parent            = $input['parent'] ?? null;
+		$hide_empty        = $input['hide_empty'] ?? false;
 		$include_hierarchy = $input['include_hierarchy'] ?? true;
-		$orderby = $input['orderby'] ?? 'name';
-		$order = $input['order'] ?? 'asc';
+		$orderby           = $input['orderby'] ?? 'name';
+		$order             = $input['order'] ?? 'asc';
 
 		// Build query args
 		$args = array(
@@ -194,11 +197,11 @@ class ListProductCategories implements RegistersAbility {
 		$total_args = $args;
 		unset( $total_args['number'], $total_args['offset'] );
 		$all_categories = get_terms( $total_args );
-		$total = is_wp_error( $all_categories ) ? 0 : count( $all_categories );
+		$total          = is_wp_error( $all_categories ) ? 0 : count( $all_categories );
 
 		// Calculate pagination
 		$current_page = floor( $offset / $limit ) + 1;
-		$total_pages = ceil( $total / $limit );
+		$total_pages  = ceil( $total / $limit );
 
 		$pagination = array(
 			'total'        => $total,
@@ -228,10 +231,10 @@ class ListProductCategories implements RegistersAbility {
 	}
 
 	private static function format_category( \WP_Term $category, bool $include_hierarchy ): array {
-		$image_data = array();
+		$image_data   = array();
 		$thumbnail_id = get_term_meta( $category->term_id, 'thumbnail_id', true );
 		if ( $thumbnail_id ) {
-			$image = wp_get_attachment_image_src( $thumbnail_id, 'full' );
+			$image     = wp_get_attachment_image_src( $thumbnail_id, 'full' );
 			$thumbnail = wp_get_attachment_image_src( $thumbnail_id, 'thumbnail' );
 			if ( $image ) {
 				$image_data = array(
@@ -259,20 +262,22 @@ class ListProductCategories implements RegistersAbility {
 		// Add hierarchy information if requested
 		if ( $include_hierarchy ) {
 			// Get children
-			$children = get_terms( array(
-				'taxonomy'   => 'product_cat',
-				'parent'     => $category->term_id,
-				'hide_empty' => false,
-				'fields'     => 'ids',
-			) );
+			$children = get_terms(
+				array(
+					'taxonomy'   => 'product_cat',
+					'parent'     => $category->term_id,
+					'hide_empty' => false,
+					'fields'     => 'ids',
+				)
+			);
 
 			$data['children'] = is_wp_error( $children ) ? array() : $children;
 
 			// Get ancestors
-			$ancestors = get_ancestors( $category->term_id, 'product_cat' );
+			$ancestors         = get_ancestors( $category->term_id, 'product_cat' );
 			$data['ancestors'] = array_reverse( $ancestors );
 		} else {
-			$data['children'] = array();
+			$data['children']  = array();
 			$data['ancestors'] = array();
 		}
 
@@ -281,11 +286,13 @@ class ListProductCategories implements RegistersAbility {
 
 	private static function get_hierarchy_info(): array {
 		// Get all categories
-		$all_categories = get_terms( array(
-			'taxonomy'   => 'product_cat',
-			'hide_empty' => false,
-			'fields'     => 'all',
-		) );
+		$all_categories = get_terms(
+			array(
+				'taxonomy'   => 'product_cat',
+				'hide_empty' => false,
+				'fields'     => 'all',
+			)
+		);
 
 		if ( is_wp_error( $all_categories ) ) {
 			return array(
@@ -297,29 +304,31 @@ class ListProductCategories implements RegistersAbility {
 		}
 
 		$total_categories = count( $all_categories );
-		$top_level = 0;
-		$with_children = 0;
-		$max_depth = 0;
+		$top_level        = 0;
+		$with_children    = 0;
+		$max_depth        = 0;
 
 		foreach ( $all_categories as $category ) {
-			if ( $category->parent == 0 ) {
-				$top_level++;
+			if ( $category->parent === 0 ) {
+				++$top_level;
 			}
 
 			// Check if has children
-			$children = get_terms( array(
-				'taxonomy' => 'product_cat',
-				'parent'   => $category->term_id,
-				'fields'   => 'ids',
-			) );
+			$children = get_terms(
+				array(
+					'taxonomy' => 'product_cat',
+					'parent'   => $category->term_id,
+					'fields'   => 'ids',
+				)
+			);
 
 			if ( ! is_wp_error( $children ) && ! empty( $children ) ) {
-				$with_children++;
+				++$with_children;
 			}
 
 			// Calculate depth
 			$ancestors = get_ancestors( $category->term_id, 'product_cat' );
-			$depth = count( $ancestors ) + 1;
+			$depth     = count( $ancestors ) + 1;
 			$max_depth = max( $max_depth, $depth );
 		}
 

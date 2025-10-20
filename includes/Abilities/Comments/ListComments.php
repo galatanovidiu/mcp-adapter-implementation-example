@@ -16,17 +16,17 @@ final class ListComments implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'post_id' => array(
+						'post_id'      => array(
 							'type'        => 'integer',
 							'description' => 'Filter comments by post ID.',
 						),
-						'status' => array(
+						'status'       => array(
 							'type'        => 'string',
 							'description' => 'Filter by comment status (approve, hold, spam, trash, all). Default: approve.',
 							'enum'        => array( 'approve', 'hold', 'spam', 'trash', 'all' ),
 							'default'     => 'approve',
 						),
-						'type' => array(
+						'type'         => array(
 							'type'        => 'string',
 							'description' => 'Filter by comment type (comment, pingback, trackback, all). Default: comment.',
 							'default'     => 'comment',
@@ -35,48 +35,54 @@ final class ListComments implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Filter by author email address.',
 						),
-						'author_name' => array(
+						'author_name'  => array(
 							'type'        => 'string',
 							'description' => 'Filter by author name.',
 						),
-						'user_id' => array(
+						'user_id'      => array(
 							'type'        => 'integer',
 							'description' => 'Filter by user ID (for registered users).',
 						),
-						'parent' => array(
+						'parent'       => array(
 							'type'        => 'integer',
 							'description' => 'Filter by parent comment ID.',
 						),
-						'search' => array(
+						'search'       => array(
 							'type'        => 'string',
 							'description' => 'Search term to look for in comment content.',
 						),
-						'date_query' => array(
+						'date_query'   => array(
 							'type'       => 'object',
 							'properties' => array(
-								'after'  => array( 'type' => 'string', 'description' => 'Date after (YYYY-MM-DD)' ),
-								'before' => array( 'type' => 'string', 'description' => 'Date before (YYYY-MM-DD)' ),
+								'after'  => array(
+									'type'        => 'string',
+									'description' => 'Date after (YYYY-MM-DD)',
+								),
+								'before' => array(
+									'type'        => 'string',
+									'description' => 'Date before (YYYY-MM-DD)',
+								),
 							),
 						),
-						'orderby' => array(
+						'orderby'      => array(
 							'type'        => 'string',
 							'description' => 'Order by field (comment_date, comment_date_gmt, comment_ID, comment_author, comment_post_ID). Default: comment_date_gmt.',
 							'default'     => 'comment_date_gmt',
 						),
-						'order' => array(
+						'order'        => array(
 							'type'        => 'string',
 							'description' => 'Order direction (ASC, DESC). Default: DESC.',
 							'enum'        => array( 'ASC', 'DESC' ),
 							'default'     => 'DESC',
 						),
-						'number' => array(
+						'number'       => array(
 							'type'        => 'integer',
 							'description' => 'Number of comments to retrieve. Default: 20.',
 							'default'     => 20,
 							'minimum'     => 1,
 							'maximum'     => 100,
 						),
-						'offset' => array(
+						'offset'       => array(
 							'type'        => 'integer',
 							'description' => 'Number of comments to skip. Default: 0.',
 							'default'     => 0,
@@ -92,7 +98,7 @@ final class ListComments implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'comments', 'total_count' ),
 					'properties' => array(
-						'comments' => array(
+						'comments'       => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -130,15 +136,18 @@ final class ListComments implements RegistersAbility {
 								),
 							),
 						),
-						'total_count' => array( 'type' => 'integer' ),
+						'total_count'    => array( 'type' => 'integer' ),
 						'found_comments' => array( 'type' => 'integer' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'engagement', 'comments' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -169,19 +178,19 @@ final class ListComments implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$post_id = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
-		$status = $input['status'] ?? 'all';
-		$type = $input['type'] ?? 'comment';
+		$post_id      = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+		$status       = $input['status'] ?? 'all';
+		$type         = $input['type'] ?? 'comment';
 		$author_email = $input['author_email'] ?? '';
-		$author_name = $input['author_name'] ?? '';
-		$user_id = isset( $input['user_id'] ) ? (int) $input['user_id'] : 0;
-		$parent = isset( $input['parent'] ) ? (int) $input['parent'] : 0;
-		$search = $input['search'] ?? '';
-		$date_query = $input['date_query'] ?? array();
-		$orderby = $input['orderby'] ?? 'comment_date_gmt';
-		$order = $input['order'] ?? 'DESC';
-		$number = (int) ( $input['number'] ?? 20 );
-		$offset = (int) ( $input['offset'] ?? 0 );
+		$author_name  = $input['author_name'] ?? '';
+		$user_id      = isset( $input['user_id'] ) ? (int) $input['user_id'] : 0;
+		$parent       = isset( $input['parent'] ) ? (int) $input['parent'] : 0;
+		$search       = $input['search'] ?? '';
+		$date_query   = $input['date_query'] ?? array();
+		$orderby      = $input['orderby'] ?? 'comment_date_gmt';
+		$order        = $input['order'] ?? 'DESC';
+		$number       = (int) ( $input['number'] ?? 20 );
+		$offset       = (int) ( $input['offset'] ?? 0 );
 		$include_meta = (bool) ( $input['include_meta'] ?? false );
 
 		// Build query arguments
@@ -200,7 +209,7 @@ final class ListComments implements RegistersAbility {
 		// Filter by status
 		if ( $status !== 'all' ) {
 			// Map status values to WordPress query format
-			$status_map = array(
+			$status_map     = array(
 				'approve' => 'approved',
 				'hold'    => 'hold',
 				'spam'    => 'spam',
@@ -255,16 +264,16 @@ final class ListComments implements RegistersAbility {
 
 		// Get comments using get_comments function
 		$comments = \get_comments( $args );
-		
+
 		// Get total count with a separate query
-		$count_args = $args;
+		$count_args          = $args;
 		$count_args['count'] = true;
 		unset( $count_args['number'], $count_args['offset'] );
 		$total_comments = \get_comments( $count_args );
-		
+
 		// Ensure total_comments is an integer
 		$total_comments = is_numeric( $total_comments ) ? (int) $total_comments : count( $comments );
-		
+
 		// Debug: Check what we got
 		if ( empty( $comments ) && $total_comments > 0 ) {
 			// Try a simple query without filters
@@ -278,58 +287,60 @@ final class ListComments implements RegistersAbility {
 
 		if ( ! empty( $comments ) && is_array( $comments ) ) {
 			foreach ( $comments as $comment ) {
-			// Get post information
-			$post = \get_post( (int) $comment->comment_post_ID );
-			$post_title = $post ? $post->post_title : '';
-			$post_url = $post ? \get_permalink( $post->ID ) : '';
+				// Get post information
+				$post       = \get_post( (int) $comment->comment_post_ID );
+				$post_title = $post ? $post->post_title : '';
+				$post_url   = $post ? \get_permalink( $post->ID ) : '';
 
-			// Get comment URL
-			$comment_url = \get_comment_link( $comment );
+				// Get comment URL
+				$comment_url = \get_comment_link( $comment );
 
-			// Count replies
-			$reply_count = \get_comments( array(
-				'parent' => $comment->comment_ID,
-				'count'  => true,
-			) );
+				// Count replies
+				$reply_count = \get_comments(
+					array(
+						'parent' => $comment->comment_ID,
+						'count'  => true,
+					)
+				);
 
-			$comment_data = array(
-				'comment_ID'           => (int) $comment->comment_ID,
-				'comment_post_ID'      => (int) $comment->comment_post_ID,
-				'comment_author'       => $comment->comment_author,
-				'comment_author_email' => $comment->comment_author_email,
-				'comment_author_url'   => $comment->comment_author_url,
-				'comment_author_IP'    => $comment->comment_author_IP,
-				'comment_date'         => $comment->comment_date,
-				'comment_date_gmt'     => $comment->comment_date_gmt,
-				'comment_content'      => $comment->comment_content,
-				'comment_karma'        => (int) $comment->comment_karma,
-				'comment_approved'     => $comment->comment_approved,
-				'comment_agent'        => $comment->comment_agent,
-				'comment_type'         => $comment->comment_type,
-				'comment_parent'       => (int) $comment->comment_parent,
-				'user_id'              => (int) $comment->user_id,
-				'post_title'           => $post_title,
-				'post_url'             => $post_url,
-				'comment_url'          => $comment_url,
-				'reply_count'          => (int) $reply_count,
-			);
+				$comment_data = array(
+					'comment_ID'           => (int) $comment->comment_ID,
+					'comment_post_ID'      => (int) $comment->comment_post_ID,
+					'comment_author'       => $comment->comment_author,
+					'comment_author_email' => $comment->comment_author_email,
+					'comment_author_url'   => $comment->comment_author_url,
+					'comment_author_IP'    => $comment->comment_author_IP,
+					'comment_date'         => $comment->comment_date,
+					'comment_date_gmt'     => $comment->comment_date_gmt,
+					'comment_content'      => $comment->comment_content,
+					'comment_karma'        => (int) $comment->comment_karma,
+					'comment_approved'     => $comment->comment_approved,
+					'comment_agent'        => $comment->comment_agent,
+					'comment_type'         => $comment->comment_type,
+					'comment_parent'       => (int) $comment->comment_parent,
+					'user_id'              => (int) $comment->user_id,
+					'post_title'           => $post_title,
+					'post_url'             => $post_url,
+					'comment_url'          => $comment_url,
+					'reply_count'          => (int) $reply_count,
+				);
 
-			// Include metadata if requested
-			if ( $include_meta ) {
-				$meta = \get_comment_meta( (int) $comment->comment_ID );
-				$meta_data = array();
-				foreach ( $meta as $key => $values ) {
-					foreach ( $values as $value ) {
-						$meta_data[] = array(
-							'key'   => $key,
-							'value' => $value,
-						);
+				// Include metadata if requested
+				if ( $include_meta ) {
+					$meta      = \get_comment_meta( (int) $comment->comment_ID );
+					$meta_data = array();
+					foreach ( $meta as $key => $values ) {
+						foreach ( $values as $value ) {
+							$meta_data[] = array(
+								'key'   => $key,
+								'value' => $value,
+							);
+						}
 					}
+					$comment_data['meta'] = $meta_data;
+				} else {
+					$comment_data['meta'] = array();
 				}
-				$comment_data['meta'] = $meta_data;
-			} else {
-				$comment_data['meta'] = array();
-			}
 
 				$comments_data[] = $comment_data;
 			}

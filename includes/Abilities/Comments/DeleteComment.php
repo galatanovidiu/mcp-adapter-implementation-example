@@ -17,7 +17,7 @@ final class DeleteComment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'comment_id' ),
 					'properties' => array(
-						'comment_id' => array(
+						'comment_id'   => array(
 							'type'        => 'integer',
 							'description' => 'The comment ID to delete.',
 						),
@@ -50,8 +50,12 @@ final class DeleteComment implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -73,11 +77,11 @@ final class DeleteComment implements RegistersAbility {
 	 */
 	public static function check_permission( array $input ): bool {
 		$comment_id = (int) ( $input['comment_id'] ?? 0 );
-		
+
 		if ( $comment_id > 0 ) {
 			return \current_user_can( 'delete_comment', $comment_id );
 		}
-		
+
 		return \current_user_can( 'moderate_comments' );
 	}
 
@@ -88,7 +92,7 @@ final class DeleteComment implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$comment_id = (int) $input['comment_id'];
+		$comment_id   = (int) $input['comment_id'];
 		$force_delete = (bool) ( $input['force_delete'] ?? false );
 
 		// Get the comment before deletion
@@ -127,8 +131,8 @@ final class DeleteComment implements RegistersAbility {
 			);
 		}
 
-		$message = $force_delete 
-			? 'Comment permanently deleted successfully.' 
+		$message = $force_delete
+			? 'Comment permanently deleted successfully.'
 			: 'Comment moved to trash successfully.';
 
 		return array(

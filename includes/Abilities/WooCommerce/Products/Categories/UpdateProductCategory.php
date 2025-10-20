@@ -13,27 +13,27 @@ class UpdateProductCategory implements RegistersAbility {
 				'label'               => 'Update Product Category',
 				'description'         => 'Update an existing WooCommerce product category with new information and settings.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'category_id' ),
-					'properties' => array(
-						'category_id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'category_id' ),
+					'properties'           => array(
+						'category_id'  => array(
 							'type'        => 'integer',
 							'description' => 'Category ID to update.',
 							'minimum'     => 1,
 						),
-						'name' => array(
+						'name'         => array(
 							'type'        => 'string',
 							'description' => 'Category name.',
 						),
-						'slug' => array(
+						'slug'         => array(
 							'type'        => 'string',
 							'description' => 'Category slug.',
 						),
-						'description' => array(
+						'description'  => array(
 							'type'        => 'string',
 							'description' => 'Category description.',
 						),
-						'parent' => array(
+						'parent'       => array(
 							'type'        => 'integer',
 							'description' => 'Parent category ID (0 for top-level).',
 						),
@@ -42,11 +42,11 @@ class UpdateProductCategory implements RegistersAbility {
 							'description' => 'Category display type.',
 							'enum'        => array( 'default', 'products', 'subcategories', 'both' ),
 						),
-						'image_id' => array(
+						'image_id'     => array(
 							'type'        => 'integer',
 							'description' => 'Category image attachment ID (0 to remove).',
 						),
-						'menu_order' => array(
+						'menu_order'   => array(
 							'type'        => 'integer',
 							'description' => 'Menu order for category sorting.',
 						),
@@ -56,8 +56,8 @@ class UpdateProductCategory implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'category' => array(
+						'success'      => array( 'type' => 'boolean' ),
+						'category'     => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'          => array( 'type' => 'integer' ),
@@ -72,28 +72,32 @@ class UpdateProductCategory implements RegistersAbility {
 							),
 						),
 						'changes_made' => array( 'type' => 'array' ),
-						'old_parent' => array(
+						'old_parent'   => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'   => array( 'type' => 'integer' ),
 								'name' => array( 'type' => 'string' ),
 							),
 						),
-						'new_parent' => array(
+						'new_parent'   => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'   => array( 'type' => 'integer' ),
 								'name' => array( 'type' => 'string' ),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'      => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'catalog' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'categories'  => array( 'ecommerce', 'catalog' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -139,7 +143,7 @@ class UpdateProductCategory implements RegistersAbility {
 		}
 
 		$changes_made = array();
-		$update_args = array();
+		$update_args  = array();
 
 		// Store old parent info
 		$old_parent = array();
@@ -156,17 +160,17 @@ class UpdateProductCategory implements RegistersAbility {
 		// Update basic fields
 		if ( isset( $input['name'] ) ) {
 			$update_args['name'] = $input['name'];
-			$changes_made[] = 'name';
+			$changes_made[]      = 'name';
 		}
 
 		if ( isset( $input['slug'] ) ) {
 			$update_args['slug'] = $input['slug'];
-			$changes_made[] = 'slug';
+			$changes_made[]      = 'slug';
 		}
 
 		if ( isset( $input['description'] ) ) {
 			$update_args['description'] = $input['description'];
-			$changes_made[] = 'description';
+			$changes_made[]             = 'description';
 		}
 
 		if ( isset( $input['parent'] ) ) {
@@ -211,7 +215,7 @@ class UpdateProductCategory implements RegistersAbility {
 			}
 
 			$update_args['parent'] = $input['parent'];
-			$changes_made[] = 'parent';
+			$changes_made[]        = 'parent';
 		}
 
 		try {
@@ -288,8 +292,7 @@ class UpdateProductCategory implements RegistersAbility {
 					! empty( $changes_made ) ? implode( ', ', $changes_made ) : 'none'
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'      => false,
 				'category'     => array(),

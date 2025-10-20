@@ -17,11 +17,11 @@ final class GetComment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'comment_id' ),
 					'properties' => array(
-						'comment_id' => array(
+						'comment_id'      => array(
 							'type'        => 'integer',
 							'description' => 'The comment ID to retrieve.',
 						),
-						'include_meta' => array(
+						'include_meta'    => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include comment metadata. Default: true.',
 							'default'     => true,
@@ -91,10 +91,10 @@ final class GetComment implements RegistersAbility {
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'comment_ID'      => array( 'type' => 'integer' ),
-									'comment_author'  => array( 'type' => 'string' ),
-									'comment_content' => array( 'type' => 'string' ),
-									'comment_date'    => array( 'type' => 'string' ),
+									'comment_ID'       => array( 'type' => 'integer' ),
+									'comment_author'   => array( 'type' => 'string' ),
+									'comment_content'  => array( 'type' => 'string' ),
+									'comment_date'     => array( 'type' => 'string' ),
 									'comment_approved' => array( 'type' => 'string' ),
 								),
 							),
@@ -103,9 +103,12 @@ final class GetComment implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'engagement', 'comments' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -136,8 +139,8 @@ final class GetComment implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$comment_id = (int) $input['comment_id'];
-		$include_meta = (bool) ( $input['include_meta'] ?? true );
+		$comment_id      = (int) $input['comment_id'];
+		$include_meta    = (bool) ( $input['include_meta'] ?? true );
 		$include_replies = (bool) ( $input['include_replies'] ?? false );
 
 		// Get the comment
@@ -153,7 +156,7 @@ final class GetComment implements RegistersAbility {
 		}
 
 		// Get post information
-		$post = \get_post( (int) $comment->comment_post_ID );
+		$post      = \get_post( (int) $comment->comment_post_ID );
 		$post_info = array(
 			'post_id'    => (int) $comment->comment_post_ID,
 			'post_title' => $post ? $post->post_title : '',
@@ -172,24 +175,26 @@ final class GetComment implements RegistersAbility {
 		if ( $comment->user_id ) {
 			$user = \get_user_by( 'id', $comment->user_id );
 			if ( $user ) {
-				$author_info['user_login'] = $user->user_login;
+				$author_info['user_login']   = $user->user_login;
 				$author_info['display_name'] = $user->display_name;
 			}
 		}
 
 		// Get URLs
 		$comment_url = \get_comment_link( $comment );
-		$edit_url = \admin_url( 'comment.php?action=editcomment&c=' . $comment->comment_ID );
+		$edit_url    = \admin_url( 'comment.php?action=editcomment&c=' . $comment->comment_ID );
 
 		// Count replies
-		$reply_count = \get_comments( array(
-			'parent' => $comment->comment_ID,
-			'count'  => true,
-		) );
+		$reply_count = \get_comments(
+			array(
+				'parent' => $comment->comment_ID,
+				'count'  => true,
+			)
+		);
 
 		// Check permissions
-		$can_edit = \current_user_can( 'edit_comment', $comment->comment_ID );
-		$can_delete = \current_user_can( 'delete_comment', $comment->comment_ID );
+		$can_edit    = \current_user_can( 'edit_comment', $comment->comment_ID );
+		$can_delete  = \current_user_can( 'delete_comment', $comment->comment_ID );
 		$can_approve = \current_user_can( 'moderate_comments' );
 
 		$comment_data = array(
@@ -220,7 +225,7 @@ final class GetComment implements RegistersAbility {
 
 		// Include metadata if requested
 		if ( $include_meta ) {
-			$meta = \get_comment_meta( (int) $comment->comment_ID );
+			$meta      = \get_comment_meta( (int) $comment->comment_ID );
 			$meta_data = array();
 			foreach ( $meta as $key => $values ) {
 				foreach ( $values as $value ) {
@@ -237,11 +242,13 @@ final class GetComment implements RegistersAbility {
 
 		// Include replies if requested
 		if ( $include_replies ) {
-			$replies = \get_comments( array(
-				'parent'  => $comment->comment_ID,
-				'orderby' => 'comment_date',
-				'order'   => 'ASC',
-			) );
+			$replies = \get_comments(
+				array(
+					'parent'  => $comment->comment_ID,
+					'orderby' => 'comment_date',
+					'order'   => 'ASC',
+				)
+			);
 
 			$replies_data = array();
 			foreach ( $replies as $reply ) {

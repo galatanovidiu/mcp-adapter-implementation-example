@@ -13,32 +13,32 @@ class CreateProductVariation implements RegistersAbility {
 				'label'               => 'Create Product Variation',
 				'description'         => 'Create a new variation for a variable WooCommerce product with specific attributes and pricing.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'product_id', 'attributes' ),
-					'properties' => array(
-						'product_id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'product_id', 'attributes' ),
+					'properties'           => array(
+						'product_id'     => array(
 							'type'        => 'integer',
 							'description' => 'Variable product ID to create variation for.',
 							'minimum'     => 1,
 						),
-						'attributes' => array(
-							'type'        => 'object',
-							'description' => 'Variation attributes (e.g., {"color": "red", "size": "large"}).',
+						'attributes'     => array(
+							'type'                 => 'object',
+							'description'          => 'Variation attributes (e.g., {"color": "red", "size": "large"}).',
 							'additionalProperties' => array( 'type' => 'string' ),
 						),
-						'sku' => array(
+						'sku'            => array(
 							'type'        => 'string',
 							'description' => 'Variation SKU (must be unique).',
 						),
-						'regular_price' => array(
+						'regular_price'  => array(
 							'type'        => 'string',
 							'description' => 'Variation regular price.',
 						),
-						'sale_price' => array(
+						'sale_price'     => array(
 							'type'        => 'string',
 							'description' => 'Variation sale price.',
 						),
-						'manage_stock' => array(
+						'manage_stock'   => array(
 							'type'        => 'boolean',
 							'description' => 'Enable stock management for this variation.',
 							'default'     => false,
@@ -48,36 +48,36 @@ class CreateProductVariation implements RegistersAbility {
 							'description' => 'Stock quantity (if manage_stock is true).',
 							'minimum'     => 0,
 						),
-						'stock_status' => array(
+						'stock_status'   => array(
 							'type'        => 'string',
 							'description' => 'Stock status.',
 							'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 							'default'     => 'instock',
 						),
-						'weight' => array(
+						'weight'         => array(
 							'type'        => 'string',
 							'description' => 'Variation weight.',
 						),
-						'dimensions' => array(
-							'type'       => 'object',
+						'dimensions'     => array(
+							'type'        => 'object',
 							'description' => 'Variation dimensions.',
-							'properties' => array(
+							'properties'  => array(
 								'length' => array( 'type' => 'string' ),
 								'width'  => array( 'type' => 'string' ),
 								'height' => array( 'type' => 'string' ),
 							),
 						),
-						'image_id' => array(
+						'image_id'       => array(
 							'type'        => 'integer',
 							'description' => 'Variation image attachment ID.',
 						),
-						'status' => array(
+						'status'         => array(
 							'type'        => 'string',
 							'description' => 'Variation status.',
 							'enum'        => array( 'publish', 'draft', 'private' ),
 							'default'     => 'publish',
 						),
-						'menu_order' => array(
+						'menu_order'     => array(
 							'type'        => 'integer',
 							'description' => 'Menu order for variation sorting.',
 							'default'     => 0,
@@ -88,7 +88,7 @@ class CreateProductVariation implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
+						'success'        => array( 'type' => 'boolean' ),
 						'parent_product' => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -97,7 +97,7 @@ class CreateProductVariation implements RegistersAbility {
 								'type' => array( 'type' => 'string' ),
 							),
 						),
-						'variation' => array(
+						'variation'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'             => array( 'type' => 'integer' ),
@@ -112,14 +112,17 @@ class CreateProductVariation implements RegistersAbility {
 								'date_created'   => array( 'type' => 'string' ),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'        => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'variations' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -183,7 +186,7 @@ class CreateProductVariation implements RegistersAbility {
 			// Set attributes
 			$formatted_attributes = array();
 			foreach ( $attributes as $attr_name => $attr_value ) {
-				$attr_key = 'attribute_' . sanitize_title( $attr_name );
+				$attr_key                          = 'attribute_' . sanitize_title( $attr_name );
 				$formatted_attributes[ $attr_key ] = $attr_value;
 			}
 			$variation->set_attributes( $formatted_attributes );
@@ -295,11 +298,18 @@ class CreateProductVariation implements RegistersAbility {
 				'message'        => sprintf(
 					'Successfully created variation for "%s" with attributes: %s',
 					$product->get_name(),
-					implode( ', ', array_map( function( $k, $v ) { return "$k: $v"; }, array_keys( $attributes ), $attributes ) )
+					implode(
+						', ',
+						array_map(
+							static function ( $k, $v ) {
+								return "$k: $v"; },
+							array_keys( $attributes ),
+							$attributes
+						)
+					)
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'        => false,
 				'parent_product' => array(

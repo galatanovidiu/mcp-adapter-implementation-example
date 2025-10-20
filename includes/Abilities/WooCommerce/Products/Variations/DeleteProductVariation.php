@@ -13,15 +13,15 @@ class DeleteProductVariation implements RegistersAbility {
 				'label'               => 'Delete Product Variation',
 				'description'         => 'Delete a specific WooCommerce product variation. Can move to trash or permanently delete.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'variation_id' ),
-					'properties' => array(
+					'type'                 => 'object',
+					'required'             => array( 'variation_id' ),
+					'properties'           => array(
 						'variation_id' => array(
 							'type'        => 'integer',
 							'description' => 'Variation ID to delete.',
 							'minimum'     => 1,
 						),
-						'force' => array(
+						'force'        => array(
 							'type'        => 'boolean',
 							'description' => 'Force permanent deletion (skip trash).',
 							'default'     => false,
@@ -32,8 +32,8 @@ class DeleteProductVariation implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'variation' => array(
+						'success'        => array( 'type' => 'boolean' ),
+						'variation'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'         => array( 'type' => 'integer' ),
@@ -45,20 +45,23 @@ class DeleteProductVariation implements RegistersAbility {
 						'parent_product' => array(
 							'type'       => 'object',
 							'properties' => array(
-								'id'                => array( 'type' => 'integer' ),
-								'name'              => array( 'type' => 'string' ),
+								'id'                   => array( 'type' => 'integer' ),
+								'name'                 => array( 'type' => 'string' ),
 								'remaining_variations' => array( 'type' => 'integer' ),
 							),
 						),
-						'permanent' => array( 'type' => 'boolean' ),
-						'message' => array( 'type' => 'string' ),
+						'permanent'      => array( 'type' => 'boolean' ),
+						'message'        => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'variations' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.6,
@@ -90,7 +93,7 @@ class DeleteProductVariation implements RegistersAbility {
 		}
 
 		$variation_id = $input['variation_id'];
-		$force = $input['force'] ?? false;
+		$force        = $input['force'] ?? false;
 
 		$variation = wc_get_product( $variation_id );
 
@@ -113,13 +116,13 @@ class DeleteProductVariation implements RegistersAbility {
 		);
 
 		// Get parent product info
-		$parent = wc_get_product( $variation->get_parent_id() );
-		$parent_info = null;
+		$parent               = wc_get_product( $variation->get_parent_id() );
+		$parent_info          = null;
 		$remaining_variations = 0;
 
 		if ( $parent ) {
 			$remaining_variations = count( $parent->get_children() ) - 1; // Subtract the one we're deleting
-			$parent_info = array(
+			$parent_info          = array(
 				'id'                   => $parent->get_id(),
 				'name'                 => $parent->get_name(),
 				'remaining_variations' => $remaining_variations,
@@ -156,8 +159,7 @@ class DeleteProductVariation implements RegistersAbility {
 					$remaining_variations
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'        => false,
 				'variation'      => $variation_info,

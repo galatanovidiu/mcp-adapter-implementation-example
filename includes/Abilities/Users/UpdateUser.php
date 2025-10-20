@@ -17,56 +17,56 @@ final class UpdateUser implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'id' ),
 					'properties' => array(
-						'id' => array(
+						'id'                => array(
 							'type'        => 'integer',
 							'description' => 'User ID to update.',
 						),
-						'login' => array(
+						'login'             => array(
 							'type'        => 'string',
 							'description' => 'User login name (username). Note: Changing login is generally not recommended.',
 							'minLength'   => 1,
 							'maxLength'   => 60,
 						),
-						'email' => array(
+						'email'             => array(
 							'type'        => 'string',
 							'description' => 'User email address.',
 							'format'      => 'email',
 						),
-						'password' => array(
+						'password'          => array(
 							'type'        => 'string',
 							'description' => 'New password for the user.',
 							'minLength'   => 8,
 						),
-						'display_name' => array(
+						'display_name'      => array(
 							'type'        => 'string',
 							'description' => 'Display name for the user.',
 						),
-						'first_name' => array(
+						'first_name'        => array(
 							'type'        => 'string',
 							'description' => 'User first name.',
 						),
-						'last_name' => array(
+						'last_name'         => array(
 							'type'        => 'string',
 							'description' => 'User last name.',
 						),
-						'nickname' => array(
+						'nickname'          => array(
 							'type'        => 'string',
 							'description' => 'User nickname.',
 						),
-						'description' => array(
+						'description'       => array(
 							'type'        => 'string',
 							'description' => 'User biographical info.',
 						),
-						'url' => array(
+						'url'               => array(
 							'type'        => 'string',
 							'description' => 'User website URL.',
 							'format'      => 'uri',
 						),
-						'role' => array(
+						'role'              => array(
 							'type'        => 'string',
 							'description' => 'User role (administrator, editor, author, contributor, subscriber, or custom role).',
 						),
-						'meta' => array(
+						'meta'              => array(
 							'type'                 => 'object',
 							'description'          => 'User meta fields to update.',
 							'additionalProperties' => true,
@@ -92,9 +92,12 @@ final class UpdateUser implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'profiles' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -115,7 +118,7 @@ final class UpdateUser implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$user_id = (int) ( $input['id'] ?? 0 );
+		$user_id         = (int) ( $input['id'] ?? 0 );
 		$current_user_id = \get_current_user_id();
 
 		// Users can edit their own profile (with some restrictions)
@@ -151,8 +154,8 @@ final class UpdateUser implements RegistersAbility {
 			);
 		}
 
-		$userdata = array( 'ID' => $user_id );
-		$updated_fields = array();
+		$userdata         = array( 'ID' => $user_id );
+		$updated_fields   = array();
 		$password_changed = false;
 
 		// Update login (with caution)
@@ -175,7 +178,7 @@ final class UpdateUser implements RegistersAbility {
 				);
 			}
 			$userdata['user_login'] = $new_login;
-			$updated_fields[] = 'login';
+			$updated_fields[]       = 'login';
 		}
 
 		// Update email
@@ -198,14 +201,14 @@ final class UpdateUser implements RegistersAbility {
 				);
 			}
 			$userdata['user_email'] = $new_email;
-			$updated_fields[] = 'email';
+			$updated_fields[]       = 'email';
 		}
 
 		// Update password
 		if ( array_key_exists( 'password', $input ) ) {
 			$userdata['user_pass'] = (string) $input['password'];
-			$updated_fields[] = 'password';
-			$password_changed = true;
+			$updated_fields[]      = 'password';
+			$password_changed      = true;
 		}
 
 		// Update other profile fields
@@ -219,18 +222,20 @@ final class UpdateUser implements RegistersAbility {
 		);
 
 		foreach ( $profile_fields as $input_key => $user_key ) {
-			if ( array_key_exists( $input_key, $input ) ) {
-				$value = (string) $input[ $input_key ];
-				if ( $input_key === 'url' ) {
-					$value = \esc_url_raw( $value );
-				} elseif ( $input_key === 'description' ) {
-					$value = \sanitize_textarea_field( $value );
-				} else {
-					$value = \sanitize_text_field( $value );
-				}
-				$userdata[ $user_key ] = $value;
-				$updated_fields[] = $input_key;
+			if ( ! array_key_exists( $input_key, $input ) ) {
+				continue;
 			}
+
+			$value = (string) $input[ $input_key ];
+			if ( $input_key === 'url' ) {
+				$value = \esc_url_raw( $value );
+			} elseif ( $input_key === 'description' ) {
+				$value = \sanitize_textarea_field( $value );
+			} else {
+				$value = \sanitize_text_field( $value );
+			}
+			$userdata[ $user_key ] = $value;
+			$updated_fields[]      = $input_key;
 		}
 
 		// Update user data
@@ -285,8 +290,8 @@ final class UpdateUser implements RegistersAbility {
 
 		// Send notification email if password was changed
 		$send_notification = array_key_exists( 'send_notification', $input ) ? (bool) $input['send_notification'] : true;
-		$message = 'User updated successfully.';
-		
+		$message           = 'User updated successfully.';
+
 		if ( $password_changed && $send_notification ) {
 			\wp_password_change_notification( $user );
 			$message .= ' Password change notification sent.';

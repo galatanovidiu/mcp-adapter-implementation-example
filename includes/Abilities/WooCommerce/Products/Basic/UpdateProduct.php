@@ -13,85 +13,80 @@ class UpdateProduct implements RegistersAbility {
 				'label'               => 'Update WooCommerce Product',
 				'description'         => 'Update an existing WooCommerce product with new details and configuration.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'id' ),
-					'properties' => array(
-						'id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'id' ),
+					'properties'           => array(
+						'id'                 => array(
 							'type'        => 'integer',
 							'description' => 'Product ID to update.',
 							'minimum'     => 1,
 						),
-						'name' => array(
+						'name'               => array(
 							'type'        => 'string',
 							'description' => 'Product name.',
 						),
-						'status' => array(
+						'status'             => array(
 							'type'        => 'string',
 							'description' => 'Product status.',
 							'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
 						),
-						'slug' => array(
+						'slug'               => array(
 							'type'        => 'string',
 							'description' => 'Product slug.',
 						),
-						'description' => array(
+						'description'        => array(
 							'type'        => 'string',
 							'description' => 'Product description (HTML allowed).',
 						),
-						'short_description' => array(
+						'short_description'  => array(
 							'type'        => 'string',
 							'description' => 'Product short description (HTML allowed).',
 						),
-						'sku' => array(
+						'sku'                => array(
 							'type'        => 'string',
 							'description' => 'Product SKU (must be unique).',
 						),
-						'regular_price' => array(
+						'regular_price'      => array(
 							'type'        => 'string',
 							'description' => 'Product regular price.',
 						),
-						'sale_price' => array(
+						'sale_price'         => array(
 							'type'        => 'string',
 							'description' => 'Product sale price.',
 						),
-						'manage_stock' => array(
+						'manage_stock'       => array(
 							'type'        => 'boolean',
 							'description' => 'Enable stock management.',
 						),
-						'stock_quantity' => array(
+						'stock_quantity'     => array(
 							'type'        => 'integer',
 							'description' => 'Stock quantity (if manage_stock is true).',
 							'minimum'     => 0,
 						),
-						'stock_status' => array(
+						'stock_status'       => array(
 							'type'        => 'string',
 							'description' => 'Stock status.',
 							'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 						),
-						'weight' => array(
+						'weight'             => array(
 							'type'        => 'string',
 							'description' => 'Product weight.',
 						),
-						'dimensions' => array(
-							'type'       => 'object',
+						'dimensions'         => array(
+							'type'        => 'object',
 							'description' => 'Product dimensions.',
-							'properties' => array(
+							'properties'  => array(
 								'length' => array( 'type' => 'string' ),
 								'width'  => array( 'type' => 'string' ),
 								'height' => array( 'type' => 'string' ),
 							),
 						),
-						'categories' => array(
-							'type'        => 'array',
-							'description' => 'Product category IDs.',
-							'items'       => array( 'type' => 'integer' ),
-						),
-						'tags' => array(
+						'tags'               => array(
 							'type'        => 'array',
 							'description' => 'Product tag IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'featured' => array(
+						'featured'           => array(
 							'type'        => 'boolean',
 							'description' => 'Mark as featured product.',
 						),
@@ -100,47 +95,47 @@ class UpdateProduct implements RegistersAbility {
 							'description' => 'Catalog visibility.',
 							'enum'        => array( 'visible', 'catalog', 'search', 'hidden' ),
 						),
-						'tax_status' => array(
+						'tax_status'         => array(
 							'type'        => 'string',
 							'description' => 'Tax status.',
 							'enum'        => array( 'taxable', 'shipping', 'none' ),
 						),
-						'tax_class' => array(
+						'tax_class'          => array(
 							'type'        => 'string',
 							'description' => 'Tax class.',
 						),
-						'shipping_class' => array(
+						'shipping_class'     => array(
 							'type'        => 'string',
 							'description' => 'Shipping class slug.',
 						),
-						'external_url' => array(
+						'external_url'       => array(
 							'type'        => 'string',
 							'description' => 'External product URL (for external products).',
 						),
-						'button_text' => array(
+						'button_text'        => array(
 							'type'        => 'string',
 							'description' => 'External product button text.',
 						),
-						'grouped_products' => array(
+						'grouped_products'   => array(
 							'type'        => 'array',
 							'description' => 'Grouped product IDs (for grouped products).',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'upsell_ids' => array(
+						'upsell_ids'         => array(
 							'type'        => 'array',
 							'description' => 'Upsell product IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'cross_sell_ids' => array(
+						'cross_sell_ids'     => array(
 							'type'        => 'array',
 							'description' => 'Cross-sell product IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
-						'image_id' => array(
+						'image_id'           => array(
 							'type'        => 'integer',
 							'description' => 'Featured image attachment ID.',
 						),
-						'gallery_image_ids' => array(
+						'gallery_image_ids'  => array(
 							'type'        => 'array',
 							'description' => 'Gallery image attachment IDs.',
 							'items'       => array( 'type' => 'integer' ),
@@ -151,8 +146,8 @@ class UpdateProduct implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'product' => array(
+						'success'      => array( 'type' => 'boolean' ),
+						'product'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'            => array( 'type' => 'integer' ),
@@ -167,14 +162,17 @@ class UpdateProduct implements RegistersAbility {
 							),
 						),
 						'changes_made' => array( 'type' => 'array' ),
-						'message' => array( 'type' => 'string' ),
+						'message'      => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'products' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -196,22 +194,22 @@ class UpdateProduct implements RegistersAbility {
 		// Check if WooCommerce is active
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			return array(
-				'success' => false,
-				'product' => null,
+				'success'      => false,
+				'product'      => null,
 				'changes_made' => array(),
-				'message' => 'WooCommerce is not active.',
+				'message'      => 'WooCommerce is not active.',
 			);
 		}
 
 		$product_id = $input['id'];
-		$product = wc_get_product( $product_id );
+		$product    = wc_get_product( $product_id );
 
 		if ( ! $product || ! $product instanceof \WC_Product ) {
 			return array(
-				'success' => false,
-				'product' => null,
+				'success'      => false,
+				'product'      => null,
 				'changes_made' => array(),
-				'message' => 'Product not found.',
+				'message'      => 'Product not found.',
 			);
 		}
 
@@ -249,10 +247,10 @@ class UpdateProduct implements RegistersAbility {
 				$existing_product_id = wc_get_product_id_by_sku( $input['sku'] );
 				if ( $existing_product_id && $existing_product_id !== $product_id ) {
 					return array(
-						'success' => false,
-						'product' => null,
+						'success'      => false,
+						'product'      => null,
 						'changes_made' => array(),
-						'message' => 'SKU already exists on another product.',
+						'message'      => 'SKU already exists on another product.',
 					);
 				}
 				$product->set_sku( $input['sku'] );
@@ -395,8 +393,8 @@ class UpdateProduct implements RegistersAbility {
 			$product->save();
 
 			return array(
-				'success' => true,
-				'product' => array(
+				'success'      => true,
+				'product'      => array(
 					'id'            => $product->get_id(),
 					'name'          => $product->get_name(),
 					'slug'          => $product->get_slug(),
@@ -408,20 +406,19 @@ class UpdateProduct implements RegistersAbility {
 					'date_modified' => $product->get_date_modified() ? $product->get_date_modified()->date( 'Y-m-d H:i:s' ) : null,
 				),
 				'changes_made' => $changes_made,
-				'message' => sprintf( 
+				'message'      => sprintf(
 					'Successfully updated product "%s" (ID: %d). Changes: %s',
 					$product->get_name(),
 					$product->get_id(),
 					! empty( $changes_made ) ? implode( ', ', $changes_made ) : 'none'
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
-				'success' => false,
-				'product' => null,
+				'success'      => false,
+				'product'      => null,
 				'changes_made' => array(),
-				'message' => 'Error updating product: ' . $e->getMessage(),
+				'message'      => 'Error updating product: ' . $e->getMessage(),
 			);
 		}
 	}

@@ -17,53 +17,53 @@ final class CreateUser implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'login', 'email' ),
 					'properties' => array(
-						'login' => array(
+						'login'             => array(
 							'type'        => 'string',
 							'description' => 'User login name (username).',
 							'minLength'   => 1,
 							'maxLength'   => 60,
 						),
-						'email' => array(
+						'email'             => array(
 							'type'        => 'string',
 							'description' => 'User email address.',
 							'format'      => 'email',
 						),
-						'password' => array(
+						'password'          => array(
 							'type'        => 'string',
 							'description' => 'User password. If not provided, a random password will be generated.',
 							'minLength'   => 8,
 						),
-						'display_name' => array(
+						'display_name'      => array(
 							'type'        => 'string',
 							'description' => 'Display name for the user.',
 						),
-						'first_name' => array(
+						'first_name'        => array(
 							'type'        => 'string',
 							'description' => 'User first name.',
 						),
-						'last_name' => array(
+						'last_name'         => array(
 							'type'        => 'string',
 							'description' => 'User last name.',
 						),
-						'nickname' => array(
+						'nickname'          => array(
 							'type'        => 'string',
 							'description' => 'User nickname.',
 						),
-						'description' => array(
+						'description'       => array(
 							'type'        => 'string',
 							'description' => 'User biographical info.',
 						),
-						'url' => array(
+						'url'               => array(
 							'type'        => 'string',
 							'description' => 'User website URL.',
 							'format'      => 'uri',
 						),
-						'role' => array(
+						'role'              => array(
 							'type'        => 'string',
 							'description' => 'User role (administrator, editor, author, contributor, subscriber, or custom role).',
 							'default'     => 'subscriber',
 						),
-						'meta' => array(
+						'meta'              => array(
 							'type'                 => 'object',
 							'description'          => 'User meta fields to set.',
 							'additionalProperties' => true,
@@ -90,9 +90,12 @@ final class CreateUser implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'management' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,

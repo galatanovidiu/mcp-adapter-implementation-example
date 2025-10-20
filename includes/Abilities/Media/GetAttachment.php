@@ -17,7 +17,7 @@ final class GetAttachment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'id' ),
 					'properties' => array(
-						'id' => array(
+						'id'               => array(
 							'type'        => 'integer',
 							'description' => 'Attachment ID.',
 						),
@@ -26,7 +26,7 @@ final class GetAttachment implements RegistersAbility {
 							'description' => 'Include detailed attachment metadata.',
 							'default'     => true,
 						),
-						'include_exif' => array(
+						'include_exif'     => array(
 							'type'        => 'boolean',
 							'description' => 'Include EXIF data for images (if available).',
 							'default'     => false,
@@ -60,9 +60,12 @@ final class GetAttachment implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'media',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'media', 'attachments' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
@@ -102,11 +105,11 @@ final class GetAttachment implements RegistersAbility {
 		}
 
 		$include_metadata = array_key_exists( 'include_metadata', $input ) ? (bool) $input['include_metadata'] : true;
-		$include_exif = ! empty( $input['include_exif'] );
+		$include_exif     = ! empty( $input['include_exif'] );
 
 		$file_path = \get_attached_file( $attachment_id );
 		$file_size = $file_path && \file_exists( $file_path ) ? \filesize( $file_path ) : 0;
-		$metadata = \wp_get_attachment_metadata( $attachment_id );
+		$metadata  = \wp_get_attachment_metadata( $attachment_id );
 
 		$attachment_data = array(
 			'id'          => $attachment_id,
@@ -127,15 +130,15 @@ final class GetAttachment implements RegistersAbility {
 
 		// Add image dimensions if available
 		if ( isset( $metadata['width'] ) && isset( $metadata['height'] ) ) {
-			$attachment_data['width'] = (int) $metadata['width'];
+			$attachment_data['width']  = (int) $metadata['width'];
 			$attachment_data['height'] = (int) $metadata['height'];
 		}
 
 		// Add image sizes if it's an image
 		if ( \wp_attachment_is_image( $attachment_id ) ) {
-			$sizes = array();
+			$sizes       = array();
 			$image_sizes = \get_intermediate_image_sizes();
-			
+
 			// Add full size
 			$full_image = \wp_get_attachment_image_src( $attachment_id, 'full' );
 			if ( $full_image ) {
@@ -145,19 +148,21 @@ final class GetAttachment implements RegistersAbility {
 					'height' => (int) $full_image[2],
 				);
 			}
-			
+
 			// Add other sizes
 			foreach ( $image_sizes as $size ) {
 				$image_data = \wp_get_attachment_image_src( $attachment_id, $size );
-				if ( $image_data ) {
-					$sizes[ $size ] = array(
-						'url'    => $image_data[0],
-						'width'  => (int) $image_data[1],
-						'height' => (int) $image_data[2],
-					);
+				if ( ! $image_data ) {
+					continue;
 				}
+
+				$sizes[ $size ] = array(
+					'url'    => $image_data[0],
+					'width'  => (int) $image_data[1],
+					'height' => (int) $image_data[2],
+				);
 			}
-			
+
 			$attachment_data['sizes'] = $sizes;
 		}
 
@@ -169,31 +174,46 @@ final class GetAttachment implements RegistersAbility {
 		// Include EXIF data if requested and available
 		if ( $include_exif && \wp_attachment_is_image( $attachment_id ) && $file_path && \file_exists( $file_path ) ) {
 			$exif_data = array();
-			
+
 			if ( \function_exists( 'exif_read_data' ) ) {
 				$exif = @\exif_read_data( $file_path );
 				if ( $exif && \is_array( $exif ) ) {
 					// Filter out binary data and keep only useful EXIF data
-					$useful_exif = array();
+					$useful_exif  = array();
 					$allowed_keys = array(
-						'DateTime', 'DateTimeOriginal', 'DateTimeDigitized',
-						'Make', 'Model', 'Software',
-						'ExposureTime', 'FNumber', 'ISO', 'ISOSpeedRatings',
-						'FocalLength', 'Flash', 'WhiteBalance',
-						'Orientation', 'XResolution', 'YResolution',
-						'GPS', 'Artist', 'Copyright'
+						'DateTime',
+						'DateTimeOriginal',
+						'DateTimeDigitized',
+						'Make',
+						'Model',
+						'Software',
+						'ExposureTime',
+						'FNumber',
+						'ISO',
+						'ISOSpeedRatings',
+						'FocalLength',
+						'Flash',
+						'WhiteBalance',
+						'Orientation',
+						'XResolution',
+						'YResolution',
+						'GPS',
+						'Artist',
+						'Copyright',
 					);
-					
+
 					foreach ( $allowed_keys as $key ) {
-						if ( isset( $exif[ $key ] ) && ! \is_array( $exif[ $key ] ) ) {
-							$useful_exif[ $key ] = $exif[ $key ];
+						if ( ! isset( $exif[ $key ] ) || \is_array( $exif[ $key ] ) ) {
+							continue;
 						}
+
+						$useful_exif[ $key ] = $exif[ $key ];
 					}
-					
+
 					$exif_data = $useful_exif;
 				}
 			}
-			
+
 			$attachment_data['exif'] = $exif_data;
 		}
 

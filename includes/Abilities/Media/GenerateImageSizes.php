@@ -16,16 +16,16 @@ final class GenerateImageSizes implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'attachment_id' => array(
+						'attachment_id'    => array(
 							'type'        => 'integer',
 							'description' => 'Specific attachment ID to regenerate. If not provided, will process multiple attachments.',
 						),
-						'attachment_ids' => array(
+						'attachment_ids'   => array(
 							'type'        => 'array',
 							'items'       => array( 'type' => 'integer' ),
 							'description' => 'Array of attachment IDs to regenerate.',
 						),
-						'image_sizes' => array(
+						'image_sizes'      => array(
 							'type'        => 'array',
 							'items'       => array( 'type' => 'string' ),
 							'description' => 'Specific image sizes to generate. If not provided, generates all registered sizes.',
@@ -35,12 +35,12 @@ final class GenerateImageSizes implements RegistersAbility {
 							'description' => 'Force regeneration even if thumbnails already exist. Default: false.',
 							'default'     => false,
 						),
-						'only_missing' => array(
+						'only_missing'     => array(
 							'type'        => 'boolean',
 							'description' => 'Only generate missing thumbnails. Default: true.',
 							'default'     => true,
 						),
-						'limit' => array(
+						'limit'            => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of attachments to process in one request. Default: 10.',
 							'default'     => 10,
@@ -60,19 +60,19 @@ final class GenerateImageSizes implements RegistersAbility {
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'attachment_id' => array( 'type' => 'integer' ),
-									'filename'      => array( 'type' => 'string' ),
-									'success'       => array( 'type' => 'boolean' ),
+									'attachment_id'   => array( 'type' => 'integer' ),
+									'filename'        => array( 'type' => 'string' ),
+									'success'         => array( 'type' => 'boolean' ),
 									'generated_sizes' => array(
 										'type'  => 'array',
 										'items' => array( 'type' => 'string' ),
 									),
-									'skipped_sizes' => array(
+									'skipped_sizes'   => array(
 										'type'  => 'array',
 										'items' => array( 'type' => 'string' ),
 									),
-									'error'         => array( 'type' => 'string' ),
-									'thumbnails'    => array(
+									'error'           => array( 'type' => 'string' ),
+									'thumbnails'      => array(
 										'type'       => 'object',
 										'properties' => array(
 											'thumbnail' => array( 'type' => 'string' ),
@@ -93,9 +93,12 @@ final class GenerateImageSizes implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'media',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'media', 'processing' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -126,12 +129,12 @@ final class GenerateImageSizes implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$attachment_id = $input['attachment_id'] ?? 0;
-		$attachment_ids = $input['attachment_ids'] ?? array();
-		$requested_sizes = $input['image_sizes'] ?? array();
+		$attachment_id    = $input['attachment_id'] ?? 0;
+		$attachment_ids   = $input['attachment_ids'] ?? array();
+		$requested_sizes  = $input['image_sizes'] ?? array();
 		$force_regenerate = (bool) ( $input['force_regenerate'] ?? false );
-		$only_missing = (bool) ( $input['only_missing'] ?? true );
-		$limit = (int) ( $input['limit'] ?? 10 );
+		$only_missing     = (bool) ( $input['only_missing'] ?? true );
+		$limit            = (int) ( $input['limit'] ?? 10 );
 
 		// Include necessary WordPress files
 		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
@@ -149,8 +152,8 @@ final class GenerateImageSizes implements RegistersAbility {
 			if ( ! empty( $invalid_sizes ) ) {
 				return array(
 					'error' => array(
-						'code'    => 'invalid_image_sizes',
-						'message' => 'Invalid image sizes: ' . implode( ', ', $invalid_sizes ),
+						'code'            => 'invalid_image_sizes',
+						'message'         => 'Invalid image sizes: ' . implode( ', ', $invalid_sizes ),
 						'available_sizes' => $available_sizes,
 					),
 				);
@@ -188,23 +191,23 @@ final class GenerateImageSizes implements RegistersAbility {
 			);
 		}
 
-		$results = array();
+		$results         = array();
 		$processed_count = 0;
 
 		foreach ( $attachments_to_process as $attachment_id ) {
 			$attachment_id = (int) $attachment_id;
-			
+
 			// Verify attachment exists and is an image
 			$attachment = \get_post( $attachment_id );
 			if ( ! $attachment || $attachment->post_type !== 'attachment' ) {
 				$results[] = array(
-					'attachment_id' => $attachment_id,
-					'filename'      => '',
-					'success'       => false,
-					'error'         => 'Attachment not found.',
+					'attachment_id'   => $attachment_id,
+					'filename'        => '',
+					'success'         => false,
+					'error'           => 'Attachment not found.',
 					'generated_sizes' => array(),
-					'skipped_sizes' => array(),
-					'thumbnails'    => array(),
+					'skipped_sizes'   => array(),
+					'thumbnails'      => array(),
 				);
 				continue;
 			}
@@ -212,13 +215,13 @@ final class GenerateImageSizes implements RegistersAbility {
 			$mime_type = \get_post_mime_type( $attachment_id );
 			if ( strpos( $mime_type, 'image/' ) !== 0 ) {
 				$results[] = array(
-					'attachment_id' => $attachment_id,
-					'filename'      => basename( \get_attached_file( $attachment_id ) ),
-					'success'       => false,
-					'error'         => 'Attachment is not an image.',
+					'attachment_id'   => $attachment_id,
+					'filename'        => basename( \get_attached_file( $attachment_id ) ),
+					'success'         => false,
+					'error'           => 'Attachment is not an image.',
 					'generated_sizes' => array(),
-					'skipped_sizes' => array(),
-					'thumbnails'    => array(),
+					'skipped_sizes'   => array(),
+					'thumbnails'      => array(),
 				);
 				continue;
 			}
@@ -226,25 +229,25 @@ final class GenerateImageSizes implements RegistersAbility {
 			$file_path = \get_attached_file( $attachment_id );
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
 				$results[] = array(
-					'attachment_id' => $attachment_id,
-					'filename'      => basename( $file_path ?: '' ),
-					'success'       => false,
-					'error'         => 'Original file not found.',
+					'attachment_id'   => $attachment_id,
+					'filename'        => basename( $file_path ?: '' ),
+					'success'         => false,
+					'error'           => 'Original file not found.',
 					'generated_sizes' => array(),
-					'skipped_sizes' => array(),
-					'thumbnails'    => array(),
+					'skipped_sizes'   => array(),
+					'thumbnails'      => array(),
 				);
 				continue;
 			}
 
-			$filename = basename( $file_path );
+			$filename        = basename( $file_path );
 			$generated_sizes = array();
-			$skipped_sizes = array();
+			$skipped_sizes   = array();
 
 			try {
 				// Get current metadata
 				$current_metadata = \wp_get_attachment_metadata( $attachment_id );
-				$existing_sizes = isset( $current_metadata['sizes'] ) ? array_keys( $current_metadata['sizes'] ) : array();
+				$existing_sizes   = isset( $current_metadata['sizes'] ) ? array_keys( $current_metadata['sizes'] ) : array();
 
 				// Determine which sizes to generate
 				$sizes_to_generate = empty( $requested_sizes ) ? $available_sizes : $requested_sizes;
@@ -273,39 +276,39 @@ final class GenerateImageSizes implements RegistersAbility {
 						if ( $should_generate ) {
 							// Get size dimensions
 							$size_data = \wp_get_additional_image_sizes();
-							$width = null;
-							$height = null;
-							
+							$width     = null;
+							$height    = null;
+
 							if ( isset( $size_data[ $size ] ) ) {
-								$width = $size_data[ $size ]['width'];
+								$width  = $size_data[ $size ]['width'];
 								$height = $size_data[ $size ]['height'];
 							} else {
 								// Handle built-in sizes
 								switch ( $size ) {
 									case 'thumbnail':
-										$width = (int) \get_option( 'thumbnail_size_w' );
+										$width  = (int) \get_option( 'thumbnail_size_w' );
 										$height = (int) \get_option( 'thumbnail_size_h' );
 										break;
 									case 'medium':
-										$width = (int) \get_option( 'medium_size_w' );
+										$width  = (int) \get_option( 'medium_size_w' );
 										$height = (int) \get_option( 'medium_size_h' );
 										break;
 									case 'large':
-										$width = (int) \get_option( 'large_size_w' );
+										$width  = (int) \get_option( 'large_size_w' );
 										$height = (int) \get_option( 'large_size_h' );
 										break;
 									case 'medium_large':
-										$width = (int) \get_option( 'medium_large_size_w' );
+										$width  = (int) \get_option( 'medium_large_size_w' );
 										$height = (int) \get_option( 'medium_large_size_h' );
 										break;
 								}
 							}
-							
+
 							if ( $width && $height ) {
 								$resized = \image_make_intermediate_size( $file_path, $width, $height, true );
 								if ( $resized ) {
 									$generated_sizes[] = $size;
-									
+
 									// Update metadata with new size
 									if ( ! isset( $current_metadata['sizes'] ) ) {
 										$current_metadata['sizes'] = array();
@@ -334,9 +337,11 @@ final class GenerateImageSizes implements RegistersAbility {
 				$standard_sizes = array( 'thumbnail', 'medium', 'large' );
 				foreach ( $standard_sizes as $size ) {
 					$image_data = \wp_get_attachment_image_src( $attachment_id, $size );
-					if ( $image_data ) {
-						$thumbnails[ $size ] = $image_data[0];
+					if ( ! $image_data ) {
+						continue;
 					}
+
+					$thumbnails[ $size ] = $image_data[0];
 				}
 
 				$results[] = array(
@@ -349,9 +354,8 @@ final class GenerateImageSizes implements RegistersAbility {
 					'thumbnails'      => $thumbnails,
 				);
 
-				$processed_count++;
-
-			} catch ( \Exception $e ) {
+				++$processed_count;
+			} catch ( \Throwable $e ) {
 				$results[] = array(
 					'attachment_id'   => $attachment_id,
 					'filename'        => $filename,
@@ -364,19 +368,24 @@ final class GenerateImageSizes implements RegistersAbility {
 			}
 		}
 
-		$success_count = count( array_filter( $results, function( $result ) {
-			return $result['success'];
-		} ) );
+		$success_count = count(
+			array_filter(
+				$results,
+				static function ( $result ) {
+					return $result['success'];
+				}
+			)
+		);
 
 		return array(
 			'success'         => $success_count > 0,
 			'processed_count' => $processed_count,
 			'results'         => $results,
-			'message'         => sprintf( 
-				'Processed %d attachments. %d successful, %d failed.', 
-				count( $results ), 
-				$success_count, 
-				count( $results ) - $success_count 
+			'message'         => sprintf(
+				'Processed %d attachments. %d successful, %d failed.',
+				count( $results ),
+				$success_count,
+				count( $results ) - $success_count
 			),
 			'available_sizes' => $available_sizes,
 		);

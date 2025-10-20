@@ -16,15 +16,15 @@ final class InstallPlugin implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'slug' => array(
+						'slug'             => array(
 							'type'        => 'string',
 							'description' => 'Plugin slug from WordPress.org repository (e.g., "akismet").',
 						),
-						'zip_url' => array(
+						'zip_url'          => array(
 							'type'        => 'string',
 							'description' => 'Direct URL to plugin ZIP file (alternative to slug).',
 						),
-						'activate' => array(
+						'activate'         => array(
 							'type'        => 'boolean',
 							'description' => 'Activate plugin after installation.',
 							'default'     => false,
@@ -34,13 +34,13 @@ final class InstallPlugin implements RegistersAbility {
 							'description' => 'Activate plugin network-wide after installation (multisite only).',
 							'default'     => false,
 						),
-						'overwrite' => array(
+						'overwrite'        => array(
 							'type'        => 'boolean',
 							'description' => 'Overwrite existing plugin if it exists.',
 							'default'     => false,
 						),
 					),
-					'oneOf' => array(
+					'oneOf'      => array(
 						array( 'required' => array( 'slug' ) ),
 						array( 'required' => array( 'zip_url' ) ),
 					),
@@ -65,9 +65,12 @@ final class InstallPlugin implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'plugins',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'plugins', 'installation' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -231,17 +234,17 @@ final class InstallPlugin implements RegistersAbility {
 		// Activate plugin if requested
 		if ( $activate || $network_activate ) {
 			$activation_result = \activate_plugin( $plugin_file, '', $network_activate, true );
-			
+
 			if ( \is_wp_error( $activation_result ) ) {
 				$response['message'] .= ' However, activation failed: ' . $activation_result->get_error_message();
 			} else {
-				$is_activated = $network_activate 
+				$is_activated = $network_activate
 					? ( \is_multisite() && \is_plugin_active_for_network( $plugin_file ) )
 					: \is_plugin_active( $plugin_file );
-				
+
 				if ( $is_activated ) {
 					$response['activated'] = true;
-					$response['message'] = $network_activate 
+					$response['message']   = $network_activate
 						? 'Plugin installed and activated network-wide.'
 						: 'Plugin installed and activated.';
 				} else {

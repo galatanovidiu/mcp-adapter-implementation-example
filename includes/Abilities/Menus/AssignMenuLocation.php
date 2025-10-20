@@ -46,18 +46,18 @@ final class AssignMenuLocation implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'assignments' ),
 					'properties' => array(
-						'success'     => array( 'type' => 'boolean' ),
-						'assignments' => array(
+						'success'             => array( 'type' => 'boolean' ),
+						'assignments'         => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'location'    => array( 'type' => 'string' ),
-									'menu_id'     => array( 'type' => 'integer' ),
-									'menu_name'   => array( 'type' => 'string' ),
-									'action'      => array( 'type' => 'string' ),
-									'success'     => array( 'type' => 'boolean' ),
-									'message'     => array( 'type' => 'string' ),
+									'location'  => array( 'type' => 'string' ),
+									'menu_id'   => array( 'type' => 'integer' ),
+									'menu_name' => array( 'type' => 'string' ),
+									'action'    => array( 'type' => 'string' ),
+									'success'   => array( 'type' => 'boolean' ),
+									'message'   => array( 'type' => 'string' ),
 								),
 							),
 						),
@@ -65,14 +65,17 @@ final class AssignMenuLocation implements RegistersAbility {
 							'type'                 => 'object',
 							'additionalProperties' => array( 'type' => 'integer' ),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'             => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'appearance',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'appearance', 'navigation' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -115,70 +118,70 @@ final class AssignMenuLocation implements RegistersAbility {
 
 		// Get registered locations and current assignments
 		$registered_locations = \get_registered_nav_menus();
-		$current_assignments = \get_nav_menu_locations();
-		$new_assignments = $replace_all ? array() : $current_assignments;
+		$current_assignments  = \get_nav_menu_locations();
+		$new_assignments      = $replace_all ? array() : $current_assignments;
 
 		$assignment_results = array();
-		$success_count = 0;
-		$error_count = 0;
+		$success_count      = 0;
+		$error_count        = 0;
 
 		foreach ( $assignments as $assignment ) {
-			$location = \sanitize_text_field( (string) ( $assignment['location'] ?? '' ) );
+			$location        = \sanitize_text_field( (string) ( $assignment['location'] ?? '' ) );
 			$menu_identifier = isset( $assignment['menu_identifier'] ) ? \sanitize_text_field( (string) $assignment['menu_identifier'] ) : '';
 
 			$result = array(
-				'location' => $location,
-				'menu_id'  => 0,
+				'location'  => $location,
+				'menu_id'   => 0,
 				'menu_name' => '',
-				'action'   => '',
-				'success'  => false,
-				'message'  => '',
+				'action'    => '',
+				'success'   => false,
+				'message'   => '',
 			);
 
 			// Validate location
 			if ( empty( $location ) ) {
-				$result['message'] = 'Location is required.';
+				$result['message']    = 'Location is required.';
 				$assignment_results[] = $result;
-				$error_count++;
+				++$error_count;
 				continue;
 			}
 
 			if ( ! isset( $registered_locations[ $location ] ) ) {
-				$result['message'] = 'Location not registered in theme.';
+				$result['message']    = 'Location not registered in theme.';
 				$assignment_results[] = $result;
-				$error_count++;
+				++$error_count;
 				continue;
 			}
 
 			// Handle unassignment (empty menu_identifier)
 			if ( empty( $menu_identifier ) ) {
 				$new_assignments[ $location ] = 0;
-				$result['action'] = 'unassigned';
-				$result['success'] = true;
-				$result['message'] = 'Location unassigned successfully.';
-				$assignment_results[] = $result;
-				$success_count++;
+				$result['action']             = 'unassigned';
+				$result['success']            = true;
+				$result['message']            = 'Location unassigned successfully.';
+				$assignment_results[]         = $result;
+				++$success_count;
 				continue;
 			}
 
 			// Get menu
 			$menu = \wp_get_nav_menu_object( $menu_identifier );
 			if ( ! $menu ) {
-				$result['message'] = 'Menu not found.';
+				$result['message']    = 'Menu not found.';
 				$assignment_results[] = $result;
-				$error_count++;
+				++$error_count;
 				continue;
 			}
 
 			// Assign menu to location
 			$new_assignments[ $location ] = $menu->term_id;
-			$result['menu_id'] = (int) $menu->term_id;
-			$result['menu_name'] = $menu->name;
-			$result['action'] = 'assigned';
-			$result['success'] = true;
-			$result['message'] = 'Menu assigned to location successfully.';
-			$assignment_results[] = $result;
-			$success_count++;
+			$result['menu_id']            = (int) $menu->term_id;
+			$result['menu_name']          = $menu->name;
+			$result['action']             = 'assigned';
+			$result['success']            = true;
+			$result['message']            = 'Menu assigned to location successfully.';
+			$assignment_results[]         = $result;
+			++$success_count;
 		}
 
 		// Update menu locations
@@ -186,15 +189,15 @@ final class AssignMenuLocation implements RegistersAbility {
 
 		// Determine overall success
 		$overall_success = $error_count === 0;
-		$message = '';
+		$message         = '';
 
 		if ( $overall_success ) {
 			$message = 'All menu location assignments completed successfully.';
 		} elseif ( $success_count > 0 ) {
-			$message = sprintf( 
-				'Partial success: %d assignments completed, %d failed.', 
-				$success_count, 
-				$error_count 
+			$message = sprintf(
+				'Partial success: %d assignments completed, %d failed.',
+				$success_count,
+				$error_count
 			);
 		} else {
 			$message = 'All menu location assignments failed.';

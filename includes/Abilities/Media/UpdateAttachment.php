@@ -17,15 +17,15 @@ final class UpdateAttachment implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'id' ),
 					'properties' => array(
-						'id' => array(
+						'id'          => array(
 							'type'        => 'integer',
 							'description' => 'Attachment ID.',
 						),
-						'title' => array(
+						'title'       => array(
 							'type'        => 'string',
 							'description' => 'Attachment title.',
 						),
-						'caption' => array(
+						'caption'     => array(
 							'type'        => 'string',
 							'description' => 'Attachment caption.',
 						),
@@ -33,11 +33,11 @@ final class UpdateAttachment implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Attachment description.',
 						),
-						'alt_text' => array(
+						'alt_text'    => array(
 							'type'        => 'string',
 							'description' => 'Alternative text for images (accessibility).',
 						),
-						'parent' => array(
+						'parent'      => array(
 							'type'        => 'integer',
 							'description' => 'Parent post ID to attach this media to.',
 						),
@@ -57,9 +57,12 @@ final class UpdateAttachment implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'media',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'media', 'attachments' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -81,7 +84,7 @@ final class UpdateAttachment implements RegistersAbility {
 	 */
 	public static function check_permission( array $input ): bool {
 		$attachment_id = (int) ( $input['id'] ?? 0 );
-		
+
 		// Check if user can edit this specific attachment
 		return \current_user_can( 'edit_post', $attachment_id );
 	}
@@ -102,30 +105,30 @@ final class UpdateAttachment implements RegistersAbility {
 		}
 
 		$updated_fields = array();
-		$post_data = array( 'ID' => $attachment_id );
+		$post_data      = array( 'ID' => $attachment_id );
 
 		// Update title
 		if ( array_key_exists( 'title', $input ) ) {
 			$post_data['post_title'] = \sanitize_text_field( (string) $input['title'] );
-			$updated_fields[] = 'title';
+			$updated_fields[]        = 'title';
 		}
 
 		// Update caption (excerpt)
 		if ( array_key_exists( 'caption', $input ) ) {
 			$post_data['post_excerpt'] = \sanitize_textarea_field( (string) $input['caption'] );
-			$updated_fields[] = 'caption';
+			$updated_fields[]          = 'caption';
 		}
 
 		// Update description (content)
 		if ( array_key_exists( 'description', $input ) ) {
 			$post_data['post_content'] = \sanitize_textarea_field( (string) $input['description'] );
-			$updated_fields[] = 'description';
+			$updated_fields[]          = 'description';
 		}
 
 		// Update parent
 		if ( array_key_exists( 'parent', $input ) ) {
 			$parent_id = (int) $input['parent'];
-			
+
 			// Validate parent post exists if not 0
 			if ( $parent_id > 0 ) {
 				$parent_post = \get_post( $parent_id );
@@ -133,9 +136,9 @@ final class UpdateAttachment implements RegistersAbility {
 					return new \WP_Error( 'invalid_parent', 'Parent post not found.' );
 				}
 			}
-			
+
 			$post_data['post_parent'] = $parent_id;
-			$updated_fields[] = 'parent';
+			$updated_fields[]         = 'parent';
 		}
 
 		// Update post data if there are changes
@@ -153,8 +156,8 @@ final class UpdateAttachment implements RegistersAbility {
 			$updated_fields[] = 'alt_text';
 		}
 
-		$message = count( $updated_fields ) > 0 
-			? 'Attachment updated successfully.' 
+		$message = count( $updated_fields ) > 0
+			? 'Attachment updated successfully.'
 			: 'No fields were updated.';
 
 		return array(

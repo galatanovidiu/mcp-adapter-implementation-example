@@ -13,10 +13,10 @@ class ManagePaymentMethods implements RegistersAbility {
 				'label'               => 'Manage WooCommerce Payment Methods',
 				'description'         => 'Enable, disable, and configure WooCommerce payment gateways and methods.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'action' ),
-					'properties' => array(
-						'action' => array(
+					'type'                 => 'object',
+					'required'             => array( 'action' ),
+					'properties'           => array(
+						'action'     => array(
 							'type'        => 'string',
 							'description' => 'Action to perform: list, enable, disable, configure.',
 							'enum'        => array( 'list', 'enable', 'disable', 'configure' ),
@@ -25,9 +25,9 @@ class ManagePaymentMethods implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Payment gateway ID (required for enable/disable/configure actions).',
 						),
-						'settings' => array(
-							'type'        => 'object',
-							'description' => 'Gateway settings to configure (for configure action).',
+						'settings'   => array(
+							'type'                 => 'object',
+							'description'          => 'Gateway settings to configure (for configure action).',
 							'additionalProperties' => true,
 						),
 					),
@@ -63,9 +63,12 @@ class ManagePaymentMethods implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'configuration' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
@@ -84,9 +87,9 @@ class ManagePaymentMethods implements RegistersAbility {
 	}
 
 	public static function execute( array $input ): array {
-		$action = sanitize_text_field( $input['action'] );
+		$action     = sanitize_text_field( $input['action'] );
 		$gateway_id = isset( $input['gateway_id'] ) ? sanitize_text_field( $input['gateway_id'] ) : '';
-		$settings = $input['settings'] ?? array();
+		$settings   = $input['settings'] ?? array();
 
 		switch ( $action ) {
 			case 'list':
@@ -112,7 +115,7 @@ class ManagePaymentMethods implements RegistersAbility {
 
 	private static function list_payment_gateways(): array {
 		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		$gateways_data = array();
+		$gateways_data    = array();
 
 		foreach ( $payment_gateways as $gateway ) {
 			$gateways_data[] = array(
@@ -144,7 +147,7 @@ class ManagePaymentMethods implements RegistersAbility {
 		}
 
 		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		
+
 		if ( ! isset( $payment_gateways[ $gateway_id ] ) ) {
 			return array(
 				'success'    => false,
@@ -155,9 +158,9 @@ class ManagePaymentMethods implements RegistersAbility {
 		}
 
 		$gateway = $payment_gateways[ $gateway_id ];
-		
+
 		// Enable the gateway
-		$gateway_settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
+		$gateway_settings            = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 		$gateway_settings['enabled'] = 'yes';
 		update_option( 'woocommerce_' . $gateway_id . '_settings', $gateway_settings );
 
@@ -179,7 +182,7 @@ class ManagePaymentMethods implements RegistersAbility {
 		}
 
 		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		
+
 		if ( ! isset( $payment_gateways[ $gateway_id ] ) ) {
 			return array(
 				'success'    => false,
@@ -190,9 +193,9 @@ class ManagePaymentMethods implements RegistersAbility {
 		}
 
 		$gateway = $payment_gateways[ $gateway_id ];
-		
+
 		// Disable the gateway
-		$gateway_settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
+		$gateway_settings            = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 		$gateway_settings['enabled'] = 'no';
 		update_option( 'woocommerce_' . $gateway_id . '_settings', $gateway_settings );
 
@@ -214,7 +217,7 @@ class ManagePaymentMethods implements RegistersAbility {
 		}
 
 		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		
+
 		if ( ! isset( $payment_gateways[ $gateway_id ] ) ) {
 			return array(
 				'success'    => false,
@@ -225,15 +228,15 @@ class ManagePaymentMethods implements RegistersAbility {
 		}
 
 		$gateway = $payment_gateways[ $gateway_id ];
-		
+
 		// Get current settings
 		$gateway_settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
-		
+
 		// Update settings
 		foreach ( $settings as $key => $value ) {
 			$gateway_settings[ $key ] = sanitize_text_field( $value );
 		}
-		
+
 		update_option( 'woocommerce_' . $gateway_id . '_settings', $gateway_settings );
 
 		return array(

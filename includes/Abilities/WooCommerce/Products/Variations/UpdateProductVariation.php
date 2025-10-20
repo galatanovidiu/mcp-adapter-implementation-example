@@ -13,76 +13,76 @@ class UpdateProductVariation implements RegistersAbility {
 				'label'               => 'Update Product Variation',
 				'description'         => 'Update an existing WooCommerce product variation with new pricing, stock, or attribute information.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'variation_id' ),
-					'properties' => array(
-						'variation_id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'variation_id' ),
+					'properties'           => array(
+						'variation_id'      => array(
 							'type'        => 'integer',
 							'description' => 'Variation ID to update.',
 							'minimum'     => 1,
 						),
-						'sku' => array(
+						'sku'               => array(
 							'type'        => 'string',
 							'description' => 'Variation SKU (must be unique).',
 						),
-						'regular_price' => array(
+						'regular_price'     => array(
 							'type'        => 'string',
 							'description' => 'Variation regular price.',
 						),
-						'sale_price' => array(
+						'sale_price'        => array(
 							'type'        => 'string',
 							'description' => 'Variation sale price.',
 						),
-						'manage_stock' => array(
+						'manage_stock'      => array(
 							'type'        => 'boolean',
 							'description' => 'Enable stock management for this variation.',
 						),
-						'stock_quantity' => array(
+						'stock_quantity'    => array(
 							'type'        => 'integer',
 							'description' => 'Stock quantity (if manage_stock is true).',
 							'minimum'     => 0,
 						),
-						'stock_status' => array(
+						'stock_status'      => array(
 							'type'        => 'string',
 							'description' => 'Stock status.',
 							'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 						),
-						'weight' => array(
+						'weight'            => array(
 							'type'        => 'string',
 							'description' => 'Variation weight.',
 						),
-						'dimensions' => array(
-							'type'       => 'object',
+						'dimensions'        => array(
+							'type'        => 'object',
 							'description' => 'Variation dimensions.',
-							'properties' => array(
+							'properties'  => array(
 								'length' => array( 'type' => 'string' ),
 								'width'  => array( 'type' => 'string' ),
 								'height' => array( 'type' => 'string' ),
 							),
 						),
-						'image_id' => array(
+						'image_id'          => array(
 							'type'        => 'integer',
 							'description' => 'Variation image attachment ID.',
 						),
-						'status' => array(
+						'status'            => array(
 							'type'        => 'string',
 							'description' => 'Variation status.',
 							'enum'        => array( 'publish', 'draft', 'private' ),
 						),
-						'menu_order' => array(
+						'menu_order'        => array(
 							'type'        => 'integer',
 							'description' => 'Menu order for variation sorting.',
 						),
-						'attributes' => array(
-							'type'        => 'object',
-							'description' => 'Variation attributes (e.g., {"color": "red", "size": "large"}).',
+						'attributes'        => array(
+							'type'                 => 'object',
+							'description'          => 'Variation attributes (e.g., {"color": "red", "size": "large"}).',
 							'additionalProperties' => array( 'type' => 'string' ),
 						),
-						'tax_class' => array(
+						'tax_class'         => array(
 							'type'        => 'string',
 							'description' => 'Tax class for this variation.',
 						),
-						'shipping_class' => array(
+						'shipping_class'    => array(
 							'type'        => 'string',
 							'description' => 'Shipping class slug.',
 						),
@@ -90,7 +90,7 @@ class UpdateProductVariation implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Sale start date (YYYY-MM-DD HH:MM:SS).',
 						),
-						'date_on_sale_to' => array(
+						'date_on_sale_to'   => array(
 							'type'        => 'string',
 							'description' => 'Sale end date (YYYY-MM-DD HH:MM:SS).',
 						),
@@ -100,8 +100,8 @@ class UpdateProductVariation implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'variation' => array(
+						'success'        => array( 'type' => 'boolean' ),
+						'variation'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'             => array( 'type' => 'integer' ),
@@ -117,7 +117,7 @@ class UpdateProductVariation implements RegistersAbility {
 								'date_modified'  => array( 'type' => 'string' ),
 							),
 						),
-						'changes_made' => array( 'type' => 'array' ),
+						'changes_made'   => array( 'type' => 'array' ),
 						'parent_product' => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -125,14 +125,17 @@ class UpdateProductVariation implements RegistersAbility {
 								'name' => array( 'type' => 'string' ),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'        => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'variations' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -163,7 +166,7 @@ class UpdateProductVariation implements RegistersAbility {
 		}
 
 		$variation_id = $input['variation_id'];
-		$variation = wc_get_product( $variation_id );
+		$variation    = wc_get_product( $variation_id );
 
 		if ( ! $variation || ! $variation instanceof \WC_Product_Variation ) {
 			return array(
@@ -265,7 +268,7 @@ class UpdateProductVariation implements RegistersAbility {
 			if ( isset( $input['attributes'] ) ) {
 				$formatted_attributes = array();
 				foreach ( $input['attributes'] as $attr_name => $attr_value ) {
-					$attr_key = 'attribute_' . sanitize_title( $attr_name );
+					$attr_key                          = 'attribute_' . sanitize_title( $attr_name );
 					$formatted_attributes[ $attr_key ] = $attr_value;
 				}
 				$variation->set_attributes( $formatted_attributes );
@@ -302,7 +305,7 @@ class UpdateProductVariation implements RegistersAbility {
 			$variation->save();
 
 			// Get parent product info
-			$parent = wc_get_product( $variation->get_parent_id() );
+			$parent         = wc_get_product( $variation->get_parent_id() );
 			$parent_product = null;
 			if ( $parent ) {
 				$parent_product = array(
@@ -334,8 +337,7 @@ class UpdateProductVariation implements RegistersAbility {
 					! empty( $changes_made ) ? implode( ', ', $changes_made ) : 'none'
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'        => false,
 				'variation'      => null,

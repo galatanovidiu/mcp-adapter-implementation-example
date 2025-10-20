@@ -16,19 +16,19 @@ final class GetUser implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id' => array(
+						'id'                   => array(
 							'type'        => 'integer',
 							'description' => 'User ID.',
 						),
-						'login' => array(
+						'login'                => array(
 							'type'        => 'string',
 							'description' => 'User login name.',
 						),
-						'email' => array(
+						'email'                => array(
 							'type'        => 'string',
 							'description' => 'User email address.',
 						),
-						'include_meta' => array(
+						'include_meta'         => array(
 							'type'        => 'boolean',
 							'description' => 'Include user meta in results.',
 							'default'     => true,
@@ -39,7 +39,7 @@ final class GetUser implements RegistersAbility {
 							'default'     => true,
 						),
 					),
-					'oneOf' => array(
+					'oneOf'      => array(
 						array( 'required' => array( 'id' ) ),
 						array( 'required' => array( 'login' ) ),
 						array( 'required' => array( 'email' ) ),
@@ -72,9 +72,12 @@ final class GetUser implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'profiles' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
@@ -97,16 +100,16 @@ final class GetUser implements RegistersAbility {
 	public static function check_permission( array $input ): bool {
 		// Users can view their own profile, admins can view any user
 		$current_user_id = \get_current_user_id();
-		
+
 		// Get the target user ID
 		$target_user_id = 0;
 		if ( ! empty( $input['id'] ) ) {
 			$target_user_id = (int) $input['id'];
 		} elseif ( ! empty( $input['login'] ) ) {
-			$user = \get_user_by( 'login', \sanitize_user( (string) $input['login'] ) );
+			$user           = \get_user_by( 'login', \sanitize_user( (string) $input['login'] ) );
 			$target_user_id = $user ? $user->ID : 0;
 		} elseif ( ! empty( $input['email'] ) ) {
-			$user = \get_user_by( 'email', \sanitize_email( (string) $input['email'] ) );
+			$user           = \get_user_by( 'email', \sanitize_email( (string) $input['email'] ) );
 			$target_user_id = $user ? $user->ID : 0;
 		}
 
@@ -146,7 +149,7 @@ final class GetUser implements RegistersAbility {
 			);
 		}
 
-		$include_meta = array_key_exists( 'include_meta', $input ) ? (bool) $input['include_meta'] : true;
+		$include_meta         = array_key_exists( 'include_meta', $input ) ? (bool) $input['include_meta'] : true;
 		$include_capabilities = array_key_exists( 'include_capabilities', $input ) ? (bool) $input['include_capabilities'] : true;
 
 		$user_data = array(
@@ -174,7 +177,7 @@ final class GetUser implements RegistersAbility {
 		// Include meta if requested
 		if ( $include_meta ) {
 			$meta = \get_user_meta( $user->ID );
-			
+
 			// Process meta to handle serialized data and arrays
 			$processed_meta = array();
 			foreach ( $meta as $key => $values ) {
@@ -184,7 +187,7 @@ final class GetUser implements RegistersAbility {
 					$processed_meta[ $key ] = array_map( 'maybe_unserialize', $values );
 				}
 			}
-			
+
 			$user_data['meta'] = $processed_meta;
 		}
 

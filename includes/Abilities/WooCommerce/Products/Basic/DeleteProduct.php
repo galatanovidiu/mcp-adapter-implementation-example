@@ -13,15 +13,15 @@ class DeleteProduct implements RegistersAbility {
 				'label'               => 'Delete WooCommerce Product',
 				'description'         => 'Delete a WooCommerce product by ID. Can move to trash or permanently delete.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'id' ),
-					'properties' => array(
-						'id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'id' ),
+					'properties'           => array(
+						'id'                => array(
 							'type'        => 'integer',
 							'description' => 'Product ID to delete.',
 							'minimum'     => 1,
 						),
-						'force' => array(
+						'force'             => array(
 							'type'        => 'boolean',
 							'description' => 'Force permanent deletion (skip trash).',
 							'default'     => false,
@@ -37,8 +37,8 @@ class DeleteProduct implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'product' => array(
+						'success'            => array( 'type' => 'boolean' ),
+						'product'            => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'   => array( 'type' => 'integer' ),
@@ -48,15 +48,18 @@ class DeleteProduct implements RegistersAbility {
 							),
 						),
 						'deleted_variations' => array( 'type' => 'integer' ),
-						'permanent' => array( 'type' => 'boolean' ),
-						'message' => array( 'type' => 'string' ),
+						'permanent'          => array( 'type' => 'boolean' ),
+						'message'            => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'products' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.6,
@@ -79,27 +82,27 @@ class DeleteProduct implements RegistersAbility {
 		// Check if WooCommerce is active
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			return array(
-				'success' => false,
-				'product' => null,
+				'success'            => false,
+				'product'            => null,
 				'deleted_variations' => 0,
-				'permanent' => false,
-				'message' => 'WooCommerce is not active.',
+				'permanent'          => false,
+				'message'            => 'WooCommerce is not active.',
 			);
 		}
 
-		$product_id = $input['id'];
-		$force = $input['force'] ?? false;
+		$product_id        = $input['id'];
+		$force             = $input['force'] ?? false;
 		$delete_variations = $input['delete_variations'] ?? true;
 
 		$product = wc_get_product( $product_id );
 
 		if ( ! $product || ! $product instanceof \WC_Product ) {
 			return array(
-				'success' => false,
-				'product' => null,
+				'success'            => false,
+				'product'            => null,
 				'deleted_variations' => 0,
-				'permanent' => false,
-				'message' => 'Product not found.',
+				'permanent'          => false,
+				'message'            => 'Product not found.',
 			);
 		}
 
@@ -119,10 +122,12 @@ class DeleteProduct implements RegistersAbility {
 				$variation_ids = $product->get_children();
 				foreach ( $variation_ids as $variation_id ) {
 					$variation = wc_get_product( $variation_id );
-					if ( $variation ) {
-						$variation->delete( $force );
-						$deleted_variations++;
+					if ( ! $variation ) {
+						continue;
 					}
+
+					$variation->delete( $force );
+					++$deleted_variations;
 				}
 			}
 
@@ -131,22 +136,22 @@ class DeleteProduct implements RegistersAbility {
 
 			if ( ! $deleted ) {
 				return array(
-					'success' => false,
-					'product' => $product_info,
+					'success'            => false,
+					'product'            => $product_info,
 					'deleted_variations' => 0,
-					'permanent' => false,
-					'message' => 'Failed to delete product.',
+					'permanent'          => false,
+					'message'            => 'Failed to delete product.',
 				);
 			}
 
 			$action = $force ? 'permanently deleted' : 'moved to trash';
 
 			return array(
-				'success' => true,
-				'product' => $product_info,
+				'success'            => true,
+				'product'            => $product_info,
 				'deleted_variations' => $deleted_variations,
-				'permanent' => $force,
-				'message' => sprintf(
+				'permanent'          => $force,
+				'message'            => sprintf(
 					'Successfully %s product "%s" (ID: %d)%s.',
 					$action,
 					$product_info['name'],
@@ -154,14 +159,13 @@ class DeleteProduct implements RegistersAbility {
 					$deleted_variations > 0 ? " and {$deleted_variations} variations" : ''
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
-				'success' => false,
-				'product' => $product_info,
+				'success'            => false,
+				'product'            => $product_info,
 				'deleted_variations' => $deleted_variations,
-				'permanent' => false,
-				'message' => 'Error deleting product: ' . $e->getMessage(),
+				'permanent'          => false,
+				'message'            => 'Error deleting product: ' . $e->getMessage(),
 			);
 		}
 	}

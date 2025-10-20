@@ -13,10 +13,10 @@ class GetProductVariation implements RegistersAbility {
 				'label'               => 'Get Product Variation',
 				'description'         => 'Retrieve detailed information about a specific WooCommerce product variation.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'variation_id' ),
-					'properties' => array(
-						'variation_id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'variation_id' ),
+					'properties'           => array(
+						'variation_id'        => array(
 							'type'        => 'integer',
 							'description' => 'Variation ID to retrieve.',
 							'minimum'     => 1,
@@ -32,29 +32,29 @@ class GetProductVariation implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'variation' => array(
+						'variation'      => array(
 							'type'       => 'object',
 							'properties' => array(
-								'id'             => array( 'type' => 'integer' ),
-								'parent_id'      => array( 'type' => 'integer' ),
-								'sku'            => array( 'type' => 'string' ),
-								'price'          => array( 'type' => 'string' ),
-								'regular_price'  => array( 'type' => 'string' ),
-								'sale_price'     => array( 'type' => 'string' ),
-								'on_sale'        => array( 'type' => 'boolean' ),
-								'stock_status'   => array( 'type' => 'string' ),
-								'stock_quantity' => array( 'type' => 'integer' ),
-								'manage_stock'   => array( 'type' => 'boolean' ),
-								'weight'         => array( 'type' => 'string' ),
-								'dimensions'     => array( 'type' => 'object' ),
-								'shipping_class' => array( 'type' => 'string' ),
-								'tax_class'      => array( 'type' => 'string' ),
-								'image'          => array( 'type' => 'object' ),
-								'attributes'     => array( 'type' => 'object' ),
-								'status'         => array( 'type' => 'string' ),
-								'menu_order'     => array( 'type' => 'integer' ),
-								'date_created'   => array( 'type' => 'string' ),
-								'date_modified'  => array( 'type' => 'string' ),
+								'id'                => array( 'type' => 'integer' ),
+								'parent_id'         => array( 'type' => 'integer' ),
+								'sku'               => array( 'type' => 'string' ),
+								'price'             => array( 'type' => 'string' ),
+								'regular_price'     => array( 'type' => 'string' ),
+								'sale_price'        => array( 'type' => 'string' ),
+								'on_sale'           => array( 'type' => 'boolean' ),
+								'stock_status'      => array( 'type' => 'string' ),
+								'stock_quantity'    => array( 'type' => 'integer' ),
+								'manage_stock'      => array( 'type' => 'boolean' ),
+								'weight'            => array( 'type' => 'string' ),
+								'dimensions'        => array( 'type' => 'object' ),
+								'shipping_class'    => array( 'type' => 'string' ),
+								'tax_class'         => array( 'type' => 'string' ),
+								'image'             => array( 'type' => 'object' ),
+								'attributes'        => array( 'type' => 'object' ),
+								'status'            => array( 'type' => 'string' ),
+								'menu_order'        => array( 'type' => 'integer' ),
+								'date_created'      => array( 'type' => 'string' ),
+								'date_modified'     => array( 'type' => 'string' ),
 								'date_on_sale_from' => array( 'type' => 'string' ),
 								'date_on_sale_to'   => array( 'type' => 'string' ),
 							),
@@ -68,14 +68,17 @@ class GetProductVariation implements RegistersAbility {
 								'type' => array( 'type' => 'string' ),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'        => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'variations' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -103,7 +106,7 @@ class GetProductVariation implements RegistersAbility {
 			);
 		}
 
-		$variation_id = $input['variation_id'];
+		$variation_id        = $input['variation_id'];
 		$include_parent_info = $input['include_parent_info'] ?? true;
 
 		$variation = wc_get_product( $variation_id );
@@ -143,7 +146,7 @@ class GetProductVariation implements RegistersAbility {
 	private static function format_detailed_variation( \WC_Product_Variation $variation ): array {
 		$image_data = array();
 		if ( $variation->get_image_id() ) {
-			$image = wp_get_attachment_image_src( $variation->get_image_id(), 'full' );
+			$image     = wp_get_attachment_image_src( $variation->get_image_id(), 'full' );
 			$thumbnail = wp_get_attachment_image_src( $variation->get_image_id(), 'thumbnail' );
 			if ( $image ) {
 				$image_data = array(
@@ -157,30 +160,30 @@ class GetProductVariation implements RegistersAbility {
 		}
 
 		return array(
-			'id'             => $variation->get_id(),
-			'parent_id'      => $variation->get_parent_id(),
-			'sku'            => $variation->get_sku(),
-			'price'          => $variation->get_price(),
-			'regular_price'  => $variation->get_regular_price(),
-			'sale_price'     => $variation->get_sale_price(),
-			'on_sale'        => $variation->is_on_sale(),
-			'stock_status'   => $variation->get_stock_status(),
-			'stock_quantity' => $variation->get_stock_quantity() ? (int) $variation->get_stock_quantity() : 0,
-			'manage_stock'   => $variation->get_manage_stock(),
-			'weight'         => $variation->get_weight(),
-			'dimensions'     => array(
+			'id'                => $variation->get_id(),
+			'parent_id'         => $variation->get_parent_id(),
+			'sku'               => $variation->get_sku(),
+			'price'             => $variation->get_price(),
+			'regular_price'     => $variation->get_regular_price(),
+			'sale_price'        => $variation->get_sale_price(),
+			'on_sale'           => $variation->is_on_sale(),
+			'stock_status'      => $variation->get_stock_status(),
+			'stock_quantity'    => $variation->get_stock_quantity() ? (int) $variation->get_stock_quantity() : 0,
+			'manage_stock'      => $variation->get_manage_stock(),
+			'weight'            => $variation->get_weight(),
+			'dimensions'        => array(
 				'length' => $variation->get_length(),
 				'width'  => $variation->get_width(),
 				'height' => $variation->get_height(),
 			),
-			'shipping_class' => $variation->get_shipping_class(),
-			'tax_class'      => $variation->get_tax_class(),
-			'image'          => $image_data,
-			'attributes'     => $variation->get_variation_attributes(),
-			'status'         => $variation->get_status(),
-			'menu_order'     => $variation->get_menu_order(),
-			'date_created'   => $variation->get_date_created() ? $variation->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
-			'date_modified'  => $variation->get_date_modified() ? $variation->get_date_modified()->date( 'Y-m-d H:i:s' ) : '',
+			'shipping_class'    => $variation->get_shipping_class(),
+			'tax_class'         => $variation->get_tax_class(),
+			'image'             => $image_data,
+			'attributes'        => $variation->get_variation_attributes(),
+			'status'            => $variation->get_status(),
+			'menu_order'        => $variation->get_menu_order(),
+			'date_created'      => $variation->get_date_created() ? $variation->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
+			'date_modified'     => $variation->get_date_modified() ? $variation->get_date_modified()->date( 'Y-m-d H:i:s' ) : '',
 			'date_on_sale_from' => $variation->get_date_on_sale_from() ? $variation->get_date_on_sale_from()->date( 'Y-m-d H:i:s' ) : '',
 			'date_on_sale_to'   => $variation->get_date_on_sale_to() ? $variation->get_date_on_sale_to()->date( 'Y-m-d H:i:s' ) : '',
 		);

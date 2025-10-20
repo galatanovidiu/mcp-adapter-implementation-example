@@ -13,14 +13,15 @@ final class ListSiteOptions implements RegistersAbility {
 			array(
 				'label'               => 'List Site Options',
 				'description'         => 'List all WordPress site options with optional filtering. Useful for discovering available settings and their current values.',
+				'category'            => 'settings',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'search' => array(
+						'search'                => array(
 							'type'        => 'string',
 							'description' => 'Search term to filter option names.',
 						),
-						'include_private' => array(
+						'include_private'       => array(
 							'type'        => 'boolean',
 							'description' => 'Include options that start with underscore (private options).',
 							'default'     => false,
@@ -30,19 +31,19 @@ final class ListSiteOptions implements RegistersAbility {
 							'description' => 'Only include options that are set to autoload.',
 							'default'     => false,
 						),
-						'exclude_serialized' => array(
+						'exclude_serialized'    => array(
 							'type'        => 'boolean',
 							'description' => 'Exclude options with serialized data for security.',
 							'default'     => true,
 						),
-						'limit' => array(
+						'limit'                 => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of options to return.',
 							'default'     => 100,
 							'minimum'     => 1,
 							'maximum'     => 500,
 						),
-						'offset' => array(
+						'offset'                => array(
 							'type'        => 'integer',
 							'description' => 'Number of options to skip (for pagination).',
 							'default'     => 0,
@@ -54,23 +55,23 @@ final class ListSiteOptions implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'options', 'total' ),
 					'properties' => array(
-						'options' => array(
+						'options'        => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
 								'required'   => array( 'option_name', 'option_value', 'autoload' ),
 								'properties' => array(
-									'option_name'  => array( 'type' => 'string' ),
-									'option_value' => array(
+									'option_name'   => array( 'type' => 'string' ),
+									'option_value'  => array(
 										'description' => 'Option value (may be string, number, boolean, or object)',
 									),
-									'autoload'     => array( 'type' => 'string' ),
+									'autoload'      => array( 'type' => 'string' ),
 									'is_serialized' => array( 'type' => 'boolean' ),
-									'value_type'   => array( 'type' => 'string' ),
+									'value_type'    => array( 'type' => 'string' ),
 								),
 							),
 						),
-						'total' => array(
+						'total'          => array(
 							'type'        => 'integer',
 							'description' => 'Total number of options matching the criteria',
 						),
@@ -82,9 +83,12 @@ final class ListSiteOptions implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'settings',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'settings', 'options' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -117,12 +121,12 @@ final class ListSiteOptions implements RegistersAbility {
 	public static function execute( array $input ) {
 		global $wpdb;
 
-		$search              = isset( $input['search'] ) ? \sanitize_text_field( (string) $input['search'] ) : '';
-		$include_private     = ! empty( $input['include_private'] );
+		$search                = isset( $input['search'] ) ? \sanitize_text_field( (string) $input['search'] ) : '';
+		$include_private       = ! empty( $input['include_private'] );
 		$include_autoload_only = ! empty( $input['include_autoload_only'] );
-		$exclude_serialized  = array_key_exists( 'exclude_serialized', $input ) ? (bool) $input['exclude_serialized'] : true;
-		$limit               = isset( $input['limit'] ) ? max( 1, min( 500, (int) $input['limit'] ) ) : 100;
-		$offset              = isset( $input['offset'] ) ? max( 0, (int) $input['offset'] ) : 0;
+		$exclude_serialized    = array_key_exists( 'exclude_serialized', $input ) ? (bool) $input['exclude_serialized'] : true;
+		$limit                 = isset( $input['limit'] ) ? max( 1, min( 500, (int) $input['limit'] ) ) : 100;
+		$offset                = isset( $input['offset'] ) ? max( 0, (int) $input['offset'] ) : 0;
 
 		// Build the WHERE clause
 		$where_conditions = array();

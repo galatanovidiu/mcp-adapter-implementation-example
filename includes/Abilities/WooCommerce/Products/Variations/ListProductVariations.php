@@ -13,28 +13,28 @@ class ListProductVariations implements RegistersAbility {
 				'label'               => 'List Product Variations',
 				'description'         => 'List all variations for a variable WooCommerce product with filtering and pagination.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'product_id' ),
-					'properties' => array(
-						'product_id' => array(
+					'type'                 => 'object',
+					'required'             => array( 'product_id' ),
+					'properties'           => array(
+						'product_id'   => array(
 							'type'        => 'integer',
 							'description' => 'Variable product ID to get variations for.',
 							'minimum'     => 1,
 						),
-						'limit' => array(
+						'limit'        => array(
 							'type'        => 'integer',
 							'description' => 'Maximum number of variations to return.',
 							'default'     => 20,
 							'minimum'     => 1,
 							'maximum'     => 100,
 						),
-						'offset' => array(
+						'offset'       => array(
 							'type'        => 'integer',
 							'description' => 'Number of variations to skip.',
 							'default'     => 0,
 							'minimum'     => 0,
 						),
-						'status' => array(
+						'status'       => array(
 							'type'        => 'string',
 							'description' => 'Filter by variation status.',
 							'enum'        => array( 'publish', 'draft', 'private', 'any' ),
@@ -45,22 +45,22 @@ class ListProductVariations implements RegistersAbility {
 							'description' => 'Filter by stock status.',
 							'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 						),
-						'on_sale' => array(
+						'on_sale'      => array(
 							'type'        => 'boolean',
 							'description' => 'Filter variations on sale only.',
 						),
-						'attributes' => array(
-							'type'        => 'object',
-							'description' => 'Filter by specific attribute values (e.g., {"color": "red", "size": "large"}).',
+						'attributes'   => array(
+							'type'                 => 'object',
+							'description'          => 'Filter by specific attribute values (e.g., {"color": "red", "size": "large"}).',
 							'additionalProperties' => array( 'type' => 'string' ),
 						),
-						'orderby' => array(
+						'orderby'      => array(
 							'type'        => 'string',
 							'description' => 'Sort variations by field.',
 							'enum'        => array( 'date', 'menu_order', 'price' ),
 							'default'     => 'menu_order',
 						),
-						'order' => array(
+						'order'        => array(
 							'type'        => 'string',
 							'description' => 'Sort order.',
 							'enum'        => array( 'asc', 'desc' ),
@@ -72,7 +72,7 @@ class ListProductVariations implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'parent_product' => array(
+						'parent_product'  => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'   => array( 'type' => 'integer' ),
@@ -80,7 +80,7 @@ class ListProductVariations implements RegistersAbility {
 								'type' => array( 'type' => 'string' ),
 							),
 						),
-						'variations' => array(
+						'variations'      => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -104,7 +104,7 @@ class ListProductVariations implements RegistersAbility {
 								),
 							),
 						),
-						'pagination' => array(
+						'pagination'      => array(
 							'type'       => 'object',
 							'properties' => array(
 								'total'        => array( 'type' => 'integer' ),
@@ -116,14 +116,17 @@ class ListProductVariations implements RegistersAbility {
 							),
 						),
 						'filters_applied' => array( 'type' => 'object' ),
-						'message' => array( 'type' => 'string' ),
+						'message'         => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'variations' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -153,15 +156,15 @@ class ListProductVariations implements RegistersAbility {
 			);
 		}
 
-		$product_id = $input['product_id'];
-		$limit = $input['limit'] ?? 20;
-		$offset = $input['offset'] ?? 0;
-		$status = $input['status'] ?? 'publish';
+		$product_id   = $input['product_id'];
+		$limit        = $input['limit'] ?? 20;
+		$offset       = $input['offset'] ?? 0;
+		$status       = $input['status'] ?? 'publish';
 		$stock_status = $input['stock_status'] ?? '';
-		$on_sale = $input['on_sale'] ?? null;
-		$attributes = $input['attributes'] ?? array();
-		$orderby = $input['orderby'] ?? 'menu_order';
-		$order = $input['order'] ?? 'asc';
+		$on_sale      = $input['on_sale'] ?? null;
+		$attributes   = $input['attributes'] ?? array();
+		$orderby      = $input['orderby'] ?? 'menu_order';
+		$order        = $input['order'] ?? 'asc';
 
 		$product = wc_get_product( $product_id );
 
@@ -191,7 +194,7 @@ class ListProductVariations implements RegistersAbility {
 
 		// Get all variation IDs
 		$all_variation_ids = $product->get_children();
-		
+
 		// Apply filters
 		$filtered_variation_ids = self::filter_variations( $all_variation_ids, $status, $stock_status, $on_sale, $attributes );
 
@@ -199,19 +202,21 @@ class ListProductVariations implements RegistersAbility {
 		$sorted_variation_ids = self::sort_variations( $filtered_variation_ids, $orderby, $order );
 
 		// Calculate pagination
-		$total = count( $sorted_variation_ids );
+		$total        = count( $sorted_variation_ids );
 		$current_page = floor( $offset / $limit ) + 1;
-		$total_pages = ceil( $total / $limit );
+		$total_pages  = ceil( $total / $limit );
 
 		// Get variations for current page
 		$page_variation_ids = array_slice( $sorted_variation_ids, $offset, $limit );
-		$variations = array();
+		$variations         = array();
 
 		foreach ( $page_variation_ids as $variation_id ) {
 			$variation = wc_get_product( $variation_id );
-			if ( $variation && $variation instanceof \WC_Product_Variation ) {
-				$variations[] = self::format_variation( $variation );
+			if ( ! $variation || ! ( $variation instanceof \WC_Product_Variation ) ) {
+				continue;
 			}
+
+			$variations[] = self::format_variation( $variation );
 		}
 
 		$pagination = array(
@@ -224,7 +229,7 @@ class ListProductVariations implements RegistersAbility {
 		);
 
 		return array(
-			'parent_product' => array(
+			'parent_product'  => array(
 				'id'   => $product->get_id(),
 				'name' => $product->get_name(),
 				'type' => $product->get_type(),
@@ -270,17 +275,17 @@ class ListProductVariations implements RegistersAbility {
 			// Filter by attributes
 			if ( ! empty( $attributes ) ) {
 				$variation_attributes = $variation->get_variation_attributes();
-				$matches = true;
-				
+				$matches              = true;
+
 				foreach ( $attributes as $attr_name => $attr_value ) {
 					$attr_key = 'attribute_' . sanitize_title( $attr_name );
-					if ( ! isset( $variation_attributes[ $attr_key ] ) || 
-						 $variation_attributes[ $attr_key ] !== $attr_value ) {
+					if ( ! isset( $variation_attributes[ $attr_key ] ) ||
+						$variation_attributes[ $attr_key ] !== $attr_value ) {
 						$matches = false;
 						break;
 					}
 				}
-				
+
 				if ( ! $matches ) {
 					continue;
 				}
@@ -301,35 +306,40 @@ class ListProductVariations implements RegistersAbility {
 		$variations_with_sort_data = array();
 		foreach ( $variation_ids as $variation_id ) {
 			$variation = wc_get_product( $variation_id );
-			if ( $variation ) {
-				$sort_value = '';
-				switch ( $orderby ) {
-					case 'price':
-						$sort_value = (float) $variation->get_price();
-						break;
-					case 'date':
-						$sort_value = $variation->get_date_created() ? $variation->get_date_created()->getTimestamp() : 0;
-						break;
-					case 'menu_order':
-					default:
-						$sort_value = $variation->get_menu_order();
-						break;
-				}
-				
-				$variations_with_sort_data[] = array(
-					'id'         => $variation_id,
-					'sort_value' => $sort_value,
-				);
+			if ( ! $variation ) {
+				continue;
 			}
+
+			$sort_value = '';
+			switch ( $orderby ) {
+				case 'price':
+					$sort_value = (float) $variation->get_price();
+					break;
+				case 'date':
+					$sort_value = $variation->get_date_created() ? $variation->get_date_created()->getTimestamp() : 0;
+					break;
+				case 'menu_order':
+				default:
+					$sort_value = $variation->get_menu_order();
+					break;
+			}
+
+			$variations_with_sort_data[] = array(
+				'id'         => $variation_id,
+				'sort_value' => $sort_value,
+			);
 		}
 
 		// Sort
-		usort( $variations_with_sort_data, function( $a, $b ) use ( $order ) {
-			if ( $order === 'desc' ) {
-				return $b['sort_value'] <=> $a['sort_value'];
+		usort(
+			$variations_with_sort_data,
+			static function ( $a, $b ) use ( $order ) {
+				if ( $order === 'desc' ) {
+					return $b['sort_value'] <=> $a['sort_value'];
+				}
+				return $a['sort_value'] <=> $b['sort_value'];
 			}
-			return $a['sort_value'] <=> $b['sort_value'];
-		});
+		);
 
 		return array_column( $variations_with_sort_data, 'id' );
 	}
@@ -337,7 +347,7 @@ class ListProductVariations implements RegistersAbility {
 	private static function format_variation( \WC_Product_Variation $variation ): array {
 		$image_data = array();
 		if ( $variation->get_image_id() ) {
-			$image = wp_get_attachment_image_src( $variation->get_image_id(), 'full' );
+			$image     = wp_get_attachment_image_src( $variation->get_image_id(), 'full' );
 			$thumbnail = wp_get_attachment_image_src( $variation->get_image_id(), 'thumbnail' );
 			if ( $image ) {
 				$image_data = array(

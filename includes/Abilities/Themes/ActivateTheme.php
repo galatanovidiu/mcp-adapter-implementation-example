@@ -27,10 +27,10 @@ final class ActivateTheme implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'active_theme' ),
 					'properties' => array(
-						'success'      => array( 'type' => 'boolean' ),
-						'active_theme' => array( 'type' => 'string' ),
+						'success'        => array( 'type' => 'boolean' ),
+						'active_theme'   => array( 'type' => 'string' ),
 						'previous_theme' => array( 'type' => 'string' ),
-						'theme_info'   => array(
+						'theme_info'     => array(
 							'type'       => 'object',
 							'properties' => array(
 								'name'        => array( 'type' => 'string' ),
@@ -39,14 +39,17 @@ final class ActivateTheme implements RegistersAbility {
 								'author'      => array( 'type' => 'string' ),
 							),
 						),
-						'message'      => array( 'type' => 'string' ),
+						'message'        => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'appearance',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'appearance', 'themes' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -77,7 +80,7 @@ final class ActivateTheme implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$stylesheet = \sanitize_text_field( (string) $input['stylesheet'] );
+		$stylesheet     = \sanitize_text_field( (string) $input['stylesheet'] );
 		$previous_theme = \get_stylesheet();
 
 		// Check if theme exists
@@ -109,7 +112,7 @@ final class ActivateTheme implements RegistersAbility {
 
 		// Check if theme is broken
 		if ( $theme->errors() ) {
-			$errors = $theme->errors();
+			$errors         = $theme->errors();
 			$error_messages = array();
 			if ( is_wp_error( $errors ) ) {
 				$error_messages = $errors->get_error_messages();
@@ -127,8 +130,8 @@ final class ActivateTheme implements RegistersAbility {
 		// Check if theme is allowed (for multisite)
 		if ( \is_multisite() ) {
 			$allowed_themes = \get_site_option( 'allowedthemes' );
-			$is_allowed = isset( $allowed_themes[ $stylesheet ] ) || \current_user_can( 'manage_network_themes' );
-			
+			$is_allowed     = isset( $allowed_themes[ $stylesheet ] ) || \current_user_can( 'manage_network_themes' );
+
 			if ( ! $is_allowed ) {
 				return array(
 					'error' => array(
@@ -156,7 +159,7 @@ final class ActivateTheme implements RegistersAbility {
 		// Attempt to switch theme
 		try {
 			\switch_theme( $stylesheet );
-			
+
 			// Verify the switch was successful
 			$current_theme = \get_stylesheet();
 			if ( $current_theme !== $stylesheet ) {
@@ -185,8 +188,7 @@ final class ActivateTheme implements RegistersAbility {
 				),
 				'message'        => 'Theme activated successfully.',
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'error' => array(
 					'code'    => 'activation_exception',

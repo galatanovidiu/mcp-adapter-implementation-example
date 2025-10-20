@@ -27,9 +27,9 @@ final class DeleteMenu implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'menu_id' ),
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'menu_id' => array( 'type' => 'integer' ),
-						'menu'    => array(
+						'success'           => array( 'type' => 'boolean' ),
+						'menu_id'           => array( 'type' => 'integer' ),
+						'menu'              => array(
 							'type'       => 'object',
 							'properties' => array(
 								'term_id'     => array( 'type' => 'integer' ),
@@ -39,7 +39,7 @@ final class DeleteMenu implements RegistersAbility {
 								'count'       => array( 'type' => 'integer' ),
 							),
 						),
-						'items_deleted' => array(
+						'items_deleted'     => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'integer' ),
 						),
@@ -47,13 +47,17 @@ final class DeleteMenu implements RegistersAbility {
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'           => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'content',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.5,
@@ -108,7 +112,7 @@ final class DeleteMenu implements RegistersAbility {
 		);
 
 		// Get menu items before deletion
-		$menu_items = \wp_get_nav_menu_items( $menu_id );
+		$menu_items    = \wp_get_nav_menu_items( $menu_id );
 		$items_deleted = array();
 		if ( $menu_items ) {
 			foreach ( $menu_items as $item ) {
@@ -117,12 +121,14 @@ final class DeleteMenu implements RegistersAbility {
 		}
 
 		// Check which locations this menu is assigned to
-		$locations_cleared = array();
+		$locations_cleared  = array();
 		$assigned_locations = \get_nav_menu_locations();
 		foreach ( $assigned_locations as $location => $assigned_menu_id ) {
-			if ( (int) $assigned_menu_id === $menu_id ) {
-				$locations_cleared[] = $location;
+			if ( (int) $assigned_menu_id !== $menu_id ) {
+				continue;
 			}
+
+			$locations_cleared[] = $location;
 		}
 
 		// Delete the menu (this will also delete all menu items and clear location assignments)

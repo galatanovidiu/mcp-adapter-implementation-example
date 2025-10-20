@@ -17,7 +17,7 @@ final class ManageTransients implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'action' ),
 					'properties' => array(
-						'action' => array(
+						'action'         => array(
 							'type'        => 'string',
 							'description' => 'Action to perform on transients.',
 							'enum'        => array( 'list', 'get', 'set', 'delete', 'cleanup' ),
@@ -26,27 +26,27 @@ final class ManageTransients implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Transient name for get, set, or delete actions.',
 						),
-						'value' => array(
+						'value'          => array(
 							'type'        => 'string',
 							'description' => 'Value to set for the transient (for set action).',
 						),
-						'expiration' => array(
+						'expiration'     => array(
 							'type'        => 'integer',
 							'description' => 'Expiration time in seconds for set action. Default: 3600 (1 hour).',
 							'default'     => 3600,
 						),
-						'limit' => array(
+						'limit'          => array(
 							'type'        => 'integer',
 							'description' => 'Limit number of transients to list. Default: 50.',
 							'default'     => 50,
 							'minimum'     => 1,
 							'maximum'     => 500,
 						),
-						'filter' => array(
+						'filter'         => array(
 							'type'        => 'string',
 							'description' => 'Filter transients by name pattern (for list action).',
 						),
-						'show_expired' => array(
+						'show_expired'   => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to show expired transients in list. Default: true.',
 							'default'     => true,
@@ -57,9 +57,9 @@ final class ManageTransients implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'action' ),
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'action'  => array( 'type' => 'string' ),
-						'transients' => array(
+						'success'         => array( 'type' => 'boolean' ),
+						'action'          => array( 'type' => 'string' ),
+						'transients'      => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -72,7 +72,7 @@ final class ManageTransients implements RegistersAbility {
 								),
 							),
 						),
-						'transient' => array(
+						'transient'       => array(
 							'type'       => 'object',
 							'properties' => array(
 								'name'       => array( 'type' => 'string' ),
@@ -91,7 +91,7 @@ final class ManageTransients implements RegistersAbility {
 								'space_freed'      => array( 'type' => 'string' ),
 							),
 						),
-						'summary' => array(
+						'summary'         => array(
 							'type'       => 'object',
 							'properties' => array(
 								'total_transients' => array( 'type' => 'integer' ),
@@ -99,14 +99,17 @@ final class ManageTransients implements RegistersAbility {
 								'active_count'     => array( 'type' => 'integer' ),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'         => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'system',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'system', 'caching' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -137,13 +140,13 @@ final class ManageTransients implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$action = \sanitize_text_field( (string) $input['action'] );
+		$action         = \sanitize_text_field( (string) $input['action'] );
 		$transient_name = isset( $input['transient_name'] ) ? \sanitize_text_field( (string) $input['transient_name'] ) : '';
-		$value = $input['value'] ?? '';
-		$expiration = (int) ( $input['expiration'] ?? 3600 );
-		$limit = (int) ( $input['limit'] ?? 50 );
-		$filter = isset( $input['filter'] ) ? \sanitize_text_field( (string) $input['filter'] ) : '';
-		$show_expired = (bool) ( $input['show_expired'] ?? true );
+		$value          = $input['value'] ?? '';
+		$expiration     = (int) ( $input['expiration'] ?? 3600 );
+		$limit          = (int) ( $input['limit'] ?? 50 );
+		$filter         = isset( $input['filter'] ) ? \sanitize_text_field( (string) $input['filter'] ) : '';
+		$show_expired   = (bool) ( $input['show_expired'] ?? true );
 
 		$result = array(
 			'success'         => false,
@@ -208,21 +211,21 @@ final class ManageTransients implements RegistersAbility {
 		global $wpdb;
 
 		$where_clause = "WHERE option_name LIKE '_transient_%'";
-		$params = array();
+		$params       = array();
 
 		if ( ! empty( $filter ) ) {
-			$where_clause .= " AND option_name LIKE %s";
-			$params[] = '%' . $wpdb->esc_like( $filter ) . '%';
+			$where_clause .= ' AND option_name LIKE %s';
+			$params[]      = '%' . $wpdb->esc_like( $filter ) . '%';
 		}
 
-		$query = "SELECT option_name, option_value FROM {$wpdb->options} {$where_clause} ORDER BY option_name LIMIT %d";
+		$query    = "SELECT option_name, option_value FROM {$wpdb->options} {$where_clause} ORDER BY option_name LIMIT %d";
 		$params[] = $limit;
 
 		$transient_options = $wpdb->get_results( $wpdb->prepare( $query, ...$params ) );
 
-		$transients = array();
+		$transients    = array();
 		$expired_count = 0;
-		$active_count = 0;
+		$active_count  = 0;
 
 		foreach ( $transient_options as $option ) {
 			// Skip timeout options
@@ -232,28 +235,30 @@ final class ManageTransients implements RegistersAbility {
 
 			$transient_name = str_replace( '_transient_', '', $option->option_name );
 			$timeout_option = '_transient_timeout_' . $transient_name;
-			
-			// Get expiration time
-			$expiration_time = $wpdb->get_var( $wpdb->prepare(
-				"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
-				$timeout_option
-			) );
 
-			$expired = false;
+			// Get expiration time
+			$expiration_time = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
+					$timeout_option
+				)
+			);
+
+			$expired         = false;
 			$expiration_date = 'Never';
 
 			if ( $expiration_time ) {
-				$expired = (int) $expiration_time < time();
+				$expired         = (int) $expiration_time < time();
 				$expiration_date = \date( 'Y-m-d H:i:s', (int) $expiration_time );
 			}
 
 			if ( $expired ) {
-				$expired_count++;
+				++$expired_count;
 				if ( ! $show_expired ) {
 					continue;
 				}
 			} else {
-				$active_count++;
+				++$active_count;
 			}
 
 			$value_size = strlen( $option->option_value );
@@ -287,7 +292,7 @@ final class ManageTransients implements RegistersAbility {
 	 */
 	private static function get_transient( string $transient_name ): array {
 		$value = \get_transient( $transient_name );
-		
+
 		if ( $value === false ) {
 			return array(
 				'success' => false,
@@ -297,22 +302,24 @@ final class ManageTransients implements RegistersAbility {
 
 		// Get expiration info
 		global $wpdb;
-		$timeout_option = '_transient_timeout_' . $transient_name;
-		$expiration_time = $wpdb->get_var( $wpdb->prepare(
-			"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
-			$timeout_option
-		) );
+		$timeout_option  = '_transient_timeout_' . $transient_name;
+		$expiration_time = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",
+				$timeout_option
+			)
+		);
 
-		$expired = false;
+		$expired         = false;
 		$expiration_date = 'Never';
 
 		if ( $expiration_time ) {
-			$expired = (int) $expiration_time < time();
+			$expired         = (int) $expiration_time < time();
 			$expiration_date = \date( 'Y-m-d H:i:s', (int) $expiration_time );
 		}
 
 		$serialized_value = maybe_serialize( $value );
-		$value_size = strlen( $serialized_value );
+		$value_size       = strlen( $serialized_value );
 
 		return array(
 			'success'   => true,
@@ -383,17 +390,21 @@ final class ManageTransients implements RegistersAbility {
 		global $wpdb;
 
 		// Clean expired transients
-		$expired_transients = $wpdb->get_col( $wpdb->prepare(
-			"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_%' AND option_value < %d",
-			time()
-		) );
+		$expired_transients = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_%' AND option_value < %d",
+				time()
+			)
+		);
 
 		$expired_cleaned = 0;
 		foreach ( $expired_transients as $timeout_option ) {
 			$transient_name = str_replace( '_transient_timeout_', '', $timeout_option );
-			if ( \delete_transient( $transient_name ) ) {
-				$expired_cleaned++;
+			if ( ! \delete_transient( $transient_name ) ) {
+				continue;
 			}
+
+			++$expired_cleaned;
 		}
 
 		// Clean orphaned transient timeouts (timeouts without corresponding transients)
@@ -408,9 +419,11 @@ final class ManageTransients implements RegistersAbility {
 
 		$orphaned_cleaned = 0;
 		foreach ( $orphaned_timeouts as $timeout_option ) {
-			if ( $wpdb->delete( $wpdb->options, array( 'option_name' => $timeout_option ) ) ) {
-				$orphaned_cleaned++;
+			if ( ! $wpdb->delete( $wpdb->options, array( 'option_name' => $timeout_option ) ) ) {
+				continue;
 			}
+
+			++$orphaned_cleaned;
 		}
 
 		// Clean orphaned transients (transients without timeouts that should have them)
@@ -427,11 +440,11 @@ final class ManageTransients implements RegistersAbility {
 		foreach ( $orphaned_transients as $transient_option ) {
 			$transient_name = str_replace( '_transient_', '', $transient_option );
 			\delete_transient( $transient_name );
-			$orphaned_cleaned++;
+			++$orphaned_cleaned;
 		}
 
 		$total_cleaned = $expired_cleaned + $orphaned_cleaned;
-		$space_freed = $total_cleaned * 1024; // Rough estimate
+		$space_freed   = $total_cleaned * 1024; // Rough estimate
 
 		return array(
 			'success'         => true,

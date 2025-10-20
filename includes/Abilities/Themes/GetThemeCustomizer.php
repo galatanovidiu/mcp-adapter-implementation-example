@@ -16,11 +16,11 @@ final class GetThemeCustomizer implements RegistersAbility {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'stylesheet' => array(
+						'stylesheet'       => array(
 							'type'        => 'string',
 							'description' => 'Theme stylesheet name. If not provided, uses active theme.',
 						),
-						'include_values' => array(
+						'include_values'   => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include current setting values. Default: true.',
 							'default'     => true,
@@ -36,8 +36,8 @@ final class GetThemeCustomizer implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'theme', 'panels', 'sections' ),
 					'properties' => array(
-						'theme'    => array( 'type' => 'string' ),
-						'panels'   => array(
+						'theme'          => array( 'type' => 'string' ),
+						'panels'         => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -51,7 +51,7 @@ final class GetThemeCustomizer implements RegistersAbility {
 								),
 							),
 						),
-						'sections' => array(
+						'sections'       => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -66,7 +66,7 @@ final class GetThemeCustomizer implements RegistersAbility {
 								),
 							),
 						),
-						'controls' => array(
+						'controls'       => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -86,7 +86,7 @@ final class GetThemeCustomizer implements RegistersAbility {
 								),
 							),
 						),
-						'settings' => array(
+						'settings'       => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -115,9 +115,12 @@ final class GetThemeCustomizer implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'appearance',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'appearance', 'customization' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -148,8 +151,8 @@ final class GetThemeCustomizer implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$stylesheet = $input['stylesheet'] ?? \get_stylesheet();
-		$include_values = $input['include_values'] ?? true;
+		$stylesheet       = $input['stylesheet'] ?? \get_stylesheet();
+		$include_values   = $input['include_values'] ?? true;
 		$include_controls = $input['include_controls'] ?? true;
 
 		// Validate theme exists
@@ -169,21 +172,23 @@ final class GetThemeCustomizer implements RegistersAbility {
 		}
 
 		// Create a temporary customizer instance
-		$wp_customize = new \WP_Customize_Manager( array(
-			'theme' => $stylesheet,
-		) );
+		$wp_customize = new \WP_Customize_Manager(
+			array(
+				'theme' => $stylesheet,
+			)
+		);
 
 		// Initialize the customizer (this loads theme customizations)
 		$wp_customize->setup_theme();
 
 		// Get theme support information
 		$theme_supports = array(
-			'custom_background' => \current_theme_supports( 'custom-background' ),
-			'custom_header'     => \current_theme_supports( 'custom-header' ),
-			'custom_logo'       => \current_theme_supports( 'custom-logo' ),
+			'custom_background'           => \current_theme_supports( 'custom-background' ),
+			'custom_header'               => \current_theme_supports( 'custom-header' ),
+			'custom_logo'                 => \current_theme_supports( 'custom-logo' ),
 			'customize_selective_refresh' => \current_theme_supports( 'customize-selective-refresh-widgets' ),
-			'widgets'           => \current_theme_supports( 'widgets' ),
-			'menus'             => \current_theme_supports( 'menus' ),
+			'widgets'                     => \current_theme_supports( 'widgets' ),
+			'menus'                       => \current_theme_supports( 'menus' ),
 		);
 
 		// Collect panels
@@ -191,9 +196,11 @@ final class GetThemeCustomizer implements RegistersAbility {
 		foreach ( $wp_customize->panels() as $panel_id => $panel ) {
 			$panel_sections = array();
 			foreach ( $wp_customize->sections() as $section_id => $section ) {
-				if ( $section->panel === $panel_id ) {
-					$panel_sections[] = $section_id;
+				if ( $section->panel !== $panel_id ) {
+					continue;
 				}
+
+				$panel_sections[] = $section_id;
 			}
 
 			$panels_data[] = array(
@@ -212,9 +219,11 @@ final class GetThemeCustomizer implements RegistersAbility {
 			$section_controls = array();
 			if ( $include_controls ) {
 				foreach ( $wp_customize->controls() as $control_id => $control ) {
-					if ( $control->section === $section_id ) {
-						$section_controls[] = $control_id;
+					if ( $control->section !== $section_id ) {
+						continue;
 					}
+
+					$section_controls[] = $control_id;
 				}
 			}
 
@@ -233,13 +242,13 @@ final class GetThemeCustomizer implements RegistersAbility {
 		$controls_data = array();
 		if ( $include_controls ) {
 			foreach ( $wp_customize->controls() as $control_id => $control ) {
-				$control_value = '';
+				$control_value   = '';
 				$control_default = '';
 
 				if ( $include_values && isset( $control->setting ) ) {
 					$setting = $wp_customize->get_setting( $control->setting->id );
 					if ( $setting ) {
-						$control_value = $setting->value();
+						$control_value   = $setting->value();
 						$control_default = $setting->default;
 					}
 				}

@@ -17,15 +17,15 @@ final class ChangeUserRole implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'user_id', 'role' ),
 					'properties' => array(
-						'user_id' => array(
+						'user_id'             => array(
 							'type'        => 'integer',
 							'description' => 'User ID.',
 						),
-						'role' => array(
+						'role'                => array(
 							'type'        => 'string',
 							'description' => 'New role for the user (administrator, editor, author, contributor, subscriber, or custom role).',
 						),
-						'add_capabilities' => array(
+						'add_capabilities'    => array(
 							'type'        => 'array',
 							'description' => 'Additional capabilities to grant to the user.',
 							'items'       => array( 'type' => 'string' ),
@@ -50,9 +50,12 @@ final class ChangeUserRole implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'users',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'users', 'permissions' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -73,7 +76,7 @@ final class ChangeUserRole implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$user_id = (int) ( $input['user_id'] ?? 0 );
+		$user_id         = (int) ( $input['user_id'] ?? 0 );
 		$current_user_id = \get_current_user_id();
 
 		// Users cannot change their own role
@@ -108,8 +111,8 @@ final class ChangeUserRole implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$user_id = (int) $input['user_id'];
-		$new_role = \sanitize_key( (string) $input['role'] );
+		$user_id         = (int) $input['user_id'];
+		$new_role        = \sanitize_key( (string) $input['role'] );
 		$current_user_id = \get_current_user_id();
 
 		// Prevent self-role change
@@ -162,37 +165,41 @@ final class ChangeUserRole implements RegistersAbility {
 		$user->set_role( $new_role );
 
 		// Handle additional capabilities
-		$add_capabilities = ! empty( $input['add_capabilities'] ) && \is_array( $input['add_capabilities'] ) 
-			? array_map( 'sanitize_key', $input['add_capabilities'] ) 
+		$add_capabilities = ! empty( $input['add_capabilities'] ) && \is_array( $input['add_capabilities'] )
+			? array_map( 'sanitize_key', $input['add_capabilities'] )
 			: array();
 
-		$remove_capabilities = ! empty( $input['remove_capabilities'] ) && \is_array( $input['remove_capabilities'] ) 
-			? array_map( 'sanitize_key', $input['remove_capabilities'] ) 
+		$remove_capabilities = ! empty( $input['remove_capabilities'] ) && \is_array( $input['remove_capabilities'] )
+			? array_map( 'sanitize_key', $input['remove_capabilities'] )
 			: array();
 
 		// Add capabilities
 		foreach ( $add_capabilities as $cap ) {
-			if ( ! empty( $cap ) ) {
-				$user->add_cap( $cap );
+			if ( empty( $cap ) ) {
+				continue;
 			}
+
+			$user->add_cap( $cap );
 		}
 
 		// Remove capabilities
 		foreach ( $remove_capabilities as $cap ) {
-			if ( ! empty( $cap ) ) {
-				$user->remove_cap( $cap );
+			if ( empty( $cap ) ) {
+				continue;
 			}
+
+			$user->remove_cap( $cap );
 		}
 
 		// Get updated user to return current capabilities
 		$updated_user = \get_user_by( 'ID', $user_id );
-		
+
 		$message = "User role changed from '{$previous_role}' to '{$new_role}'.";
-		
+
 		if ( ! empty( $add_capabilities ) ) {
 			$message .= ' Added capabilities: ' . implode( ', ', $add_capabilities ) . '.';
 		}
-		
+
 		if ( ! empty( $remove_capabilities ) ) {
 			$message .= ' Removed capabilities: ' . implode( ', ', $remove_capabilities ) . '.';
 		}

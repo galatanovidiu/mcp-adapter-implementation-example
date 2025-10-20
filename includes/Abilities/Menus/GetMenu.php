@@ -21,12 +21,12 @@ final class GetMenu implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Menu ID, slug, or name to retrieve.',
 						),
-						'include_items' => array(
+						'include_items'   => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to include menu items. Default: true.',
 							'default'     => true,
 						),
-						'hierarchical' => array(
+						'hierarchical'    => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to organize items hierarchically. Default: false.',
 							'default'     => false,
@@ -51,21 +51,21 @@ final class GetMenu implements RegistersAbility {
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'ID'               => array( 'type' => 'integer' ),
-									'title'            => array( 'type' => 'string' ),
-									'url'              => array( 'type' => 'string' ),
-									'target'           => array( 'type' => 'string' ),
-									'attr_title'       => array( 'type' => 'string' ),
-									'description'      => array( 'type' => 'string' ),
-									'classes'          => array( 'type' => 'string' ),
-									'xfn'              => array( 'type' => 'string' ),
-									'menu_order'       => array( 'type' => 'integer' ),
-									'object'           => array( 'type' => 'string' ),
-									'object_id'        => array( 'type' => 'integer' ),
-									'type'             => array( 'type' => 'string' ),
-									'type_label'       => array( 'type' => 'string' ),
-									'parent_id'        => array( 'type' => 'integer' ),
-									'children'         => array(
+									'ID'          => array( 'type' => 'integer' ),
+									'title'       => array( 'type' => 'string' ),
+									'url'         => array( 'type' => 'string' ),
+									'target'      => array( 'type' => 'string' ),
+									'attr_title'  => array( 'type' => 'string' ),
+									'description' => array( 'type' => 'string' ),
+									'classes'     => array( 'type' => 'string' ),
+									'xfn'         => array( 'type' => 'string' ),
+									'menu_order'  => array( 'type' => 'integer' ),
+									'object'      => array( 'type' => 'string' ),
+									'object_id'   => array( 'type' => 'integer' ),
+									'type'        => array( 'type' => 'string' ),
+									'type_label'  => array( 'type' => 'string' ),
+									'parent_id'   => array( 'type' => 'integer' ),
+									'children'    => array(
 										'type'  => 'array',
 										'items' => array( 'type' => 'object' ),
 									),
@@ -76,9 +76,12 @@ final class GetMenu implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'content',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'content', 'menus' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -110,8 +113,8 @@ final class GetMenu implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$menu_identifier = \sanitize_text_field( (string) $input['menu_identifier'] );
-		$include_items = (bool) ( $input['include_items'] ?? true );
-		$hierarchical = (bool) ( $input['hierarchical'] ?? false );
+		$include_items   = (bool) ( $input['include_items'] ?? true );
+		$hierarchical    = (bool) ( $input['hierarchical'] ?? false );
 
 		// Get the menu
 		$menu = \wp_get_nav_menu_object( $menu_identifier );
@@ -126,12 +129,14 @@ final class GetMenu implements RegistersAbility {
 		}
 
 		// Get menu locations where this menu is assigned
-		$menu_locations = array();
+		$menu_locations     = array();
 		$assigned_locations = \get_nav_menu_locations();
 		foreach ( $assigned_locations as $location => $assigned_menu_id ) {
-			if ( (int) $assigned_menu_id === (int) $menu->term_id ) {
-				$menu_locations[] = $location;
+			if ( (int) $assigned_menu_id !== (int) $menu->term_id ) {
+				continue;
 			}
+
+			$menu_locations[] = $location;
 		}
 
 		$menu_data = array(
@@ -197,7 +202,7 @@ final class GetMenu implements RegistersAbility {
 	 */
 	private static function build_menu_hierarchy( array $items ): array {
 		$hierarchy = array();
-		$children = array();
+		$children  = array();
 
 		// First pass: separate top-level items and children
 		foreach ( $items as $item ) {
@@ -227,9 +232,11 @@ final class GetMenu implements RegistersAbility {
 	private static function attach_children( array $items, array $children ): array {
 		foreach ( $items as &$item ) {
 			$item_id = $item['ID'];
-			if ( isset( $children[ $item_id ] ) ) {
-				$item['children'] = self::attach_children( $children[ $item_id ], $children );
+			if ( ! isset( $children[ $item_id ] ) ) {
+				continue;
 			}
+
+			$item['children'] = self::attach_children( $children[ $item_id ], $children );
 		}
 
 		return $items;

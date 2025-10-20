@@ -13,22 +13,22 @@ class CreateProductCategory implements RegistersAbility {
 				'label'               => 'Create Product Category',
 				'description'         => 'Create a new WooCommerce product category with optional parent and display settings.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'name' ),
-					'properties' => array(
-						'name' => array(
+					'type'                 => 'object',
+					'required'             => array( 'name' ),
+					'properties'           => array(
+						'name'         => array(
 							'type'        => 'string',
 							'description' => 'Category name.',
 						),
-						'slug' => array(
+						'slug'         => array(
 							'type'        => 'string',
 							'description' => 'Category slug (auto-generated if not provided).',
 						),
-						'description' => array(
+						'description'  => array(
 							'type'        => 'string',
 							'description' => 'Category description.',
 						),
-						'parent' => array(
+						'parent'       => array(
 							'type'        => 'integer',
 							'description' => 'Parent category ID (0 for top-level).',
 							'default'     => 0,
@@ -39,11 +39,11 @@ class CreateProductCategory implements RegistersAbility {
 							'enum'        => array( 'default', 'products', 'subcategories', 'both' ),
 							'default'     => 'default',
 						),
-						'image_id' => array(
+						'image_id'     => array(
 							'type'        => 'integer',
 							'description' => 'Category image attachment ID.',
 						),
-						'menu_order' => array(
+						'menu_order'   => array(
 							'type'        => 'integer',
 							'description' => 'Menu order for category sorting.',
 							'default'     => 0,
@@ -54,8 +54,8 @@ class CreateProductCategory implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'success' => array( 'type' => 'boolean' ),
-						'category' => array(
+						'success'     => array( 'type' => 'boolean' ),
+						'category'    => array(
 							'type'       => 'object',
 							'properties' => array(
 								'id'          => array( 'type' => 'integer' ),
@@ -76,14 +76,18 @@ class CreateProductCategory implements RegistersAbility {
 								'name' => array( 'type' => 'string' ),
 							),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'     => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'catalog' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'categories'  => array( 'ecommerce', 'catalog' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -112,13 +116,13 @@ class CreateProductCategory implements RegistersAbility {
 			);
 		}
 
-		$name = $input['name'];
-		$slug = $input['slug'] ?? sanitize_title( $name );
-		$description = $input['description'] ?? '';
-		$parent = $input['parent'] ?? 0;
+		$name         = $input['name'];
+		$slug         = $input['slug'] ?? sanitize_title( $name );
+		$description  = $input['description'] ?? '';
+		$parent       = $input['parent'] ?? 0;
 		$display_type = $input['display_type'] ?? 'default';
-		$image_id = $input['image_id'] ?? 0;
-		$menu_order = $input['menu_order'] ?? 0;
+		$image_id     = $input['image_id'] ?? 0;
+		$menu_order   = $input['menu_order'] ?? 0;
 
 		// Validate parent category
 		$parent_info = null;
@@ -141,11 +145,15 @@ class CreateProductCategory implements RegistersAbility {
 
 		try {
 			// Create the category
-			$result = wp_insert_term( $name, 'product_cat', array(
-				'slug'        => $slug,
-				'description' => $description,
-				'parent'      => $parent,
-			) );
+			$result = wp_insert_term(
+				$name,
+				'product_cat',
+				array(
+					'slug'        => $slug,
+					'description' => $description,
+					'parent'      => $parent,
+				)
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return array(
@@ -201,8 +209,7 @@ class CreateProductCategory implements RegistersAbility {
 					$parent_info ? ' under "' . $parent_info['name'] . '"' : ''
 				),
 			);
-
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return array(
 				'success'     => false,
 				'category'    => null,

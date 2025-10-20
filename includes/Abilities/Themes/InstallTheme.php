@@ -17,11 +17,11 @@ final class InstallTheme implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'theme' ),
 					'properties' => array(
-						'theme' => array(
+						'theme'     => array(
 							'type'        => 'string',
 							'description' => 'Theme slug from WordPress.org repository or download URL.',
 						),
-						'activate' => array(
+						'activate'  => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to activate the theme after installation. Default: false.',
 							'default'     => false,
@@ -37,9 +37,9 @@ final class InstallTheme implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success' ),
 					'properties' => array(
-						'success'       => array( 'type' => 'boolean' ),
-						'theme_slug'    => array( 'type' => 'string' ),
-						'theme_info'    => array(
+						'success'     => array( 'type' => 'boolean' ),
+						'theme_slug'  => array( 'type' => 'string' ),
+						'theme_info'  => array(
 							'type'       => 'object',
 							'properties' => array(
 								'name'        => array( 'type' => 'string' ),
@@ -49,9 +49,9 @@ final class InstallTheme implements RegistersAbility {
 								'stylesheet'  => array( 'type' => 'string' ),
 							),
 						),
-						'activated'     => array( 'type' => 'boolean' ),
-						'message'       => array( 'type' => 'string' ),
-						'install_log'   => array(
+						'activated'   => array( 'type' => 'boolean' ),
+						'message'     => array( 'type' => 'string' ),
+						'install_log' => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
 						),
@@ -59,9 +59,12 @@ final class InstallTheme implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'appearance',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'appearance', 'installation' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -93,8 +96,8 @@ final class InstallTheme implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$theme_identifier = \sanitize_text_field( (string) $input['theme'] );
-		$activate = (bool) ( $input['activate'] ?? false );
-		$overwrite = (bool) ( $input['overwrite'] ?? false );
+		$activate         = (bool) ( $input['activate'] ?? false );
+		$overwrite        = (bool) ( $input['overwrite'] ?? false );
 
 		// Include necessary WordPress files
 		if ( ! function_exists( 'themes_api' ) ) {
@@ -107,17 +110,17 @@ final class InstallTheme implements RegistersAbility {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
-		$install_log = array();
-		$theme_slug = '';
+		$install_log  = array();
+		$theme_slug   = '';
 		$download_url = '';
 
 		// Determine if it's a URL or theme slug
 		if ( filter_var( $theme_identifier, FILTER_VALIDATE_URL ) ) {
-			$download_url = $theme_identifier;
-			$theme_slug = basename( parse_url( $theme_identifier, PHP_URL_PATH ), '.zip' );
+			$download_url  = $theme_identifier;
+			$theme_slug    = basename( parse_url( $theme_identifier, PHP_URL_PATH ), '.zip' );
 			$install_log[] = "Installing theme from URL: {$download_url}";
 		} else {
-			$theme_slug = $theme_identifier;
+			$theme_slug    = $theme_identifier;
 			$install_log[] = "Installing theme from WordPress.org: {$theme_slug}";
 
 			// Get theme information from WordPress.org API
@@ -132,8 +135,8 @@ final class InstallTheme implements RegistersAbility {
 				);
 			}
 
-			$download_url = $api->download_link ?? '';
-			$theme_name = $api->name ?? $theme_slug;
+			$download_url  = $api->download_link ?? '';
+			$theme_name    = $api->name ?? $theme_slug;
 			$theme_version = $api->version ?? 'unknown';
 			$install_log[] = "Found theme: {$theme_name} v{$theme_version}";
 		}
@@ -180,8 +183,8 @@ final class InstallTheme implements RegistersAbility {
 		$upgrader = new \Theme_Upgrader( $skin );
 
 		// Perform the installation
-		$install_log[] = "Starting theme installation...";
-		$result = $upgrader->install( $download_url );
+		$install_log[] = 'Starting theme installation...';
+		$result        = $upgrader->install( $download_url );
 
 		// Collect installation messages
 		$install_log = array_merge( $install_log, $skin->messages );
@@ -208,11 +211,11 @@ final class InstallTheme implements RegistersAbility {
 
 		// Get the installed theme information
 		$installed_theme = null;
-		$stylesheet = '';
+		$stylesheet      = '';
 
 		// Try to find the installed theme
 		if ( isset( $upgrader->result ) && isset( $upgrader->result['destination_name'] ) ) {
-			$stylesheet = $upgrader->result['destination_name'];
+			$stylesheet      = $upgrader->result['destination_name'];
 			$installed_theme = \wp_get_theme( $stylesheet );
 		} else {
 			// Fallback: try the theme slug
@@ -234,31 +237,31 @@ final class InstallTheme implements RegistersAbility {
 
 		$install_log[] = "Theme installed successfully: {$installed_theme->get('Name')}";
 
-		$activated = false;
+		$activated      = false;
 		$previous_theme = '';
 
 		// Activate theme if requested
 		if ( $activate ) {
 			$previous_theme = \get_stylesheet();
-			
+
 			// Check if theme is allowed (for multisite)
 			$can_activate = true;
 			if ( \is_multisite() ) {
 				$allowed_themes = \get_site_option( 'allowedthemes' );
-				$can_activate = isset( $allowed_themes[ $stylesheet ] ) || \current_user_can( 'manage_network_themes' );
+				$can_activate   = isset( $allowed_themes[ $stylesheet ] ) || \current_user_can( 'manage_network_themes' );
 			}
 
 			if ( $can_activate ) {
 				\switch_theme( $stylesheet );
 				$activated = \get_stylesheet() === $stylesheet;
-				
+
 				if ( $activated ) {
-					$install_log[] = "Theme activated successfully.";
+					$install_log[] = 'Theme activated successfully.';
 				} else {
-					$install_log[] = "Theme installation succeeded but activation failed.";
+					$install_log[] = 'Theme installation succeeded but activation failed.';
 				}
 			} else {
-				$install_log[] = "Theme installation succeeded but activation not allowed on this site.";
+				$install_log[] = 'Theme installation succeeded but activation not allowed on this site.';
 			}
 		}
 

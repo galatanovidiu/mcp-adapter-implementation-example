@@ -21,7 +21,7 @@ final class DeleteTheme implements RegistersAbility {
 							'type'        => 'string',
 							'description' => 'Theme stylesheet name (folder name) to delete.',
 						),
-						'force' => array(
+						'force'      => array(
 							'type'        => 'boolean',
 							'description' => 'Force deletion even if theme is active. Default: false.',
 							'default'     => false,
@@ -32,22 +32,26 @@ final class DeleteTheme implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success' ),
 					'properties' => array(
-						'success'     => array( 'type' => 'boolean' ),
-						'theme_slug'  => array( 'type' => 'string' ),
-						'theme_name'  => array( 'type' => 'string' ),
-						'message'     => array( 'type' => 'string' ),
-						'files_removed' => array(
+						'success'        => array( 'type' => 'boolean' ),
+						'theme_slug'     => array( 'type' => 'string' ),
+						'theme_name'     => array( 'type' => 'string' ),
+						'message'        => array( 'type' => 'string' ),
+						'files_removed'  => array(
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
 						),
-						'was_active'  => array( 'type' => 'boolean' ),
+						'was_active'     => array( 'type' => 'boolean' ),
 						'fallback_theme' => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'appearance',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.5,
@@ -79,7 +83,7 @@ final class DeleteTheme implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$stylesheet = \sanitize_text_field( (string) $input['stylesheet'] );
-		$force = (bool) ( $input['force'] ?? false );
+		$force      = (bool) ( $input['force'] ?? false );
 
 		// Check if theme exists
 		$theme = \wp_get_theme( $stylesheet );
@@ -92,9 +96,9 @@ final class DeleteTheme implements RegistersAbility {
 			);
 		}
 
-		$theme_name = $theme->get( 'Name' );
-		$active_theme = \get_stylesheet();
-		$was_active = $stylesheet === $active_theme;
+		$theme_name     = $theme->get( 'Name' );
+		$active_theme   = \get_stylesheet();
+		$was_active     = $stylesheet === $active_theme;
 		$fallback_theme = '';
 
 		// Prevent deletion of active theme unless forced
@@ -120,18 +124,20 @@ final class DeleteTheme implements RegistersAbility {
 
 		// Check if this is a parent theme with active child themes
 		$child_themes = array();
-		$all_themes = \wp_get_themes();
+		$all_themes   = \wp_get_themes();
 		foreach ( $all_themes as $theme_stylesheet => $child_theme ) {
-			if ( $child_theme->get_template() === $stylesheet && $theme_stylesheet !== $stylesheet ) {
-				$child_themes[] = $theme_stylesheet;
+			if ( $child_theme->get_template() !== $stylesheet || $theme_stylesheet === $stylesheet ) {
+				continue;
 			}
+
+			$child_themes[] = $theme_stylesheet;
 		}
 
 		if ( ! empty( $child_themes ) && ! $force ) {
 			return array(
 				'error' => array(
-					'code'    => 'has_child_themes',
-					'message' => 'Cannot delete theme that has child themes. Child themes: ' . implode( ', ', $child_themes ),
+					'code'         => 'has_child_themes',
+					'message'      => 'Cannot delete theme that has child themes. Child themes: ' . implode( ', ', $child_themes ),
 					'child_themes' => $child_themes,
 				),
 			);
@@ -141,14 +147,16 @@ final class DeleteTheme implements RegistersAbility {
 		if ( $was_active ) {
 			// Find a suitable fallback theme
 			$fallback_candidates = array( 'twentytwentyfour', 'twentytwentythree', 'twentytwentytwo', 'twentytwentyone', 'twentytwenty' );
-			
+
 			foreach ( $fallback_candidates as $candidate ) {
-				if ( $candidate !== $stylesheet ) {
-					$fallback_theme_obj = \wp_get_theme( $candidate );
-					if ( $fallback_theme_obj->exists() ) {
-						$fallback_theme = $candidate;
-						break;
-					}
+				if ( $candidate === $stylesheet ) {
+					continue;
+				}
+
+				$fallback_theme_obj = \wp_get_theme( $candidate );
+				if ( $fallback_theme_obj->exists() ) {
+					$fallback_theme = $candidate;
+					break;
 				}
 			}
 
@@ -184,9 +192,9 @@ final class DeleteTheme implements RegistersAbility {
 		}
 
 		// Get list of files before deletion for logging
-		$theme_dir = $theme->get_stylesheet_directory();
+		$theme_dir     = $theme->get_stylesheet_directory();
 		$files_removed = array();
-		
+
 		if ( is_dir( $theme_dir ) ) {
 			$iterator = new \RecursiveIteratorIterator(
 				new \RecursiveDirectoryIterator( $theme_dir, \RecursiveDirectoryIterator::SKIP_DOTS ),

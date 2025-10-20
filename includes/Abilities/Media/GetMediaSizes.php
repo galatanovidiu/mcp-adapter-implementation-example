@@ -27,7 +27,7 @@ final class GetMediaSizes implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'sizes' ),
 					'properties' => array(
-						'sizes' => array(
+						'sizes'         => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -54,9 +54,12 @@ final class GetMediaSizes implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'media',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'media', 'settings' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -89,17 +92,17 @@ final class GetMediaSizes implements RegistersAbility {
 	public static function execute( array $input ) {
 		$include_custom = array_key_exists( 'include_custom', $input ) ? (bool) $input['include_custom'] : true;
 
-		$sizes = array();
+		$sizes         = array();
 		$default_sizes = array( 'thumbnail', 'medium', 'medium_large', 'large' );
 
 		// Get all registered image sizes
 		$all_sizes = \wp_get_additional_image_sizes();
-		
+
 		// Add default WordPress sizes
 		foreach ( $default_sizes as $size ) {
-			$width = (int) \get_option( $size . '_size_w' );
+			$width  = (int) \get_option( $size . '_size_w' );
 			$height = (int) \get_option( $size . '_size_h' );
-			$crop = (bool) \get_option( $size . '_crop' );
+			$crop   = (bool) \get_option( $size . '_crop' );
 
 			$sizes[] = array(
 				'name'        => $size,
@@ -136,7 +139,7 @@ final class GetMediaSizes implements RegistersAbility {
 		);
 
 		// Get upload limits and allowed file types
-		$max_upload_size = \wp_max_upload_size();
+		$max_upload_size    = \wp_max_upload_size();
 		$allowed_mime_types = \get_allowed_mime_types();
 
 		$upload_limits = array(

@@ -13,9 +13,9 @@ class CheckFilePermissions implements RegistersAbility {
 				'label'               => 'Check File Permissions',
 				'description'         => 'Audit WordPress file and directory permissions for security compliance.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'detailed' => array(
+					'type'                 => 'object',
+					'properties'           => array(
+						'detailed'       => array(
 							'type'        => 'boolean',
 							'description' => 'Include detailed permission information for each file/directory.',
 							'default'     => false,
@@ -31,7 +31,7 @@ class CheckFilePermissions implements RegistersAbility {
 				'output_schema'       => array(
 					'type'       => 'object',
 					'properties' => array(
-						'summary' => array(
+						'summary'         => array(
 							'type'       => 'object',
 							'properties' => array(
 								'total_checked'   => array( 'type' => 'integer' ),
@@ -40,27 +40,27 @@ class CheckFilePermissions implements RegistersAbility {
 								'overall_status'  => array( 'type' => 'string' ),
 							),
 						),
-						'wp_config' => array(
+						'wp_config'       => array(
 							'type'       => 'object',
 							'properties' => array(
-								'permissions' => array( 'type' => 'string' ),
-								'writable'    => array( 'type' => 'boolean' ),
-								'status'      => array( 'type' => 'string' ),
+								'permissions'    => array( 'type' => 'string' ),
+								'writable'       => array( 'type' => 'boolean' ),
+								'status'         => array( 'type' => 'string' ),
 								'recommendation' => array( 'type' => 'string' ),
 							),
 						),
-						'directories' => array(
-							'type'  => 'object',
+						'directories'     => array(
+							'type'       => 'object',
 							'properties' => array(
-								'wp_content' => array( 'type' => 'object' ),
+								'wp_content'  => array( 'type' => 'object' ),
 								'wp_includes' => array( 'type' => 'object' ),
-								'wp_admin' => array( 'type' => 'object' ),
-								'uploads' => array( 'type' => 'object' ),
-								'themes' => array( 'type' => 'object' ),
-								'plugins' => array( 'type' => 'object' ),
+								'wp_admin'    => array( 'type' => 'object' ),
+								'uploads'     => array( 'type' => 'object' ),
+								'themes'      => array( 'type' => 'object' ),
+								'plugins'     => array( 'type' => 'object' ),
 							),
 						),
-						'critical_files' => array(
+						'critical_files'  => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
@@ -77,14 +77,17 @@ class CheckFilePermissions implements RegistersAbility {
 							'type'  => 'array',
 							'items' => array( 'type' => 'string' ),
 						),
-						'message' => array( 'type' => 'string' ),
+						'message'         => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'security',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'security', 'system' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -103,7 +106,7 @@ class CheckFilePermissions implements RegistersAbility {
 	}
 
 	public static function execute( array $input ): array {
-		$detailed = $input['detailed'] ?? false;
+		$detailed       = $input['detailed'] ?? false;
 		$check_writable = $input['check_writable'] ?? true;
 
 		$summary = array(
@@ -114,19 +117,19 @@ class CheckFilePermissions implements RegistersAbility {
 		);
 
 		$recommendations = array();
-		$critical_files = array();
-		$directories = array();
+		$critical_files  = array();
+		$directories     = array();
 
 		// Check wp-config.php
 		$wp_config = self::check_wp_config( $check_writable );
 		if ( $wp_config['status'] !== 'good' ) {
 			if ( $wp_config['status'] === 'critical' ) {
-				$summary['critical_issues']++;
+				++$summary['critical_issues'];
 			} else {
-				$summary['warnings']++;
+				++$summary['warnings'];
 			}
 		}
-		$summary['total_checked']++;
+		++$summary['total_checked'];
 
 		// Check critical directories
 		$dirs_to_check = array(
@@ -139,18 +142,22 @@ class CheckFilePermissions implements RegistersAbility {
 		);
 
 		foreach ( $dirs_to_check as $name => $path ) {
-			if ( file_exists( $path ) ) {
-				$dir_info = self::check_directory_permissions( $path, $name, $detailed );
-				$directories[ $name ] = $dir_info;
-				$summary['total_checked']++;
+			if ( ! file_exists( $path ) ) {
+				continue;
+			}
 
-				if ( $dir_info['status'] !== 'good' ) {
-					if ( $dir_info['status'] === 'critical' ) {
-						$summary['critical_issues']++;
-					} else {
-						$summary['warnings']++;
-					}
-				}
+			$dir_info             = self::check_directory_permissions( $path, $name, $detailed );
+			$directories[ $name ] = $dir_info;
+			++$summary['total_checked'];
+
+			if ( $dir_info['status'] === 'good' ) {
+				continue;
+			}
+
+			if ( $dir_info['status'] === 'critical' ) {
+				++$summary['critical_issues'];
+			} else {
+				++$summary['warnings'];
 			}
 		}
 
@@ -164,30 +171,34 @@ class CheckFilePermissions implements RegistersAbility {
 
 		foreach ( $files_to_check as $filename ) {
 			$filepath = ABSPATH . $filename;
-			if ( file_exists( $filepath ) ) {
-				$file_info = self::check_file_permissions( $filepath, $filename, $check_writable );
-				if ( $file_info['status'] !== 'good' || $detailed ) {
-					$critical_files[] = $file_info;
-				}
-				$summary['total_checked']++;
+			if ( ! file_exists( $filepath ) ) {
+				continue;
+			}
 
-				if ( $file_info['status'] !== 'good' ) {
-					if ( $file_info['status'] === 'critical' ) {
-						$summary['critical_issues']++;
-					} else {
-						$summary['warnings']++;
-					}
-				}
+			$file_info = self::check_file_permissions( $filepath, $filename, $check_writable );
+			if ( $file_info['status'] !== 'good' || $detailed ) {
+				$critical_files[] = $file_info;
+			}
+			++$summary['total_checked'];
+
+			if ( $file_info['status'] === 'good' ) {
+				continue;
+			}
+
+			if ( $file_info['status'] === 'critical' ) {
+				++$summary['critical_issues'];
+			} else {
+				++$summary['warnings'];
 			}
 		}
 
 		// Generate recommendations
 		if ( $summary['critical_issues'] > 0 ) {
 			$summary['overall_status'] = 'critical';
-			$recommendations[] = 'Critical security issues found. Review file permissions immediately.';
+			$recommendations[]         = 'Critical security issues found. Review file permissions immediately.';
 		} elseif ( $summary['warnings'] > 0 ) {
 			$summary['overall_status'] = 'warning';
-			$recommendations[] = 'Some file permissions may need attention for optimal security.';
+			$recommendations[]         = 'Some file permissions may need attention for optimal security.';
 		}
 
 		// Add general recommendations
@@ -212,7 +223,7 @@ class CheckFilePermissions implements RegistersAbility {
 
 	private static function check_wp_config( bool $check_writable ): array {
 		$wp_config_path = ABSPATH . 'wp-config.php';
-		
+
 		if ( ! file_exists( $wp_config_path ) ) {
 			// Check one level up
 			$wp_config_path = dirname( ABSPATH ) . '/wp-config.php';
@@ -220,34 +231,34 @@ class CheckFilePermissions implements RegistersAbility {
 
 		if ( ! file_exists( $wp_config_path ) ) {
 			return array(
-				'permissions' => 'N/A',
-				'writable'    => false,
-				'status'      => 'critical',
+				'permissions'    => 'N/A',
+				'writable'       => false,
+				'status'         => 'critical',
 				'recommendation' => 'wp-config.php not found. This is a critical issue.',
 			);
 		}
 
-		$perms = substr( sprintf( '%o', fileperms( $wp_config_path ) ), -4 );
+		$perms       = substr( sprintf( '%o', fileperms( $wp_config_path ) ), -4 );
 		$is_writable = is_writable( $wp_config_path );
-		
-		$status = 'good';
+
+		$status         = 'good';
 		$recommendation = 'File permissions are appropriate.';
 
 		if ( $check_writable && $is_writable ) {
-			$status = 'warning';
+			$status         = 'warning';
 			$recommendation = 'wp-config.php is writable. Consider changing permissions to 644 or 600.';
 		}
 
 		// Check if permissions are too open
 		if ( intval( substr( $perms, -1 ) ) > 4 ) {
-			$status = 'critical';
+			$status         = 'critical';
 			$recommendation = 'wp-config.php has world-readable permissions. Change to 644 or 600.';
 		}
 
 		return array(
-			'permissions' => $perms,
-			'writable'    => $is_writable,
-			'status'      => $status,
+			'permissions'    => $perms,
+			'writable'       => $is_writable,
+			'status'         => $status,
 			'recommendation' => $recommendation,
 		);
 	}
@@ -263,35 +274,35 @@ class CheckFilePermissions implements RegistersAbility {
 			);
 		}
 
-		$perms = substr( sprintf( '%o', fileperms( $path ) ), -4 );
+		$perms       = substr( sprintf( '%o', fileperms( $path ) ), -4 );
 		$is_writable = is_writable( $path );
-		
+
 		$status = 'good';
-		$issue = '';
+		$issue  = '';
 
 		// Check for appropriate directory permissions
 		$recommended_perms = array(
-			'wp_content' => '755',
-			'uploads'    => '755',
-			'themes'     => '755',
-			'plugins'    => '755',
+			'wp_content'  => '755',
+			'uploads'     => '755',
+			'themes'      => '755',
+			'plugins'     => '755',
 			'wp_includes' => '755',
-			'wp_admin'   => '755',
+			'wp_admin'    => '755',
 		);
 
 		$expected = $recommended_perms[ $name ] ?? '755';
-		
+
 		if ( $perms !== $expected ) {
 			if ( intval( $perms ) > intval( $expected ) ) {
 				$status = 'warning';
-				$issue = "Permissions ({$perms}) are more permissive than recommended ({$expected})";
+				$issue  = "Permissions ({$perms}) are more permissive than recommended ({$expected})";
 			}
 		}
 
 		// Special checks for sensitive directories
 		if ( in_array( $name, array( 'wp_includes', 'wp_admin' ) ) && $is_writable ) {
 			$status = 'warning';
-			$issue = "Directory should not be writable by web server for security";
+			$issue  = 'Directory should not be writable by web server for security';
 		}
 
 		$result = array(
@@ -319,19 +330,19 @@ class CheckFilePermissions implements RegistersAbility {
 			);
 		}
 
-		$perms = substr( sprintf( '%o', fileperms( $filepath ) ), -4 );
+		$perms       = substr( sprintf( '%o', fileperms( $filepath ) ), -4 );
 		$is_writable = is_writable( $filepath );
-		
+
 		$status = 'good';
-		$issue = '';
+		$issue  = '';
 
 		// Check for overly permissive file permissions
 		if ( intval( substr( $perms, -1 ) ) > 4 ) {
 			$status = 'critical';
-			$issue = 'File has world-writable permissions';
+			$issue  = 'File has world-writable permissions';
 		} elseif ( $check_writable && $is_writable && in_array( $filename, array( '.htaccess', 'index.php' ) ) ) {
 			$status = 'warning';
-			$issue = 'File is writable by web server';
+			$issue  = 'File is writable by web server';
 		}
 
 		$result = array(

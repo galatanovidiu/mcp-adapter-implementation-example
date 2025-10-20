@@ -13,23 +13,23 @@ class ManageShippingMethods implements RegistersAbility {
 				'label'               => 'Manage WooCommerce Shipping Methods',
 				'description'         => 'Configure WooCommerce shipping zones, methods, and rates.',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'required'   => array( 'action' ),
-					'properties' => array(
-						'action' => array(
+					'type'                 => 'object',
+					'required'             => array( 'action' ),
+					'properties'           => array(
+						'action'          => array(
 							'type'        => 'string',
 							'description' => 'Action to perform: list_zones, list_methods, create_zone, add_method, configure_method.',
 							'enum'        => array( 'list_zones', 'list_methods', 'create_zone', 'add_method', 'configure_method' ),
 						),
-						'zone_id' => array(
+						'zone_id'         => array(
 							'type'        => 'integer',
 							'description' => 'Shipping zone ID (required for zone-specific actions).',
 						),
-						'zone_name' => array(
+						'zone_name'       => array(
 							'type'        => 'string',
 							'description' => 'Shipping zone name (for create_zone action).',
 						),
-						'zone_locations' => array(
+						'zone_locations'  => array(
 							'type'        => 'array',
 							'description' => 'Zone locations (for create_zone action).',
 							'items'       => array(
@@ -40,22 +40,22 @@ class ManageShippingMethods implements RegistersAbility {
 								),
 							),
 						),
-						'method_id' => array(
+						'method_id'       => array(
 							'type'        => 'string',
 							'description' => 'Shipping method ID (for method-specific actions).',
 						),
-						'method_type' => array(
+						'method_type'     => array(
 							'type'        => 'string',
 							'description' => 'Shipping method type (flat_rate, free_shipping, local_pickup).',
 							'enum'        => array( 'flat_rate', 'free_shipping', 'local_pickup' ),
 						),
-						'method_title' => array(
+						'method_title'    => array(
 							'type'        => 'string',
 							'description' => 'Shipping method title.',
 						),
 						'method_settings' => array(
-							'type'        => 'object',
-							'description' => 'Shipping method settings.',
+							'type'                 => 'object',
+							'description'          => 'Shipping method settings.',
 							'additionalProperties' => true,
 						),
 					),
@@ -65,44 +65,47 @@ class ManageShippingMethods implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'success', 'action' ),
 					'properties' => array(
-						'success'    => array( 'type' => 'boolean' ),
-						'action'     => array( 'type' => 'string' ),
-						'zone_id'    => array( 'type' => 'integer' ),
-						'method_id'  => array( 'type' => 'string' ),
-						'zones'      => array(
+						'success'   => array( 'type' => 'boolean' ),
+						'action'    => array( 'type' => 'string' ),
+						'zone_id'   => array( 'type' => 'integer' ),
+						'method_id' => array( 'type' => 'string' ),
+						'zones'     => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'id'          => array( 'type' => 'integer' ),
-									'name'        => array( 'type' => 'string' ),
-									'locations'   => array( 'type' => 'array' ),
-									'methods'     => array( 'type' => 'array' ),
-									'order'       => array( 'type' => 'integer' ),
+									'id'        => array( 'type' => 'integer' ),
+									'name'      => array( 'type' => 'string' ),
+									'locations' => array( 'type' => 'array' ),
+									'methods'   => array( 'type' => 'array' ),
+									'order'     => array( 'type' => 'integer' ),
 								),
 							),
 						),
-						'methods'    => array(
+						'methods'   => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
 								'properties' => array(
-									'id'          => array( 'type' => 'string' ),
-									'title'       => array( 'type' => 'string' ),
-									'type'        => array( 'type' => 'string' ),
-									'enabled'     => array( 'type' => 'boolean' ),
-									'settings'    => array( 'type' => 'object' ),
+									'id'       => array( 'type' => 'string' ),
+									'title'    => array( 'type' => 'string' ),
+									'type'     => array( 'type' => 'string' ),
+									'enabled'  => array( 'type' => 'boolean' ),
+									'settings' => array( 'type' => 'object' ),
 								),
 							),
 						),
-						'message'    => array( 'type' => 'string' ),
+						'message'   => array( 'type' => 'string' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'ecommerce', 'configuration' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
@@ -121,13 +124,13 @@ class ManageShippingMethods implements RegistersAbility {
 	}
 
 	public static function execute( array $input ): array {
-		$action = sanitize_text_field( $input['action'] );
-		$zone_id = isset( $input['zone_id'] ) ? (int) $input['zone_id'] : 0;
-		$zone_name = isset( $input['zone_name'] ) ? sanitize_text_field( $input['zone_name'] ) : '';
-		$zone_locations = $input['zone_locations'] ?? array();
-		$method_id = isset( $input['method_id'] ) ? sanitize_text_field( $input['method_id'] ) : '';
-		$method_type = isset( $input['method_type'] ) ? sanitize_text_field( $input['method_type'] ) : '';
-		$method_title = isset( $input['method_title'] ) ? sanitize_text_field( $input['method_title'] ) : '';
+		$action          = sanitize_text_field( $input['action'] );
+		$zone_id         = isset( $input['zone_id'] ) ? (int) $input['zone_id'] : 0;
+		$zone_name       = isset( $input['zone_name'] ) ? sanitize_text_field( $input['zone_name'] ) : '';
+		$zone_locations  = $input['zone_locations'] ?? array();
+		$method_id       = isset( $input['method_id'] ) ? sanitize_text_field( $input['method_id'] ) : '';
+		$method_type     = isset( $input['method_type'] ) ? sanitize_text_field( $input['method_type'] ) : '';
+		$method_title    = isset( $input['method_title'] ) ? sanitize_text_field( $input['method_title'] ) : '';
 		$method_settings = $input['method_settings'] ?? array();
 
 		switch ( $action ) {
@@ -156,12 +159,12 @@ class ManageShippingMethods implements RegistersAbility {
 	}
 
 	private static function list_shipping_zones(): array {
-		$zones = \WC_Shipping_Zones::get_zones();
+		$zones      = \WC_Shipping_Zones::get_zones();
 		$zones_data = array();
 
 		foreach ( $zones as $zone ) {
-			$zone_obj = new \WC_Shipping_Zone( $zone['id'] );
-			$methods = $zone_obj->get_shipping_methods();
+			$zone_obj     = new \WC_Shipping_Zone( $zone['id'] );
+			$methods      = $zone_obj->get_shipping_methods();
 			$methods_data = array();
 
 			foreach ( $methods as $method ) {
@@ -185,8 +188,8 @@ class ManageShippingMethods implements RegistersAbility {
 
 		// Add "Rest of the World" zone
 		$rest_of_world = new \WC_Shipping_Zone( 0 );
-		$methods = $rest_of_world->get_shipping_methods();
-		$methods_data = array();
+		$methods       = $rest_of_world->get_shipping_methods();
+		$methods_data  = array();
 
 		foreach ( $methods as $method ) {
 			$methods_data[] = array(
@@ -215,8 +218,8 @@ class ManageShippingMethods implements RegistersAbility {
 	}
 
 	private static function list_shipping_methods( int $zone_id ): array {
-		$zone = new \WC_Shipping_Zone( $zone_id );
-		$methods = $zone->get_shipping_methods();
+		$zone         = new \WC_Shipping_Zone( $zone_id );
+		$methods      = $zone->get_shipping_methods();
 		$methods_data = array();
 
 		foreach ( $methods as $method ) {
@@ -230,11 +233,11 @@ class ManageShippingMethods implements RegistersAbility {
 		}
 
 		return array(
-			'success'  => true,
-			'action'   => 'list_methods',
-			'zone_id'  => $zone_id,
-			'methods'  => $methods_data,
-			'message'  => 'Shipping methods retrieved successfully.',
+			'success' => true,
+			'action'  => 'list_methods',
+			'zone_id' => $zone_id,
+			'methods' => $methods_data,
+			'message' => 'Shipping methods retrieved successfully.',
 		);
 	}
 
@@ -258,10 +261,10 @@ class ManageShippingMethods implements RegistersAbility {
 		$zone_id = $zone->save();
 
 		return array(
-			'success'  => true,
-			'action'   => 'create_zone',
-			'zone_id'  => $zone_id,
-			'message'  => sprintf( 'Shipping zone "%s" created successfully.', $zone_name ),
+			'success' => true,
+			'action'  => 'create_zone',
+			'zone_id' => $zone_id,
+			'message' => sprintf( 'Shipping zone "%s" created successfully.', $zone_name ),
 		);
 	}
 
@@ -274,7 +277,7 @@ class ManageShippingMethods implements RegistersAbility {
 			);
 		}
 
-		$zone = new \WC_Shipping_Zone( $zone_id );
+		$zone      = new \WC_Shipping_Zone( $zone_id );
 		$method_id = $zone->add_shipping_method( $method_type );
 
 		if ( $method_id ) {
@@ -310,7 +313,7 @@ class ManageShippingMethods implements RegistersAbility {
 			);
 		}
 
-		$zone = new \WC_Shipping_Zone( $zone_id );
+		$zone   = new \WC_Shipping_Zone( $zone_id );
 		$method = $zone->get_shipping_method( $method_id );
 
 		if ( ! $method ) {

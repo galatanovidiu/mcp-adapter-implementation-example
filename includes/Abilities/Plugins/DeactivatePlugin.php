@@ -17,7 +17,7 @@ final class DeactivatePlugin implements RegistersAbility {
 					'type'       => 'object',
 					'required'   => array( 'plugin_file' ),
 					'properties' => array(
-						'plugin_file' => array(
+						'plugin_file'  => array(
 							'type'        => 'string',
 							'description' => 'Plugin file path (e.g., "plugin-folder/plugin-file.php").',
 						),
@@ -26,7 +26,7 @@ final class DeactivatePlugin implements RegistersAbility {
 							'description' => 'Deactivate plugin network-wide (multisite only).',
 							'default'     => false,
 						),
-						'silent' => array(
+						'silent'       => array(
 							'type'        => 'boolean',
 							'description' => 'Suppress deactivation hooks.',
 							'default'     => false,
@@ -50,9 +50,12 @@ final class DeactivatePlugin implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
+				'category'            => 'plugins',
 				'meta'                => array(
-					'mcp'  => ['public' => true, 'type' => 'tool'],
-					'categories' => array( 'plugins', 'management' ),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -74,11 +77,11 @@ final class DeactivatePlugin implements RegistersAbility {
 	 */
 	public static function check_permission( array $input ): bool {
 		$network_wide = ! empty( $input['network_wide'] );
-		
+
 		if ( $network_wide && \is_multisite() ) {
 			return \current_user_can( 'manage_network_plugins' );
 		}
-		
+
 		return \current_user_can( 'activate_plugins' );
 	}
 
@@ -112,7 +115,7 @@ final class DeactivatePlugin implements RegistersAbility {
 		$plugin_data = $all_plugins[ $plugin_file ];
 
 		// Check if plugin is currently active
-		$is_active = \is_plugin_active( $plugin_file );
+		$is_active         = \is_plugin_active( $plugin_file );
 		$is_network_active = \is_multisite() && \is_plugin_active_for_network( $plugin_file );
 
 		if ( ! $is_active && ! $is_network_active ) {
@@ -164,7 +167,7 @@ final class DeactivatePlugin implements RegistersAbility {
 		}
 
 		// Verify deactivation was successful
-		$is_still_active = $network_wide 
+		$is_still_active = $network_wide
 			? ( \is_multisite() && \is_plugin_active_for_network( $plugin_file ) )
 			: \is_plugin_active( $plugin_file );
 
