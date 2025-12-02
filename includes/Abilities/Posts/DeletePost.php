@@ -9,7 +9,7 @@ final class DeletePost implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/delete-post',
+			'core/delete-post',
 			array(
 				'label'               => 'Delete Post',
 				'description'         => 'Delete a WordPress post by ID.',
@@ -37,7 +37,43 @@ final class DeletePost implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'annotations' => array(
+						'audience'             => array( 'user', 'assistant' ),
+						'priority'             => 0.6,
+						'readOnlyHint'         => false,
+						'destructiveHint'      => true,
+						'idempotentHint'       => true,
+						'openWorldHint'        => false,
+						'requiresConfirmation' => true,
+					),
+					'elicitation' => array(
+						'message' => 'You are about to delete the post "{post_title}". The post will be {action}. Do you want to continue?',
+						'impact'  => 'medium',
+						'schema'  => array(
+							'type'       => 'object',
+							'properties' => array(
+								'confirm' => array(
+									'type'        => 'boolean',
+									'title'       => 'Confirm Deletion',
+									'description' => 'Confirm that you want to delete this post',
+								),
+								'reason'  => array(
+									'type'        => 'string',
+									'title'       => 'Reason (Optional)',
+									'description' => 'Why are you deleting this post?',
+									'maxLength'   => 200,
+								),
+							),
+							'required'   => array( 'confirm' ),
+						),
+					),
+				),
 			)
 		);
 	}

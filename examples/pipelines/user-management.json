@@ -1,0 +1,70 @@
+{
+  "description": "User management pipeline - Find inactive users and send notifications",
+  "steps": [
+    {
+      "type": "ability",
+      "ability": "core/list-users",
+      "input": {
+        "number": 100,
+        "role": "subscriber"
+      },
+      "output": "users",
+      "description": "Fetch all subscriber users"
+    },
+    {
+      "type": "parallel",
+      "steps": [
+        {
+          "type": "transform",
+          "operation": "count",
+          "input": "$users",
+          "output": "total_users"
+        },
+        {
+          "type": "transform",
+          "operation": "pluck",
+          "input": "$users",
+          "params": {
+            "field": "user_email"
+          },
+          "output": "user_emails"
+        },
+        {
+          "type": "transform",
+          "operation": "pluck",
+          "input": "$users",
+          "params": {
+            "field": "display_name"
+          },
+          "output": "user_names"
+        }
+      ],
+      "description": "Extract user data in parallel"
+    },
+    {
+      "type": "transform",
+      "operation": "filter",
+      "input": "$users",
+      "params": {
+        "condition": {
+          "field": "user_registered",
+          "operator": "less_than",
+          "value": "2024-01-01"
+        }
+      },
+      "output": "old_users",
+      "description": "Filter users registered before 2024"
+    },
+    {
+      "type": "transform",
+      "operation": "slice",
+      "input": "$old_users",
+      "params": {
+        "offset": 0,
+        "length": 10
+      },
+      "output": "sample_users",
+      "description": "Take first 10 users as sample"
+    }
+  ]
+}

@@ -22,10 +22,10 @@ declare( strict_types=1 );
 
 
 use OvidiuGalatan\McpAdapterExample\Abilities\BootstrapAbilities;
+use OvidiuGalatan\McpAdapterExample\Handlers\RayMcpErrorHandler;
+use OvidiuGalatan\McpAdapterExample\Handlers\RayMcpObservabilityHandler;
 use WP\MCP\Core\McpAdapter;
-use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
-use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
-use WP\MCP\Transport\Http\RestTransport;
+use WP\MCP\Transport\HttpTransport;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -74,39 +74,8 @@ add_action(
 			return;
 		}
 
-		// Attempt to initialize the adapter.
-		$adapter = McpAdapter::instance();
-		if ( null === $adapter ) {
-			// Log detailed information about missing dependencies.
-			$status = McpAdapter::get_dependency_status();
-			error_log( '[MCP Adapter Example] MCP Adapter initialization failed. Status: ' . wp_json_encode( $status ) );
-
-			// Setup admin notices to inform users about missing dependencies.
-			add_action(
-				'admin_notices',
-				static function () {
-					$errors = McpAdapter::get_initialization_errors();
-					if ( empty( $errors ) ) {
-						return;
-					}
-
-					$message  = 'MCP Adapter Implementation Example plugin could not initialize due to missing dependencies:';
-					$message .= '<ul>';
-					foreach ( $errors as $error ) {
-						$message .= '<li>' . esc_html( $error ) . '</li>';
-					}
-					$message .= '</ul>';
-					$message .= 'Please ensure all required dependencies are installed and activated.';
-
-					printf(
-						'<div class="notice notice-error"><p><strong>MCP Adapter Example:</strong> %s</p></div>',
-						wp_kses_post( $message )
-					);
-				}
-			);
-
-			return;
-		}
+		// Initialize the adapter.
+		McpAdapter::instance();
 	}
 );
 
@@ -116,36 +85,68 @@ add_action(
  */    'mcp_adapter_init',
 	static function ( McpAdapter $adapter ): void {
 
-			BootstrapAbilities::init();
+		BootstrapAbilities::init();
 
+		// Server 1: API Expose (for discovering and executing REST API endpoints)
 		$adapter->create_server(
-			'mcp-adapter-example-server',
-			'mcp-adapter-example',
+			'mcp-api-expose',
+			'mcp-api-expose',
 			'mcp',
-			'MCP Adapter Example Server',
-			'MCP server for the MCP Adapter Implementation Example plugin',
+			'Expose all API endpoints trough MCP',
+			'Exposing all API endpoints trough MCP',
 			'v1.0.0',
-			array( RestTransport::class ),
-			ErrorLogMcpErrorHandler::class,
-			NullMcpObservabilityHandler::class,
+			array( HttpTransport::class ),
+			RayMcpErrorHandler::class,
+			RayMcpObservabilityHandler::class,
 			array(
-				'wpmcp-example/list-posts',
-				'wpmcp-example/create-post',
-				'wpmcp-example/get-post',
-				'wpmcp-example/update-post',
-				'wpmcp-example/delete-post',
-				'wpmcp-example/list-block-types',
-				'wpmcp-example/list-post-meta-keys',
-				'wpmcp-example/get-post-meta',
-				'wpmcp-example/update-post-meta',
-				'wpmcp-example/delete-post-meta',
-				'wpmcp-example/list-taxonomies',
-				'wpmcp-example/get-terms',
-				'wpmcp-example/create-term',
-				'wpmcp-example/update-term',
-				'wpmcp-example/delete-term',
-				'wpmcp-example/attach-post-terms',
-				'wpmcp-example/detach-post-terms',
+				'mcp-api-expose/discover-api-endpoints',
+				'mcp-api-expose/get-api-endpoint-info',
+				'mcp-api-expose/execute-api-endpoint',
+			),
+			array(),
+			array()
+		);
+
+		// Server 2: Pipeline Executor (for declarative pipelines with 90%+ token reduction)
+		$adapter->create_server(
+			'wordpress-pipeline',
+			'mcp',
+			'pipeline',
+			'WordPress Declarative Pipeline Executor',
+			'Use this server when you need to perform multi-step WordPress operations like: batch processing content (analyzing/updating 10+ posts), complex workflows with loops and conditionals, data transformations (filtering, mapping, aggregating), error handling, or any task requiring 3+ sequential operations. Define workflows as JSON pipelines instead of making individual tool calls. Use the pipeline/get-capabilities tool to see all available operations. Best for: content migration, bulk updates, reporting, inventory management, user segmentation.',
+			'v1.0.0',
+			array( HttpTransport::class ),
+			RayMcpErrorHandler::class,
+			RayMcpObservabilityHandler::class,
+			array(
+				'mcp-adapter/execute-pipeline',
+				'pipeline/get-capabilities',
+			),
+			array(
+				'pipeline/examples',
+			),
+			array()
+		);
+
+		// Server 3: Flattened Schema Demo (for testing flat input/output handling)
+		$adapter->create_server(
+			'mcp-flat-schema-demo',
+			'mcp',
+			'flat-demo',
+			'Flat Schema Demo Tools',
+			'Demo tools that use flattened schemas to validate MCP adapter wrapping/unwrapping.',
+			'v1.0.0',
+			array( HttpTransport::class ),
+			RayMcpErrorHandler::class,
+			RayMcpObservabilityHandler::class,
+			array(
+				'test/flat-echo-string',
+				'test/flat-add-ten',
+				'test/flat-toggle-boolean',
+				'test/flat-pick-first',
+				'test/flat-random-quote',
+				'test/flat-square-integer',
+				'test/flat-get-post',
 			),
 			array(),
 			array()

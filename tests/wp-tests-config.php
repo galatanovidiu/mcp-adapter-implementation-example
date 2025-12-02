@@ -1,7 +1,7 @@
 <?php
 /**
  * WordPress test configuration for wp-env.
- * 
+ *
  * This file is used by PHPUnit when running WordPress integration tests
  * inside the wp-env Docker containers.
  *
@@ -27,14 +27,14 @@ define( 'DB_CHARSET', 'utf8' );
 define( 'DB_COLLATE', '' );
 
 // Authentication keys and salts
-define( 'AUTH_KEY',         'test-auth-key-12345' );
-define( 'SECURE_AUTH_KEY',  'test-secure-auth-key-12345' );
-define( 'LOGGED_IN_KEY',    'test-logged-in-key-12345' );
-define( 'NONCE_KEY',        'test-nonce-key-12345' );
-define( 'AUTH_SALT',        'test-auth-salt-12345' );
+define( 'AUTH_KEY', 'test-auth-key-12345' );
+define( 'SECURE_AUTH_KEY', 'test-secure-auth-key-12345' );
+define( 'LOGGED_IN_KEY', 'test-logged-in-key-12345' );
+define( 'NONCE_KEY', 'test-nonce-key-12345' );
+define( 'AUTH_SALT', 'test-auth-salt-12345' );
 define( 'SECURE_AUTH_SALT', 'test-secure-auth-salt-12345' );
-define( 'LOGGED_IN_SALT',   'test-logged-in-salt-12345' );
-define( 'NONCE_SALT',       'test-nonce-salt-12345' );
+define( 'LOGGED_IN_SALT', 'test-logged-in-salt-12345' );
+define( 'NONCE_SALT', 'test-nonce-salt-12345' );
 
 // Table prefix
 $table_prefix = 'wptests_';

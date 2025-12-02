@@ -9,7 +9,7 @@ final class ListPostMetaKeys implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/list-post-meta-keys',
+			'core/list-post-meta-keys',
 			array(
 				'label'               => 'List Post Meta Keys',
 				'description'         => 'List registered post meta keys for a given post type (show_in_rest only by default).',
@@ -57,7 +57,21 @@ final class ListPostMetaKeys implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.7,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

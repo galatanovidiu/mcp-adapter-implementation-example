@@ -265,14 +265,16 @@ abstract class TestCase extends WP_UnitTestCase {
 	protected function debug_registered_routes(): void {
 		$server = rest_get_server();
 		$routes = $server->get_routes();
-		error_log('=== REGISTERED ROUTES ===');
-		error_log('Total routes: ' . count($routes));
-		foreach (array_keys($routes) as $route) {
-			if (strpos($route, 'mcp') !== false) {
-				error_log("Found MCP route: $route");
+		error_log( '=== REGISTERED ROUTES ===' );
+		error_log( 'Total routes: ' . count( $routes ) );
+		foreach ( array_keys( $routes ) as $route ) {
+			if ( strpos( $route, 'mcp' ) === false ) {
+				continue;
 			}
+
+			error_log( "Found MCP route: $route" );
 		}
-		error_log('=== END ROUTES ===');
+		error_log( '=== END ROUTES ===' );
 	}
 
 	/**
@@ -280,18 +282,18 @@ abstract class TestCase extends WP_UnitTestCase {
 	 */
 	protected function debug_mcp_server_state(): void {
 		$adapter = $this->get_mcp_adapter();
-		$server = $adapter ? $adapter->get_server('mcp-adapter-example-server') : null;
-		
-		error_log('=== MCP SERVER STATE ===');
-		error_log('Adapter exists: ' . ($adapter ? 'YES' : 'NO'));
-		error_log('Server exists: ' . ($server ? 'YES' : 'NO'));
-		if ($server) {
-			error_log('Server namespace: ' . $server->get_server_route_namespace());
-			error_log('Server route: ' . $server->get_server_route());
-			error_log('Tools count: ' . count($server->get_tools()));
-			error_log('Tools: ' . implode(', ', array_keys($server->get_tools())));
+		$server  = $adapter ? $adapter->get_server( 'mcp-adapter-example-server' ) : null;
+
+		error_log( '=== MCP SERVER STATE ===' );
+		error_log( 'Adapter exists: ' . ( $adapter ? 'YES' : 'NO' ) );
+		error_log( 'Server exists: ' . ( $server ? 'YES' : 'NO' ) );
+		if ( $server ) {
+			error_log( 'Server namespace: ' . $server->get_server_route_namespace() );
+			error_log( 'Server route: ' . $server->get_server_route() );
+			error_log( 'Tools count: ' . count( $server->get_tools() ) );
+			error_log( 'Tools: ' . implode( ', ', array_keys( $server->get_tools() ) ) );
 		}
-		error_log('=== END SERVER STATE ===');
+		error_log( '=== END SERVER STATE ===' );
 	}
 
 	/**
@@ -299,13 +301,13 @@ abstract class TestCase extends WP_UnitTestCase {
 	 */
 	protected function debug_action_hooks(): void {
 		global $wp_filter;
-		error_log('=== ACTION HOOKS ===');
-		error_log('mcp_adapter_init hooks: ' . (isset($wp_filter['mcp_adapter_init']) ? count($wp_filter['mcp_adapter_init']->callbacks) : 0));
-		error_log('rest_api_init hooks: ' . (isset($wp_filter['rest_api_init']) ? count($wp_filter['rest_api_init']->callbacks) : 0));
-		if (isset($wp_filter['rest_api_init'])) {
-			error_log('rest_api_init priorities: ' . implode(', ', array_keys($wp_filter['rest_api_init']->callbacks)));
+		error_log( '=== ACTION HOOKS ===' );
+		error_log( 'mcp_adapter_init hooks: ' . ( isset( $wp_filter['mcp_adapter_init'] ) ? count( $wp_filter['mcp_adapter_init']->callbacks ) : 0 ) );
+		error_log( 'rest_api_init hooks: ' . ( isset( $wp_filter['rest_api_init'] ) ? count( $wp_filter['rest_api_init']->callbacks ) : 0 ) );
+		if ( isset( $wp_filter['rest_api_init'] ) ) {
+			error_log( 'rest_api_init priorities: ' . implode( ', ', array_keys( $wp_filter['rest_api_init']->callbacks ) ) );
 		}
-		error_log('=== END HOOKS ===');
+		error_log( '=== END HOOKS ===' );
 	}
 
 	/**
@@ -324,12 +326,12 @@ abstract class TestCase extends WP_UnitTestCase {
 		// Use reflection to reset the servers array and initialization flag in the adapter.
 		try {
 			$reflection = new \ReflectionClass( $adapter );
-			
+
 			// Reset the servers array.
 			$servers_property = $reflection->getProperty( 'servers' );
 			$servers_property->setAccessible( true );
 			$servers_property->setValue( $adapter, array() );
-			
+
 			// Reset the has_triggered_init flag so mcp_adapter_init can be called again.
 			$init_flag_property = $reflection->getProperty( 'has_triggered_init' );
 			$init_flag_property->setAccessible( true );
@@ -357,13 +359,13 @@ abstract class TestCase extends WP_UnitTestCase {
 		}
 
 		// Create the REST request with the correct route format.
-		$route = "/{$server_namespace}/{$server_route}";
+		$route   = "/{$server_namespace}/{$server_route}";
 		$request = new \WP_REST_Request( 'POST', $route );
-		
+
 		// Set proper headers.
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		
+
 		// Set the JSON-RPC body.
 		$body = wp_json_encode(
 			array(
@@ -377,8 +379,6 @@ abstract class TestCase extends WP_UnitTestCase {
 
 		// Get the REST server and dispatch the request.
 		$server = rest_get_server();
-		$response = $server->dispatch( $request );
-
-		return $response;
+		return $server->dispatch( $request );
 	}
 }

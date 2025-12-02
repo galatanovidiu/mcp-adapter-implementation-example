@@ -25,7 +25,7 @@ final class ListPosts implements RegistersAbility {
 		}
 
 		\wp_register_ability(
-			'wpmcp-example/list-posts',
+			'core/list-posts',
 			array(
 				'label'               => 'List Posts',
 				'description'         => 'List and search WordPress posts with various filters including search terms, post type, status, taxonomy filters, meta queries, and pagination.',
@@ -222,7 +222,21 @@ final class ListPosts implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.9,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

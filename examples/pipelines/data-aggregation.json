@@ -1,0 +1,90 @@
+{
+  "description": "Data aggregation pipeline - Demonstrates various transformation operations",
+  "steps": [
+    {
+      "type": "ability",
+      "ability": "core/list-posts",
+      "input": {
+        "post_type": "post",
+        "posts_per_page": 100
+      },
+      "output": "posts",
+      "description": "Fetch all posts"
+    },
+    {
+      "type": "parallel",
+      "steps": [
+        {
+          "type": "transform",
+          "operation": "count",
+          "input": "$posts",
+          "output": "total_posts"
+        },
+        {
+          "type": "transform",
+          "operation": "pluck",
+          "input": "$posts",
+          "params": {
+            "field": "post_author"
+          },
+          "output": "author_ids"
+        },
+        {
+          "type": "transform",
+          "operation": "pluck",
+          "input": "$posts",
+          "params": {
+            "field": "post_title"
+          },
+          "output": "titles"
+        }
+      ],
+      "description": "Extract data in parallel"
+    },
+    {
+      "type": "transform",
+      "operation": "unique",
+      "input": "$author_ids",
+      "output": "unique_authors",
+      "description": "Get unique author IDs"
+    },
+    {
+      "type": "transform",
+      "operation": "count",
+      "input": "$unique_authors",
+      "output": "author_count",
+      "description": "Count unique authors"
+    },
+    {
+      "type": "transform",
+      "operation": "sort",
+      "input": "$titles",
+      "params": {
+        "direction": "asc"
+      },
+      "output": "sorted_titles",
+      "description": "Sort titles alphabetically"
+    },
+    {
+      "type": "transform",
+      "operation": "slice",
+      "input": "$sorted_titles",
+      "params": {
+        "offset": 0,
+        "length": 10
+      },
+      "output": "top_10_titles",
+      "description": "Get first 10 titles"
+    },
+    {
+      "type": "transform",
+      "operation": "join",
+      "input": "$top_10_titles",
+      "params": {
+        "separator": " | "
+      },
+      "output": "titles_string",
+      "description": "Join titles into string"
+    }
+  ]
+}

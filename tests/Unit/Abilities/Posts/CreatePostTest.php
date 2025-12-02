@@ -190,7 +190,7 @@ final class CreatePostTest extends TestCase {
 	public function test_post_creation_with_term_creation(): void {
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
-		
+
 		// Ensure the user has the manage_terms capability.
 		$user = new \WP_User( $user_id );
 		$user->add_cap( 'manage_terms' );

@@ -1,0 +1,47 @@
+{
+  "description": "Error handling pipeline - Demonstrates try/catch and error recovery",
+  "steps": [
+    {
+      "type": "try_catch",
+      "try": [
+        {
+          "type": "ability",
+          "ability": "core/get-post",
+          "input": {
+            "post_id": 999999
+          },
+          "output": "post",
+          "description": "Try to get a post that doesn't exist"
+        }
+      ],
+      "catch": [
+        {
+          "type": "ability",
+          "ability": "core/create-post",
+          "input": {
+            "post_title": "Fallback Post",
+            "post_content": "This post was created as a fallback",
+            "post_status": "draft"
+          },
+          "output": "fallback_post",
+          "description": "Create a fallback post on error"
+        }
+      ],
+      "finally": [
+        {
+          "type": "ability",
+          "ability": "core/list-posts",
+          "input": {
+            "posts_per_page": 1,
+            "orderby": "date",
+            "order": "DESC"
+          },
+          "output": "latest_posts",
+          "description": "Always get latest posts for verification"
+        }
+      ],
+      "output": "result",
+      "description": "Try to get post with error recovery"
+    }
+  ]
+}

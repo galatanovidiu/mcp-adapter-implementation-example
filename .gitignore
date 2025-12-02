@@ -32,3 +32,5 @@ composer.lock
 # Cache
 phpcs-cache.json
 phpstan-cache/
+
+tests/e2e/test-data/credentials.json

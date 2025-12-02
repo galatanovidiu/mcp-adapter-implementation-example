@@ -9,7 +9,7 @@ final class CreateTerm implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/create-term',
+			'core/create-term',
 			array(
 				'label'               => 'Create Term',
 				'description'         => 'Create a term in a taxonomy.',
@@ -33,7 +33,21 @@ final class CreateTerm implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.7,
+						'readOnlyHint'    => false,
+						'destructiveHint' => false,
+						'idempotentHint'  => false,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

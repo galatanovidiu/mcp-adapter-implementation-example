@@ -9,7 +9,7 @@ final class ListTaxonomies implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/list-taxonomies',
+			'core/list-taxonomies',
 			array(
 				'label'               => 'List Taxonomies',
 				'description'         => 'List available taxonomies; optionally filtered by post type.',
@@ -52,7 +52,17 @@ final class ListTaxonomies implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'category'            => 'content',
+				'meta'                => array(
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.8,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}

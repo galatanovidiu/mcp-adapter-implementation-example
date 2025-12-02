@@ -9,7 +9,7 @@ final class DeletePostMeta implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/delete-post-meta',
+			'core/delete-post-meta',
 			array(
 				'label'               => 'Delete Post Meta',
 				'description'         => 'Delete a specific meta value or all values for a key on a given post.',
@@ -44,7 +44,22 @@ final class DeletePostMeta implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'annotations' => array(
+						'audience'             => array( 'user', 'assistant' ),
+						'priority'             => 0.5,
+						'readOnlyHint'         => false,
+						'destructiveHint'      => true,
+						'idempotentHint'       => true,
+						'openWorldHint'        => false,
+						'requiresConfirmation' => true,
+					),
+				),
 			)
 		);
 	}

@@ -9,7 +9,7 @@ final class GetTerms implements RegistersAbility {
 
 	public static function register(): void {
 		\wp_register_ability(
-			'wpmcp-example/get-terms',
+			'core/get-terms',
 			array(
 				'label'               => 'Get Terms',
 				'description'         => 'List terms in a taxonomy with optional filters/pagination.',
@@ -67,7 +67,21 @@ final class GetTerms implements RegistersAbility {
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),
 				'execute_callback'    => array( self::class, 'execute' ),
-				'meta'                => array(),
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+					'annotations' => array(
+						'audience'        => array( 'user', 'assistant' ),
+						'priority'        => 0.8,
+						'readOnlyHint'    => true,
+						'destructiveHint' => false,
+						'idempotentHint'  => true,
+						'openWorldHint'   => false,
+					),
+				),
 			)
 		);
 	}
@@ -98,7 +112,7 @@ final class GetTerms implements RegistersAbility {
 				),
 			);
 		}
-		$args  = array(
+		$args = array(
 			'taxonomy'   => $taxonomy,
 			'search'     => isset( $input['search'] ) ? (string) $input['search'] : '',
 			'parent'     => isset( $input['parent'] ) ? (int) $input['parent'] : 0,
@@ -111,11 +125,11 @@ final class GetTerms implements RegistersAbility {
 			'offset'     => isset( $input['page'] ) ? ( max( 1, (int) $input['page'] ) - 1 ) * ( isset( $input['per_page'] ) ? max( 1, (int) $input['per_page'] ) : 50 ) : ( isset( $input['offset'] ) ? max( 0, (int) $input['offset'] ) : 0 ),
 		);
 		// Get total count without pagination.
-		$count_args = $args;
+		$count_args           = $args;
 		$count_args['fields'] = 'count';
 		$count_args['number'] = '';
 		$count_args['offset'] = '';
-		$total = \get_terms( $count_args );
+		$total                = \get_terms( $count_args );
 		if ( \is_wp_error( $total ) ) {
 			$total = 0;
 		}
@@ -145,7 +159,7 @@ final class GetTerms implements RegistersAbility {
 				'parent'      => (int) $t->parent,
 			);
 		}
-		return array( 
+		return array(
 			'terms' => $out,
 			'total' => (int) $total,
 		);
