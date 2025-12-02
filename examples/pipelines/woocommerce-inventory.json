@@ -1,0 +1,75 @@
+{
+  "description": "WooCommerce inventory pipeline - Update product stock levels based on conditions",
+  "steps": [
+    {
+      "type": "ability",
+      "ability": "woocommerce/list-products",
+      "input": {
+        "per_page": 100,
+        "status": "publish"
+      },
+      "output": "products",
+      "description": "Fetch all published products"
+    },
+    {
+      "type": "transform",
+      "operation": "filter",
+      "input": "$products",
+      "params": {
+        "condition": {
+          "field": "stock_quantity",
+          "operator": "less_than",
+          "value": 10
+        }
+      },
+      "output": "low_stock_products",
+      "description": "Filter products with low stock"
+    },
+    {
+      "type": "loop",
+      "input": "$low_stock_products",
+      "itemVar": "product",
+      "steps": [
+        {
+          "type": "conditional",
+          "condition": {
+            "field": "$product.stock_quantity",
+            "operator": "less_than_or_equal",
+            "value": 5
+          },
+          "then": [
+            {
+              "type": "ability",
+              "ability": "woocommerce/update-product",
+              "input": {
+                "product_id": "$product.id",
+                "stock_status": "outofstock"
+              },
+              "description": "Mark as out of stock if <= 5 items"
+            }
+          ],
+          "else": [
+            {
+              "type": "ability",
+              "ability": "woocommerce/update-product",
+              "input": {
+                "product_id": "$product.id",
+                "stock_status": "onbackorder"
+              },
+              "description": "Mark as backorder if 6-9 items"
+            }
+          ]
+        }
+      ],
+      "output": "updated_products",
+      "description": "Update stock status for low stock products"
+    },
+    {
+      "type": "transform",
+      "operation": "count",
+      "input": "$updated_products",
+      "output": "total_updated",
+      "description": "Count updated products"
+    }
+  ]
+}

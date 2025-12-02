@@ -92,7 +92,6 @@ final class GetConstants implements RegistersAbility {
 						'public' => true,
 						'type'   => 'tool',
 					),
-					'categories'  => array( 'system', 'configuration' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,

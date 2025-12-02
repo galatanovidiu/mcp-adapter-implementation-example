@@ -111,6 +111,15 @@ use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Variations\De
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Variations\GetProductVariation;
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Variations\ListProductVariations;
 use OvidiuGalatan\McpAdapterExample\Abilities\WooCommerce\Products\Variations\UpdateProductVariation;
+use OvidiuGalatan\McpAdapterExample\Abilities\Resources\ListPostsResource;
+use OvidiuGalatan\McpAdapterExample\Abilities\Resources\SiteSettingsResource;
+use OvidiuGalatan\McpAdapterExample\Abilities\Prompts\GeneratePostPrompt;
+use OvidiuGalatan\McpAdapterExample\Abilities\Prompts\SummarizeContentPrompt;
+use OvidiuGalatan\McpAdapterExample\Abilities\Pipeline\ExecutePipeline;
+use OvidiuGalatan\McpAdapterExample\Abilities\Pipeline\ListPipelineExamples;
+use OvidiuGalatan\McpAdapterExample\Abilities\Pipeline\GetPipelineCapabilities;
+use OvidiuGalatan\McpAdapterExample\Abilities\Tests\ToolWithNoInputSchema;
+use OvidiuGalatan\McpAdapterExample\Abilities\Tests\FlattenedSchemaDemos;
 
 // use OvidiuGalatan\McpAdapterExample\Abilities\Security\BackupDatabase;
 
@@ -131,7 +140,7 @@ final class BootstrapAbilities {
 		}
 
 		add_action(
-			'abilities_api_categories_init',
+			'wp_abilities_api_categories_init',
 			static function () {
 				// Register categories first
 				AppearanceCategory::register();
@@ -148,7 +157,7 @@ final class BootstrapAbilities {
 		);
 
 		\add_action(
-			'abilities_api_init',
+			'wp_abilities_api_init',
 			static function (): void {
 
 				// Post CRUD abilities
@@ -290,6 +299,28 @@ final class BootstrapAbilities {
 				// WooCommerce Product Tags abilities
 				ListProductTags::register();
 				ManageProductTags::register();
+
+				// Resource abilities
+				ListPostsResource::register();
+				SiteSettingsResource::register();
+
+				// Prompt abilities
+				GeneratePostPrompt::register();
+				SummarizeContentPrompt::register();
+
+				// MCP API expose abilities
+				DiscoverApiEndpoints::register();
+				GetApiEndpointInfo::register();
+				ExecuteApiEndpoint::register();
+
+				// Pipeline abilities
+				ExecutePipeline::register();
+				ListPipelineExamples::register();
+				GetPipelineCapabilities::register();
+
+				// Test abilities
+				ToolWithNoInputSchema::register();
+				FlattenedSchemaDemos::register();
 			}
 		);
 

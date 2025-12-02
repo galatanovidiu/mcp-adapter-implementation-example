@@ -97,7 +97,6 @@ class UpdateProductCategory implements RegistersAbility {
 						'public' => true,
 						'type'   => 'tool',
 					),
-					'categories'  => array( 'ecommerce', 'catalog' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,

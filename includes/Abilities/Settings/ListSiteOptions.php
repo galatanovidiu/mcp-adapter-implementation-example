@@ -92,9 +92,9 @@ final class ListSiteOptions implements RegistersAbility {
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 						'openWorldHint'   => false,
 					),
 				),

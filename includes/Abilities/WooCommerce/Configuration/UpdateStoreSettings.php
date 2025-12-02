@@ -55,7 +55,6 @@ class UpdateStoreSettings implements RegistersAbility {
 						'public' => true,
 						'type'   => 'tool',
 					),
-					'categories'  => array( 'ecommerce', 'configuration' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,

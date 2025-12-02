@@ -47,13 +47,12 @@ final class GetSiteSettings implements RegistersAbility {
 						'public' => true,
 						'type'   => 'tool',
 					),
-					'categories'  => array( 'settings', 'configuration' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 						'openWorldHint'   => false,
 					),
 				),
@@ -64,21 +63,21 @@ final class GetSiteSettings implements RegistersAbility {
 	/**
 	 * Check permission for getting site settings.
 	 *
-	 * @param array $input Input parameters.
+	 * @param mixed $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( $input = null ): bool {
 		return \current_user_can( 'manage_options' );
 	}
 
 	/**
 	 * Execute the get site settings operation.
 	 *
-	 * @param array $input Input parameters.
+	 * @param mixed $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
-		$category        = isset( $input['category'] ) ? \sanitize_key( (string) $input['category'] ) : '';
+	public static function execute( $input = null ) {
+		$category        = ! empty( $input['category'] ) ? \sanitize_key( (string) $input['category'] ) : '';
 		$include_private = ! empty( $input['include_private'] );
 
 		$settings = array();

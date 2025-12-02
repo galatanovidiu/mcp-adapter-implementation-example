@@ -65,7 +65,6 @@ final class ListBlockTypes implements RegistersAbility {
 						'public' => true,
 						'type'   => 'tool',
 					),
-					'categories'  => array( 'content', 'blocks' ),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,

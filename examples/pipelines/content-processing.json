@@ -1,0 +1,81 @@
+{
+  "description": "Content processing pipeline - Analyze all published posts and update metadata",
+  "steps": [
+    {
+      "type": "ability",
+      "ability": "core/list-posts",
+      "input": {
+        "post_status": "publish",
+        "posts_per_page": 50
+      },
+      "output": "posts",
+      "description": "Fetch all published posts"
+    },
+    {
+      "type": "transform",
+      "operation": "filter",
+      "input": "$posts",
+      "params": {
+        "condition": {
+          "field": "post_meta.ai_analyzed",
+          "operator": "empty"
+        }
+      },
+      "output": "unanalyzed_posts",
+      "description": "Filter posts that haven't been analyzed"
+    },
+    {
+      "type": "loop",
+      "input": "$unanalyzed_posts",
+      "itemVar": "post",
+      "indexVar": "index",
+      "steps": [
+        {
+          "type": "conditional",
+          "condition": {
+            "field": "$post.post_content",
+            "operator": "not_empty"
+          },
+          "then": [
+            {
+              "type": "transform",
+              "operation": "count",
+              "input": "$post.post_content",
+              "output": "content_length",
+              "description": "Calculate content length"
+            },
+            {
+              "type": "ability",
+              "ability": "core/update-post-meta",
+              "input": {
+                "post_id": "$post.ID",
+                "meta_key": "ai_analyzed",
+                "meta_value": true
+              },
+              "description": "Mark post as analyzed"
+            },
+            {
+              "type": "ability",
+              "ability": "core/update-post-meta",
+              "input": {
+                "post_id": "$post.ID",
+                "meta_key": "content_length",
+                "meta_value": "$content_length"
+              },
+              "description": "Store content length"
+            }
+          ]
+        }
+      ],
+      "output": "processed_posts",
+      "description": "Process each unanalyzed post"
+    },
+    {
+      "type": "transform",
+      "operation": "count",
+      "input": "$processed_posts",
+      "output": "total_processed",
+      "description": "Count processed posts"
+    }
+  ]
+}
