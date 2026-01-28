@@ -85,17 +85,16 @@ final class ListSiteOptions implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'settings',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
-						'openWorldHint'   => false,
 					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)

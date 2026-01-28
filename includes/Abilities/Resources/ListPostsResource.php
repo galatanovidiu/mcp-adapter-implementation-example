@@ -25,8 +25,8 @@ final class ListPostsResource implements RegistersAbility {
 						'annotations' => array(
 							'audience'        => array( 'user', 'assistant' ),
 							'priority'        => 0.8,
-							'readOnlyHint'    => true,
-							'destructiveHint' => false,
+							'readonly'    => true,
+							'destructive' => false,
 						),
 					),
 				),

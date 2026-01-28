@@ -53,10 +53,9 @@ final class DeletePostMeta implements RegistersAbility {
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.5,
-						'readOnlyHint'         => false,
-						'destructiveHint'      => true,
-						'idempotentHint'       => true,
-						'openWorldHint'        => false,
+						'readonly'         => false,
+						'destructive'      => true,
+						'idempotent'       => true,
 						'requiresConfirmation' => true,
 					),
 				),

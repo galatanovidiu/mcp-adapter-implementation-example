@@ -25,8 +25,8 @@ final class SiteSettingsResource implements RegistersAbility {
 						'annotations' => array(
 							'audience'        => array( 'user', 'assistant' ),
 							'priority'        => 0.7,
-							'readOnlyHint'    => true,
-							'destructiveHint' => false,
+							'readonly'    => true,
+							'destructive' => false,
 						),
 					),
 				),
