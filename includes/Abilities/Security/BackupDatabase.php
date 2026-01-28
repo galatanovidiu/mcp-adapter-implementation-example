@@ -88,7 +88,6 @@ class BackupDatabase implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -96,6 +95,7 @@ class BackupDatabase implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => false,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

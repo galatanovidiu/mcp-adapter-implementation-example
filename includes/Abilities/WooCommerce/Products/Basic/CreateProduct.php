@@ -185,7 +185,6 @@ class CreateProduct implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array(
 							'user',
@@ -196,6 +195,7 @@ class CreateProduct implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => false,
 						'openWorldHint'   => true,
+					),
 					),
 				),
 			)

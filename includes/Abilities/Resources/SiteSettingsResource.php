@@ -17,17 +17,17 @@ final class SiteSettingsResource implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'settings',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'resource',
-					),
-					'uri'         => 'wordpress://settings',
-					'mimeType'    => 'application/json',
-					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
-						'priority'        => 0.7,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
+					'mcp' => array(
+						'public'      => true,
+						'type'        => 'resource',
+						'uri'         => 'wordpress://settings',
+						'mimeType'    => 'application/json',
+						'annotations' => array(
+							'audience'        => array( 'user', 'assistant' ),
+							'priority'        => 0.7,
+							'readOnlyHint'    => true,
+							'destructiveHint' => false,
+						),
 					),
 				),
 			)

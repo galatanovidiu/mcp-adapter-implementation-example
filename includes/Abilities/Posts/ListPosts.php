@@ -227,6 +227,10 @@ final class ListPosts implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
+						'ui'     => array(
+							'resourceUri' => 'ui://core/list-posts',
+							'visibility'  => array( 'app' ),
+						),
 					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
@@ -235,6 +239,37 @@ final class ListPosts implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => true,
 						'openWorldHint'   => false,
+					),
+				),
+			)
+		);
+
+		\wp_register_ability(
+			'core/list-posts-ui',
+			array(
+				'label'               => 'List Posts UI',
+				'description'         => 'UI resource for listing WordPress posts.',
+				'execute_callback'    => static function () {
+					$ui_template = __DIR__ . '/list-posts-ui.html';
+					if ( is_readable( $ui_template ) ) {
+						$contents = file_get_contents( $ui_template );
+						if ( false !== $contents ) {
+							return $contents;
+						}
+					}
+
+					return '<html><body><p>UI template not found.</p></body></html>';
+				},
+				'permission_callback' => static function () {
+					return true;
+				},
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp' => array(
+						'public'   => true,
+						'type'     => 'resource',
+						'uri'      => 'ui://core/list-posts',
+						'mimeType' => 'text/html;profile=mcp-app',
 					),
 				),
 			)

@@ -17,17 +17,17 @@ final class ListPostsResource implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'content',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'resource',
-					),
-					'uri'         => 'wordpress://posts',
-					'mimeType'    => 'application/json',
-					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
-						'priority'        => 0.8,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
+					'mcp' => array(
+						'public'      => true,
+						'type'        => 'resource',
+						'uri'         => 'wordpress://posts',
+						'mimeType'    => 'application/json',
+						'annotations' => array(
+							'audience'        => array( 'user', 'assistant' ),
+							'priority'        => 0.8,
+							'readOnlyHint'    => true,
+							'destructiveHint' => false,
+						),
 					),
 				),
 			)

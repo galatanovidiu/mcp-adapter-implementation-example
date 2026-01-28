@@ -97,7 +97,6 @@ final class UploadMedia implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -105,6 +104,7 @@ final class UploadMedia implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => false,
 						'openWorldHint'   => true,
+					),
 					),
 				),
 			)

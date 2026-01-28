@@ -62,7 +62,6 @@ final class UpdateAttachment implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -70,6 +69,7 @@ final class UpdateAttachment implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => true,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

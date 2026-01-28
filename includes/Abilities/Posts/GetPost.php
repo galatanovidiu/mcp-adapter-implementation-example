@@ -41,17 +41,17 @@ final class GetPost implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'content',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
-						'priority'        => 0.9,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+					'mcp' => array(
+						'public'      => true,
+						'type'        => 'tool',
+						'annotations' => array(
+							'audience'        => array( 'user', 'assistant' ),
+							'priority'        => 0.9,
+							'readOnlyHint'    => true,
+							'destructiveHint' => false,
+							'idempotentHint'  => true,
+							'openWorldHint'   => false,
+						),
 					),
 				),
 			)

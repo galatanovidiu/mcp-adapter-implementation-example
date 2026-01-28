@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>List Posts</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Source Serif 4", "Source Serif Pro", "Georgia", serif;
+        background: #f7f3ec;
+        color: #2c2a24;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+
+      .app {
+        max-width: 720px;
+        margin: 0 auto;
+        background: #fff9f1;
+        border: 1px solid #e6ded2;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 18px 40px rgba(53, 44, 31, 0.12);
+      }
+
+      h1 {
+        margin: 0 0 16px;
+        font-size: 24px;
+        letter-spacing: 0.3px;
+      }
+
+      form {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+        align-items: end;
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      input {
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #d5cabc;
+        background: #fff;
+        font-size: 15px;
+        font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      button {
+        padding: 12px 18px;
+        border-radius: 999px;
+        border: none;
+        background: #1f5b67;
+        color: #f8f2e9;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #194a54;
+      }
+
+      .status {
+        margin: 0 0 16px;
+        font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        color: #4a4337;
+      }
+
+      .posts {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .post {
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid #e7dfd1;
+        background: #ffffff;
+      }
+
+      .post a {
+        color: #1f5b67;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .post p {
+        margin: 6px 0 0;
+        font-size: 13px;
+        font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        color: #6b5f52;
+      }
+
+      @media (max-width: 640px) {
+        form {
+          grid-template-columns: 1fr;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1>List Posts</h1>
+      <form id="controls">
+        <label>
+          Search
+          <input id="search" type="text" placeholder="Search posts" />
+        </label>
+        <label>
+          Limit
+          <input id="limit" type="number" min="1" max="100" value="10" />
+        </label>
+        <button type="submit">Load Posts</button>
+      </form>
+      <p id="status" class="status">Connecting to MCP host...</p>
+      <ul id="posts" class="posts"></ul>
+    </main>
+    <script>
+      (function () {
+        const TOOL_NAME = "core-list-posts";
+        const PROTOCOL_VERSION = "2025-11-25";
+        const statusEl = document.getElementById("status");
+        const postsEl = document.getElementById("posts");
+        const form = document.getElementById("controls");
+        const searchInput = document.getElementById("search");
+        const limitInput = document.getElementById("limit");
+        const pending = new Map();
+        let nextId = 1;
+
+        function setStatus(message) {
+          statusEl.textContent = message;
+        }
+
+        function sendMessage(message) {
+          window.parent.postMessage(message, "*");
+        }
+
+        function sendRequest(method, params) {
+          return new Promise((resolve, reject) => {
+            const id = nextId++;
+            pending.set(id, { resolve, reject });
+            sendMessage({ jsonrpc: "2.0", id, method, params });
+          });
+        }
+
+        function sendNotification(method, params) {
+          sendMessage({ jsonrpc: "2.0", method, params });
+        }
+
+        function parseResultPayload(result) {
+          if (!result) {
+            return null;
+          }
+
+          if (result.structuredContent) {
+            return result.structuredContent;
+          }
+
+          if (Array.isArray(result.content)) {
+            const textBlock = result.content.find((block) => block.type === "text");
+            if (textBlock && textBlock.text) {
+              try {
+                return JSON.parse(textBlock.text);
+              } catch (error) {
+                return null;
+              }
+            }
+          }
+
+          return null;
+        }
+
+        function renderPosts(payload) {
+          postsEl.innerHTML = "";
+          if (!payload || !Array.isArray(payload.posts) || payload.posts.length === 0) {
+            setStatus("No posts returned.");
+            return;
+          }
+
+          payload.posts.forEach((post) => {
+            const item = document.createElement("li");
+            item.className = "post";
+            const title = post.title || "Untitled";
+            const link = post.link || "#";
+            item.innerHTML =
+              '<a href="' +
+              link +
+              '" target="_blank" rel="noreferrer">' +
+              title +
+              "</a>" +
+              '<p>Type: ' +
+              post.post_type +
+              " · Status: " +
+              post.status +
+              "</p>";
+            postsEl.appendChild(item);
+          });
+
+          setStatus("Loaded " + payload.posts.length + " posts.");
+        }
+
+        function handleToolResult(result) {
+          if (result && result.isError) {
+            setStatus("Tool error: " + (result.error || "Unknown error"));
+            return;
+          }
+          renderPosts(parseResultPayload(result));
+        }
+
+        window.addEventListener("message", (event) => {
+          const message = event.data;
+          if (!message || message.jsonrpc !== "2.0") {
+            return;
+          }
+
+          if (message.id && pending.has(message.id)) {
+            const { resolve, reject } = pending.get(message.id);
+            pending.delete(message.id);
+            if (message.error) {
+              reject(message.error);
+            } else {
+              resolve(message.result);
+            }
+            return;
+          }
+
+          if (message.method === "ui/notifications/tool-result") {
+            handleToolResult(message.params);
+          }
+        });
+
+        async function initialize() {
+          try {
+            await sendRequest("ui/initialize", {
+              appInfo: { name: "list-posts-ui", version: "1.0.0" },
+              appCapabilities: {},
+              protocolVersion: PROTOCOL_VERSION,
+            });
+            sendNotification("ui/notifications/initialized");
+            setStatus("Connected. Ready to load posts.");
+          } catch (error) {
+            setStatus("Failed to initialize: " + (error && error.message ? error.message : "Unknown error"));
+          }
+        }
+
+        async function loadPosts() {
+          setStatus("Loading posts...");
+          try {
+            const result = await sendRequest("tools/call", {
+              name: TOOL_NAME,
+              arguments: {
+                search: searchInput.value ? searchInput.value : undefined,
+                limit: Number(limitInput.value) || 10,
+              },
+            });
+            handleToolResult(result);
+          } catch (error) {
+            setStatus("Tool request failed: " + (error && error.message ? error.message : "Unknown error"));
+          }
+        }
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          loadPosts();
+        });
+
+        initialize();
+      })();
+    </script>
+  </body>
+</html>

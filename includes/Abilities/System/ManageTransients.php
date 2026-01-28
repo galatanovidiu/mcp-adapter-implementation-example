@@ -109,7 +109,6 @@ final class ManageTransients implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -117,6 +116,7 @@ final class ManageTransients implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => false,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

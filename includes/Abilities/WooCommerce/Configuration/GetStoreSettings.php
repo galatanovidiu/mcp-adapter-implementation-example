@@ -68,7 +68,6 @@ class GetStoreSettings implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
@@ -76,6 +75,7 @@ class GetStoreSettings implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => true,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

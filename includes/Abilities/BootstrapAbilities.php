@@ -115,15 +115,6 @@ use OvidiuGalatan\McpAdapterExample\Abilities\Resources\ListPostsResource;
 use OvidiuGalatan\McpAdapterExample\Abilities\Resources\SiteSettingsResource;
 use OvidiuGalatan\McpAdapterExample\Abilities\Prompts\GeneratePostPrompt;
 use OvidiuGalatan\McpAdapterExample\Abilities\Prompts\SummarizeContentPrompt;
-use OvidiuGalatan\McpAdapterExample\Abilities\Pipeline\ExecutePipeline;
-use OvidiuGalatan\McpAdapterExample\Abilities\Pipeline\ListPipelineExamples;
-use OvidiuGalatan\McpAdapterExample\Abilities\Pipeline\GetPipelineCapabilities;
-use OvidiuGalatan\McpAdapterExample\Abilities\Tests\ToolWithNoInputSchema;
-use OvidiuGalatan\McpAdapterExample\Abilities\Tests\FlattenedSchemaDemos;
-
-// use OvidiuGalatan\McpAdapterExample\Abilities\Security\BackupDatabase;
-
-// use OvidiuGalatan\McpAdapterExample\Abilities\Security\ListLoginAttempts;
 
 final class BootstrapAbilities {
 
@@ -307,20 +298,6 @@ final class BootstrapAbilities {
 				// Prompt abilities
 				GeneratePostPrompt::register();
 				SummarizeContentPrompt::register();
-
-				// MCP API expose abilities
-				DiscoverApiEndpoints::register();
-				GetApiEndpointInfo::register();
-				ExecuteApiEndpoint::register();
-
-				// Pipeline abilities
-				ExecutePipeline::register();
-				ListPipelineExamples::register();
-				GetPipelineCapabilities::register();
-
-				// Test abilities
-				ToolWithNoInputSchema::register();
-				FlattenedSchemaDemos::register();
 			}
 		);
 

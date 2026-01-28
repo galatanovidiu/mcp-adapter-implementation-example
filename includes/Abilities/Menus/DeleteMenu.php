@@ -57,7 +57,6 @@ final class DeleteMenu implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.5,
@@ -65,6 +64,7 @@ final class DeleteMenu implements RegistersAbility {
 						'destructiveHint' => true,
 						'idempotentHint'  => true,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

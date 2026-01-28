@@ -105,7 +105,6 @@ final class RunUpdates implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.5,
@@ -113,6 +112,7 @@ final class RunUpdates implements RegistersAbility {
 						'destructiveHint' => true,
 						'idempotentHint'  => false,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

@@ -96,7 +96,6 @@ class UpdateProductCategory implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -104,6 +103,7 @@ class UpdateProductCategory implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => true,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

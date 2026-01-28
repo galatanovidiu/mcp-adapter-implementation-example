@@ -95,7 +95,6 @@ final class CreateUser implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -103,6 +102,7 @@ final class CreateUser implements RegistersAbility {
 						'destructiveHint' => false,
 						'idempotentHint'  => false,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

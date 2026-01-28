@@ -55,14 +55,14 @@ final class DeleteComment implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
-					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
-						'priority'        => 0.6,
-						'readOnlyHint'    => false,
-						'destructiveHint' => true,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'annotations' => array(
+							'audience'        => array( 'user', 'assistant' ),
+							'priority'        => 0.6,
+							'readOnlyHint'    => false,
+							'destructiveHint' => true,
+							'idempotentHint'  => true,
+							'openWorldHint'   => false,
+						),
 					),
 				),
 			)

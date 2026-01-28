@@ -88,7 +88,6 @@ final class ListSiteOptions implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
@@ -96,6 +95,7 @@ final class ListSiteOptions implements RegistersAbility {
 						'destructive' => false,
 						'idempotent'  => true,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)

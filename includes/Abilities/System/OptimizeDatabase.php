@@ -92,7 +92,6 @@ final class OptimizeDatabase implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
@@ -100,6 +99,7 @@ final class OptimizeDatabase implements RegistersAbility {
 						'destructiveHint' => true,
 						'idempotentHint'  => false,
 						'openWorldHint'   => false,
+					),
 					),
 				),
 			)
