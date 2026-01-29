@@ -252,44 +252,46 @@ final class BootstrapAbilities {
 				// ListLoginAttempts::register(); // Just dummy data for now
 				// BackupDatabase::register(); // Will use a database backup plugin instead
 
-				// WooCommerce Product Management abilities (Phase 1)
-				ListProducts::register();
-				GetProduct::register();
-				CreateProduct::register();
-				UpdateProduct::register();
-				DeleteProduct::register();
-				DuplicateProduct::register();
+				if ( class_exists( 'WooCommerce' ) ) {
+					// WooCommerce Product Management abilities (Phase 1)
+					ListProducts::register();
+					GetProduct::register();
+					CreateProduct::register();
+					UpdateProduct::register();
+					DeleteProduct::register();
+					DuplicateProduct::register();
 
-				// WooCommerce Store Configuration abilities
-				GetStoreSettings::register();
-				GetStoreStatus::register();
-				GetStoreInfo::register();
-				UpdateStoreSettings::register();
-				ManagePaymentMethods::register();
-				ManageShippingMethods::register();
+					// WooCommerce Store Configuration abilities
+					GetStoreSettings::register();
+					GetStoreStatus::register();
+					GetStoreInfo::register();
+					UpdateStoreSettings::register();
+					ManagePaymentMethods::register();
+					ManageShippingMethods::register();
 
-				// WooCommerce Product Variations abilities
-				ListProductVariations::register();
-				GetProductVariation::register();
-				CreateProductVariation::register();
-				UpdateProductVariation::register();
-				DeleteProductVariation::register();
+					// WooCommerce Product Variations abilities
+					ListProductVariations::register();
+					GetProductVariation::register();
+					CreateProductVariation::register();
+					UpdateProductVariation::register();
+					DeleteProductVariation::register();
 
-				// WooCommerce Product Attributes abilities
-				ListProductAttributes::register();
-				CreateProductAttribute::register();
-				UpdateProductAttribute::register();
+					// WooCommerce Product Attributes abilities
+					ListProductAttributes::register();
+					CreateProductAttribute::register();
+					UpdateProductAttribute::register();
 
-				// WooCommerce Product Categories abilities
-				ListProductCategories::register();
-				GetProductCategory::register();
-				CreateProductCategory::register();
-				UpdateProductCategory::register();
-				DeleteProductCategory::register();
+					// WooCommerce Product Categories abilities
+					ListProductCategories::register();
+					GetProductCategory::register();
+					CreateProductCategory::register();
+					UpdateProductCategory::register();
+					DeleteProductCategory::register();
 
-				// WooCommerce Product Tags abilities
-				ListProductTags::register();
-				ManageProductTags::register();
+					// WooCommerce Product Tags abilities
+					ListProductTags::register();
+					ManageProductTags::register();
+				}
 
 				// Resource abilities
 				ListPostsResource::register();

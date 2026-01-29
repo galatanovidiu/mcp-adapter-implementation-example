@@ -150,9 +150,13 @@ final class GetThemeCustomizer implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$stylesheet       = $input['stylesheet'] ?? \get_stylesheet();
-		$include_values   = $input['include_values'] ?? true;
-		$include_controls = $input['include_controls'] ?? true;
+		$stylesheet       = \sanitize_text_field( (string) ( $input['stylesheet'] ?? \get_stylesheet() ) );
+		$include_values   = array_key_exists( 'include_values', $input )
+			? \rest_sanitize_boolean( $input['include_values'] )
+			: true;
+		$include_controls = array_key_exists( 'include_controls', $input )
+			? \rest_sanitize_boolean( $input['include_controls'] )
+			: true;
 
 		// Validate theme exists
 		$theme = \wp_get_theme( $stylesheet );

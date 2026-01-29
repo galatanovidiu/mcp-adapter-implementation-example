@@ -119,6 +119,9 @@ final class ListPlugins implements RegistersAbility {
 
 		// Get update information
 		$update_plugins = \get_site_transient( 'update_plugins' );
+		$update_response = ( \is_object( $update_plugins ) && isset( $update_plugins->response ) )
+			? $update_plugins->response
+			: array();
 
 		$plugins = array();
 
@@ -147,9 +150,9 @@ final class ListPlugins implements RegistersAbility {
 				// Check for updates
 				$update_available = false;
 				$new_version      = '';
-				if ( isset( $update_plugins->response[ $plugin_file ] ) ) {
+				if ( isset( $update_response[ $plugin_file ] ) ) {
 					$update_available = true;
-					$new_version      = $update_plugins->response[ $plugin_file ]->new_version ?? '';
+					$new_version      = $update_response[ $plugin_file ]->new_version ?? '';
 				}
 
 				$plugins[] = array(

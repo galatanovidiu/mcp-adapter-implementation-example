@@ -196,12 +196,18 @@ final class UpdateMenu implements RegistersAbility {
 		$items_added   = array();
 		$items_updated = array();
 		$items_removed = array();
+		$items_skipped = array();
 
 		// Remove menu items
 		if ( ! empty( $remove_items ) && is_array( $remove_items ) ) {
 			foreach ( $remove_items as $item_id ) {
 				$item_id = (int) $item_id;
 				if ( $item_id <= 0 ) {
+					continue;
+				}
+
+				if ( ! self::is_menu_item_for_menu( $menu_id, $item_id ) ) {
+					$items_skipped[] = $item_id;
 					continue;
 				}
 
@@ -219,6 +225,11 @@ final class UpdateMenu implements RegistersAbility {
 			foreach ( $update_items as $item_data ) {
 				$item_id = (int) ( $item_data['item_id'] ?? 0 );
 				if ( $item_id <= 0 ) {
+					continue;
+				}
+
+				if ( ! self::is_menu_item_for_menu( $menu_id, $item_id ) ) {
+					$items_skipped[] = $item_id;
 					continue;
 				}
 
@@ -254,6 +265,10 @@ final class UpdateMenu implements RegistersAbility {
 
 				if ( isset( $item_data['parent_id'] ) ) {
 					$menu_item_args['menu-item-parent-id'] = (int) $item_data['parent_id'];
+				}
+
+				if ( isset( $item_data['menu_order'] ) ) {
+					$menu_item_args['menu-item-position'] = (int) $item_data['menu_order'];
 				}
 
 				if ( empty( $menu_item_args ) ) {
@@ -330,6 +345,11 @@ final class UpdateMenu implements RegistersAbility {
 
 		// Get updated menu object
 		$updated_menu = \wp_get_nav_menu_object( $menu_id );
+		$items_skipped = array_values( array_unique( $items_skipped ) );
+		$message       = 'Menu updated successfully.';
+		if ( ! empty( $items_skipped ) ) {
+			$message .= ' Skipped invalid menu item IDs: ' . implode( ', ', $items_skipped ) . '.';
+		}
 
 		$menu_data = array(
 			'term_id'     => (int) $updated_menu->term_id,
@@ -347,7 +367,22 @@ final class UpdateMenu implements RegistersAbility {
 			'items_updated'  => $items_updated,
 			'items_removed'  => $items_removed,
 			'updated_fields' => $updated_fields,
-			'message'        => 'Menu updated successfully.',
+			'message'        => $message,
 		);
+	}
+
+	private static function is_menu_item_for_menu( int $menu_id, int $item_id ): bool {
+		$post = \get_post( $item_id );
+		if ( ! $post || 'nav_menu_item' !== $post->post_type ) {
+			return false;
+		}
+
+		$terms = \wp_get_object_terms( $item_id, 'nav_menu', array( 'fields' => 'ids' ) );
+		if ( \is_wp_error( $terms ) || empty( $terms ) ) {
+			return false;
+		}
+
+		$terms = array_map( 'intval', $terms );
+		return in_array( $menu_id, $terms, true );
 	}
 }

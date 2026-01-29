@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>List Posts</title>
+    <style>
+        /* =========================================================================
+           CSS VARIABLES - WordPress Admin inspired
+           ========================================================================= */
+        :root {
+            color-scheme: light dark;
+
+            /* Background colors */
+            --color-background-primary: light-dark(#f0f0f1, #1d2327);
+            --color-background-secondary: light-dark(#ffffff, #2c3338);
+            --color-background-tertiary: light-dark(#f6f7f7, #32373c);
+            --color-background-hover: light-dark(#f0f0f1, #32373c);
+            --color-background-info: light-dark(#dbeafe, #1e3a5f);
+
+            /* Text colors */
+            --color-text-primary: light-dark(#1d2327, #f0f0f1);
+            --color-text-secondary: light-dark(#50575e, #a7aaad);
+            --color-text-tertiary: light-dark(#787c82, #8c8f94);
+            --color-text-link: light-dark(#2271b1, #72aee6);
+            --color-text-link-hover: light-dark(#135e96, #a0c7e4);
+            --color-text-success: light-dark(#00a32a, #72aee6);
+            --color-text-danger: light-dark(#d63638, #f86368);
+
+            /* Border colors */
+            --color-border-primary: light-dark(#c3c4c7, #3c434a);
+            --color-border-secondary: light-dark(#dcdcde, #4f5962);
+
+            /* Accent */
+            --color-accent: light-dark(#2271b1, #72aee6);
+            --color-accent-hover: light-dark(#135e96, #a0c7e4);
+
+            /* Typography */
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            --font-text-sm: 13px;
+            --font-text-md: 14px;
+
+            /* Table */
+            --table-row-height: 40px;
+        }
+
+        /* =========================================================================
+           BASE STYLES
+           ========================================================================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            font-size: var(--font-text-md);
+            line-height: 1.4;
+            background: var(--color-background-primary);
+            color: var(--color-text-primary);
+            padding: 12px;
+        }
+
+        a {
+            color: var(--color-text-link);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--color-text-link-hover);
+        }
+
+        /* =========================================================================
+           LAYOUT
+           ========================================================================= */
+        .app {
+            max-width: 100%;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .app-title {
+            font-size: 23px;
+            font-weight: 400;
+            color: var(--color-text-primary);
+        }
+
+        .app-status {
+            font-size: var(--font-text-sm);
+            color: var(--color-text-secondary);
+            padding: 4px 8px;
+            background: var(--color-background-secondary);
+            border-radius: 3px;
+        }
+
+        .app-status.status-error {
+            color: var(--color-text-danger);
+            background: light-dark(#fcf0f1, #3c1f1f);
+        }
+
+        .app-status.status-success {
+            color: var(--color-text-success);
+        }
+
+        /* =========================================================================
+           CONTROLS - WordPress Admin style
+           ========================================================================= */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+
+        .form-select,
+        .form-input {
+            height: 30px;
+            padding: 0 8px;
+            font-size: var(--font-text-md);
+            font-family: inherit;
+            border: 1px solid var(--color-border-primary);
+            border-radius: 3px;
+            background: var(--color-background-secondary);
+            color: var(--color-text-primary);
+            outline: none;
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 1px var(--color-accent);
+        }
+
+        .form-input {
+            min-width: 180px;
+        }
+
+        .form-input::placeholder {
+            color: var(--color-text-tertiary);
+        }
+
+        .form-select {
+            min-width: 120px;
+            cursor: pointer;
+        }
+
+        .form-input-small {
+            width: 60px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .btn {
+            height: 30px;
+            padding: 0 12px;
+            font-size: var(--font-text-sm);
+            font-family: inherit;
+            border: 1px solid var(--color-border-primary);
+            border-radius: 3px;
+            background: var(--color-background-tertiary);
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: background-color 0.1s, border-color 0.1s;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--color-background-secondary);
+            border-color: var(--color-border-secondary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--color-accent-hover);
+            border-color: var(--color-accent-hover);
+        }
+
+        .controls-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--color-border-primary);
+            margin: 0 4px;
+        }
+
+        /* =========================================================================
+           SELECTION BAR
+           ========================================================================= */
+        .selection-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: var(--color-background-info);
+            border-radius: 3px;
+            font-size: var(--font-text-sm);
+        }
+
+        .selection-bar.visible {
+            display: flex;
+        }
+
+        .selection-count {
+            font-weight: 600;
+        }
+
+        .selection-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        /* =========================================================================
+           POSTS TABLE - WordPress Admin style
+           ========================================================================= */
+        .posts-table-wrapper {
+            background: var(--color-background-secondary);
+            border: 1px solid var(--color-border-primary);
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+
+        .posts-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-text-sm);
+        }
+
+        .posts-table th,
+        .posts-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border-primary);
+        }
+
+        .posts-table th {
+            background: var(--color-background-tertiary);
+            font-weight: 400;
+            color: var(--color-text-secondary);
+            font-size: var(--font-text-md);
+            white-space: nowrap;
+        }
+
+        .posts-table tbody tr:hover {
+            background: var(--color-background-hover);
+        }
+
+        .posts-table tbody tr.selected {
+            background: light-dark(#f0f6fc, #1e3a5f);
+        }
+
+        .posts-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Column widths */
+        .col-checkbox {
+            width: 35px;
+            padding: 8px !important;
+        }
+
+        .col-title {
+            min-width: 200px;
+        }
+
+        .col-type {
+            width: 100px;
+        }
+
+        .col-status {
+            width: 90px;
+        }
+
+        .col-date {
+            width: 120px;
+        }
+
+        /* Checkbox styling */
+        .post-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--color-accent);
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        /* Title cell */
+        .post-title-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .post-title {
+            font-weight: 600;
+            color: var(--color-text-link);
+            word-break: break-word;
+        }
+
+        .post-title:hover {
+            color: var(--color-text-link-hover);
+        }
+
+        .post-id {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+        }
+
+        .post-status-suffix {
+            color: var(--color-text-secondary);
+            font-weight: 400;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 12px;
+            border-radius: 3px;
+            text-transform: capitalize;
+        }
+
+        .status-publish {
+            color: var(--color-text-success);
+        }
+
+        .status-draft {
+            color: var(--color-text-tertiary);
+        }
+
+        .status-pending {
+            color: light-dark(#996800, #ffb900);
+        }
+
+        .status-private {
+            color: var(--color-text-danger);
+        }
+
+        .status-future {
+            color: light-dark(#8c5f00, #ffb900);
+        }
+
+        /* Type badge */
+        .type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 12px;
+            background: var(--color-background-tertiary);
+            border-radius: 3px;
+            color: var(--color-text-secondary);
+        }
+
+        /* Date cell */
+        .post-date {
+            color: var(--color-text-secondary);
+            white-space: nowrap;
+        }
+
+        /* =========================================================================
+           PAGINATION
+           ========================================================================= */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            margin-top: 8px;
+            font-size: var(--font-text-sm);
+            color: var(--color-text-secondary);
+        }
+
+        .pagination-info {
+            /* Left aligned by default */
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pagination-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--color-border-primary);
+            border-radius: 3px;
+            background: var(--color-background-secondary);
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--color-background-tertiary);
+            color: var(--color-text-primary);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .pagination-pages {
+            padding: 0 8px;
+        }
+
+        /* =========================================================================
+           EMPTY STATE
+           ========================================================================= */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state-title {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        /* =========================================================================
+           RESPONSIVE
+           ========================================================================= */
+        @media (max-width: 600px) {
+            .col-type,
+            .col-status {
+                display: none;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-input,
+            .form-select {
+                width: 100%;
+            }
+
+            .controls-separator {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <header class="app-header">
+            <h1 class="app-title">Posts</h1>
+            <span id="status" class="app-status">Initializing...</span>
+        </header>
+
+        <form id="controls" class="controls">
+            <input
+                type="text"
+                id="search"
+                class="form-input"
+                placeholder="Search posts..."
+            />
+            <select id="post-type" class="form-select">
+                <option value="any">All Post Types</option>
+            </select>
+            <select id="post-status" class="form-select">
+                <option value="any">All Statuses</option>
+                <option value="publish">Published</option>
+                <option value="draft">Draft</option>
+                <option value="pending">Pending</option>
+                <option value="private">Private</option>
+                <option value="future">Scheduled</option>
+            </select>
+            <span class="controls-separator"></span>
+            <input
+                type="number"
+                id="limit"
+                class="form-input form-input-small"
+                min="1"
+                max="100"
+                value="10"
+                title="Posts per page"
+            />
+            <button type="submit" class="btn btn-primary" id="load-btn">
+                Filter
+            </button>
+        </form>
+
+        <div id="selection-bar" class="selection-bar">
+            <span class="selection-count">
+                <span id="selection-count">0</span> selected
+            </span>
+            <div class="selection-actions">
+                <button type="button" class="btn" id="clear-selection-btn">
+                    Clear
+                </button>
+                <button type="button" class="btn btn-primary" id="send-to-ai-btn">
+                    Send to AI
+                </button>
+            </div>
+        </div>
+
+        <div class="posts-table-wrapper">
+            <table class="posts-table">
+                <thead>
+                    <tr>
+                        <th class="col-checkbox">
+                            <input type="checkbox" id="select-all" class="post-checkbox" title="Select all" />
+                        </th>
+                        <th class="col-title">Title</th>
+                        <th class="col-type">Type</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-date">Date</th>
+                    </tr>
+                </thead>
+                <tbody id="posts-body"></tbody>
+            </table>
+        </div>
+
+        <div id="pagination" class="pagination" style="display: none;">
+            <span id="pagination-info" class="pagination-info"></span>
+            <div class="pagination-controls">
+                <button type="button" class="pagination-btn" id="first-btn" disabled title="First page">&laquo;</button>
+                <button type="button" class="pagination-btn" id="prev-btn" disabled title="Previous page">&lsaquo;</button>
+                <span class="pagination-pages">
+                    <span id="current-page">1</span> of <span id="total-pages">1</span>
+                </span>
+                <button type="button" class="pagination-btn" id="next-btn" disabled title="Next page">&rsaquo;</button>
+                <button type="button" class="pagination-btn" id="last-btn" disabled title="Last page">&raquo;</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // =========================================================================
+        // CONFIGURATION
+        // =========================================================================
+
+        const APP_NAME = 'list-posts-ui';
+        const APP_VERSION = '1.0.0';
+        const PROTOCOL_VERSION = '2026-01-26';
+        const TOOL_NAME = 'core-list-posts';
+        const DEBUG = false;
+
+        // =========================================================================
+        // STATE
+        // =========================================================================
+
+        const state = {
+            initialized: false,
+            hostCapabilities: null,
+            hostContext: null,
+            toolInput: null,
+            posts: [],
+            selectedIds: new Set(),
+            currentPage: 1,
+            postsPerPage: 10,
+            totalPosts: 0,
+            pendingRequests: new Map(),
+            nextRequestId: 1,
+        };
+
+        // =========================================================================
+        // DOM REFERENCES
+        // =========================================================================
+
+        const elements = {
+            status: document.getElementById('status'),
+            controls: document.getElementById('controls'),
+            searchInput: document.getElementById('search'),
+            postTypeSelect: document.getElementById('post-type'),
+            postStatusSelect: document.getElementById('post-status'),
+            limitInput: document.getElementById('limit'),
+            loadBtn: document.getElementById('load-btn'),
+            postsBody: document.getElementById('posts-body'),
+            selectAllCheckbox: document.getElementById('select-all'),
+            selectionBar: document.getElementById('selection-bar'),
+            selectionCount: document.getElementById('selection-count'),
+            clearSelectionBtn: document.getElementById('clear-selection-btn'),
+            sendToAiBtn: document.getElementById('send-to-ai-btn'),
+            pagination: document.getElementById('pagination'),
+            paginationInfo: document.getElementById('pagination-info'),
+            currentPage: document.getElementById('current-page'),
+            totalPages: document.getElementById('total-pages'),
+            firstBtn: document.getElementById('first-btn'),
+            prevBtn: document.getElementById('prev-btn'),
+            nextBtn: document.getElementById('next-btn'),
+            lastBtn: document.getElementById('last-btn'),
+        };
+
+        // =========================================================================
+        // UTILITIES
+        // =========================================================================
+
+        function log(message, data = null) {
+            if (!DEBUG) return;
+            const prefix = `[${APP_NAME}]`;
+            if (data) {
+                console.log(prefix, message, data);
+            } else {
+                console.log(prefix, message);
+            }
+        }
+
+        function setStatus(message, type = 'info') {
+            if (elements.status) {
+                elements.status.textContent = message;
+                elements.status.className = `app-status status-${type}`;
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            });
+        }
+
+        // =========================================================================
+        // JSON-RPC COMMUNICATION
+        // =========================================================================
+
+        function sendMessage(message) {
+            if (DEBUG && message.method) {
+                log('-> ' + (message.id ? 'Request' : 'Notification') + ': ' + message.method, message.params);
+            }
+            window.parent.postMessage(message, '*');
+        }
+
+        function sendRequest(method, params = {}) {
+            return new Promise((resolve, reject) => {
+                const id = state.nextRequestId++;
+                const request = {
+                    jsonrpc: '2.0',
+                    id: id,
+                    method: method,
+                    params: params,
+                };
+
+                state.pendingRequests.set(id, { resolve, reject, method });
+                sendMessage(request);
+
+                setTimeout(() => {
+                    if (state.pendingRequests.has(id)) {
+                        state.pendingRequests.delete(id);
+                        reject(new Error(`Request timeout: ${method}`));
+                    }
+                }, 30000);
+            });
+        }
+
+        function sendNotification(method, params = {}) {
+            sendMessage({ jsonrpc: '2.0', method: method, params: params });
+        }
+
+        // =========================================================================
+        // MESSAGE HANDLING
+        // =========================================================================
+
+        function handleMessage(event) {
+            const message = event.data;
+
+            if (!message || message.jsonrpc !== '2.0') {
+                return;
+            }
+
+            if (message.id !== undefined && state.pendingRequests.has(message.id)) {
+                const pending = state.pendingRequests.get(message.id);
+                state.pendingRequests.delete(message.id);
+
+                if (DEBUG) {
+                    log('<- Response for ' + pending.method, message.result || message.error);
+                }
+
+                if (message.error) {
+                    pending.reject(message.error);
+                } else {
+                    pending.resolve(message.result);
+                }
+                return;
+            }
+
+            if (message.method) {
+                if (DEBUG) {
+                    log('<- Notification: ' + message.method, message.params);
+                }
+                handleNotification(message.method, message.params || {}, message.id);
+            }
+        }
+
+        function handleNotification(method, params, requestId) {
+            switch (method) {
+                case 'ui/notifications/tool-input':
+                    handleToolInput(params);
+                    break;
+                case 'ui/notifications/tool-input-partial':
+                    break;
+                case 'ui/notifications/tool-result':
+                    handleToolResult(params);
+                    break;
+                case 'ui/notifications/tool-cancelled':
+                    handleToolCancelled(params);
+                    break;
+                case 'ui/notifications/host-context-changed':
+                    handleHostContextChanged(params);
+                    break;
+                case 'ui/resource-teardown':
+                    handleTeardown(params, requestId);
+                    break;
+                default:
+                    log('Unknown notification: ' + method, params);
+            }
+        }
+
+        // =========================================================================
+        // NOTIFICATION HANDLERS
+        // =========================================================================
+
+        function handleToolInput(params) {
+            log('Tool input received', params);
+            state.toolInput = params.arguments || {};
+
+            if (state.toolInput.search) {
+                elements.searchInput.value = state.toolInput.search;
+            }
+            if (state.toolInput.post_type && state.toolInput.post_type.length > 0) {
+                elements.postTypeSelect.value = state.toolInput.post_type[0];
+            }
+            if (state.toolInput.post_status && state.toolInput.post_status.length > 0) {
+                elements.postStatusSelect.value = state.toolInput.post_status[0];
+            }
+            if (state.toolInput.limit) {
+                elements.limitInput.value = state.toolInput.limit;
+                state.postsPerPage = state.toolInput.limit;
+            }
+        }
+
+        function handleToolResult(params) {
+            log('Tool result received', params);
+
+            if (params.isError) {
+                const errorMsg = params.content?.[0]?.text || 'Unknown error';
+                setStatus('Error: ' + errorMsg, 'error');
+                return;
+            }
+
+            const data = parseToolResult(params);
+            if (data) {
+                renderPosts(data);
+            }
+        }
+
+        function handleToolCancelled(params) {
+            log('Tool cancelled', params);
+            setStatus('Operation cancelled', 'warning');
+            setLoading(false);
+        }
+
+        function handleHostContextChanged(params) {
+            log('Host context changed', params);
+            state.hostContext = { ...state.hostContext, ...params };
+
+            if (params.theme !== undefined) {
+                applyTheme(params.theme);
+            }
+            if (params.styles?.variables) {
+                applyHostStyles(params.styles.variables);
+            }
+        }
+
+        function handleTeardown(params, requestId) {
+            log('Teardown requested', params);
+            if (requestId !== undefined) {
+                sendMessage({ jsonrpc: '2.0', id: requestId, result: {} });
+            }
+        }
+
+        // =========================================================================
+        // RESULT PARSING
+        // =========================================================================
+
+        function parseToolResult(result) {
+            if (result.structuredContent) {
+                return result.structuredContent;
+            }
+
+            if (Array.isArray(result.content)) {
+                const textBlock = result.content.find(block => block.type === 'text');
+                if (textBlock?.text) {
+                    try {
+                        return JSON.parse(textBlock.text);
+                    } catch (e) {
+                        log('Failed to parse result', e);
+                        return null;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // =========================================================================
+        // THEMING
+        // =========================================================================
+
+        function applyTheme(theme) {
+            document.documentElement.style.colorScheme = theme;
+            document.body.dataset.theme = theme;
+        }
+
+        function applyHostStyles(variables) {
+            const root = document.documentElement;
+            for (const [key, value] of Object.entries(variables)) {
+                if (value !== undefined) {
+                    root.style.setProperty(key, value);
+                }
+            }
+        }
+
+        // =========================================================================
+        // SIZE REPORTING
+        // =========================================================================
+
+        let resizeObserver = null;
+        let lastReportedSize = { width: 0, height: 0 };
+
+        function setupSizeReporting() {
+            if (typeof ResizeObserver === 'undefined') return;
+
+            const reportSize = debounce(() => {
+                const width = document.documentElement.scrollWidth;
+                const height = document.documentElement.scrollHeight;
+
+                if (width !== lastReportedSize.width || height !== lastReportedSize.height) {
+                    lastReportedSize = { width, height };
+                    sendNotification('ui/notifications/size-changed', { width, height });
+                }
+            }, 100);
+
+            resizeObserver = new ResizeObserver(reportSize);
+            resizeObserver.observe(document.documentElement);
+        }
+
+        // =========================================================================
+        // HOST COMMUNICATION
+        // =========================================================================
+
+        async function callTool(toolName, args = {}) {
+            try {
+                const result = await sendRequest('tools/call', {
+                    name: toolName,
+                    arguments: args,
+                });
+                return result;
+            } catch (error) {
+                log('Tool call failed', error);
+                throw error;
+            }
+        }
+
+        async function updateModelContext(text, structuredContent = null) {
+            if (!state.hostCapabilities?.updateModelContext) {
+                log('Host does not support updateModelContext');
+                return;
+            }
+
+            const params = {};
+            if (text) {
+                params.content = [{ type: 'text', text: text }];
+            }
+            if (structuredContent) {
+                params.structuredContent = structuredContent;
+            }
+
+            try {
+                await sendRequest('ui/update-model-context', params);
+            } catch (error) {
+                log('Failed to update model context', error);
+            }
+        }
+
+        async function sendChatMessage(text) {
+            if (!state.hostCapabilities?.message) {
+                log('Host does not support message');
+                return;
+            }
+
+            try {
+                await sendRequest('ui/message', {
+                    role: 'user',
+                    content: [{ type: 'text', text: text }],
+                });
+            } catch (error) {
+                log('Failed to send message', error);
+            }
+        }
+
+        async function openLink(url) {
+            if (state.hostCapabilities?.openLinks) {
+                try {
+                    await sendRequest('ui/open-link', { url });
+                    return;
+                } catch (error) {
+                    log('Failed to open link via host', error);
+                }
+            }
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        // =========================================================================
+        // UI HELPERS
+        // =========================================================================
+
+        function setLoading(loading) {
+            elements.loadBtn.disabled = loading;
+            elements.loadBtn.textContent = loading ? 'Loading...' : 'Filter';
+        }
+
+        // =========================================================================
+        // POSTS RENDERING
+        // =========================================================================
+
+        function renderPosts(data) {
+            state.posts = data.posts || [];
+            state.totalPosts = data.found_posts || data.total || 0;
+
+            if (state.posts.length === 0) {
+                elements.postsBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <p class="empty-state-title">No posts found</p>
+                            <p>Try adjusting your filters.</p>
+                        </td>
+                    </tr>
+                `;
+                setStatus('No posts found');
+                updatePagination();
+                setLoading(false);
+                return;
+            }
+
+            elements.postsBody.innerHTML = '';
+
+            state.posts.forEach(post => {
+                const tr = document.createElement('tr');
+                tr.className = state.selectedIds.has(post.id) ? 'selected' : '';
+                tr.dataset.postId = post.id;
+
+                const title = escapeHtml(post.title || 'Untitled');
+                const postType = escapeHtml(post.post_type || 'post');
+                const status = post.status || 'unknown';
+                const link = post.link || '#';
+
+                // Status suffix for non-published posts
+                let statusSuffix = '';
+                if (status !== 'publish') {
+                    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                    statusSuffix = ` <span class="post-status-suffix">— ${statusLabel}</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="col-checkbox">
+                        <input
+                            type="checkbox"
+                            class="post-checkbox"
+                            data-post-id="${post.id}"
+                            ${state.selectedIds.has(post.id) ? 'checked' : ''}
+                        />
+                    </td>
+                    <td class="col-title">
+                        <div class="post-title-cell">
+                            <a href="${escapeHtml(link)}" class="post-title" data-link="${escapeHtml(link)}">
+                                ${title}${statusSuffix}
+                            </a>
+                            <span class="post-id">ID: ${post.id}</span>
+                        </div>
+                    </td>
+                    <td class="col-type">
+                        <span class="type-badge">${postType}</span>
+                    </td>
+                    <td class="col-status">
+                        <span class="status-badge status-${status}">${status}</span>
+                    </td>
+                    <td class="col-date">
+                        <span class="post-date">${formatDate(post.date)}</span>
+                    </td>
+                `;
+
+                elements.postsBody.appendChild(tr);
+            });
+
+            setStatus(`${state.totalPosts} item${state.totalPosts !== 1 ? 's' : ''}`, 'success');
+            updatePagination();
+            updateSelectionUI();
+            setLoading(false);
+        }
+
+        // =========================================================================
+        // PAGINATION
+        // =========================================================================
+
+        function updatePagination() {
+            const totalPages = Math.ceil(state.totalPosts / state.postsPerPage);
+
+            if (totalPages <= 1) {
+                elements.pagination.style.display = 'none';
+                return;
+            }
+
+            elements.pagination.style.display = 'flex';
+            elements.currentPage.textContent = state.currentPage;
+            elements.totalPages.textContent = totalPages;
+            elements.paginationInfo.textContent = `${state.totalPosts} items`;
+
+            elements.firstBtn.disabled = state.currentPage <= 1;
+            elements.prevBtn.disabled = state.currentPage <= 1;
+            elements.nextBtn.disabled = state.currentPage >= totalPages;
+            elements.lastBtn.disabled = state.currentPage >= totalPages;
+        }
+
+        async function loadPage(page) {
+            state.currentPage = page;
+            await loadPosts();
+        }
+
+        // =========================================================================
+        // SELECTION
+        // =========================================================================
+
+        function toggleSelection(postId) {
+            if (state.selectedIds.has(postId)) {
+                state.selectedIds.delete(postId);
+            } else {
+                state.selectedIds.add(postId);
+            }
+
+            updateSelectionUI();
+            updateModelContextWithSelection();
+        }
+
+        function selectAll() {
+            const allSelected = state.posts.every(p => state.selectedIds.has(p.id));
+
+            if (allSelected) {
+                // Deselect all on current page
+                state.posts.forEach(p => state.selectedIds.delete(p.id));
+            } else {
+                // Select all on current page
+                state.posts.forEach(p => state.selectedIds.add(p.id));
+            }
+
+            updateSelectionUI();
+            updateModelContextWithSelection();
+        }
+
+        function clearSelection() {
+            state.selectedIds.clear();
+            updateSelectionUI();
+            updateModelContextWithSelection();
+        }
+
+        function updateSelectionUI() {
+            const count = state.selectedIds.size;
+            const allOnPageSelected = state.posts.length > 0 &&
+                state.posts.every(p => state.selectedIds.has(p.id));
+
+            elements.selectionCount.textContent = count;
+            elements.selectionBar.classList.toggle('visible', count > 0);
+            elements.selectAllCheckbox.checked = allOnPageSelected;
+            elements.selectAllCheckbox.indeterminate = count > 0 && !allOnPageSelected;
+
+            // Update row checkboxes and styles
+            document.querySelectorAll('#posts-body tr').forEach(row => {
+                const postId = parseInt(row.dataset.postId, 10);
+                const checkbox = row.querySelector('.post-checkbox');
+                const isSelected = state.selectedIds.has(postId);
+
+                row.classList.toggle('selected', isSelected);
+                if (checkbox) checkbox.checked = isSelected;
+            });
+        }
+
+        function updateModelContextWithSelection() {
+            const ids = Array.from(state.selectedIds);
+
+            if (ids.length === 0) {
+                updateModelContext('No posts currently selected.', {
+                    selectedPostIds: [],
+                    selectionCount: 0,
+                });
+                return;
+            }
+
+            const selectedPosts = state.posts.filter(p => ids.includes(p.id));
+            const titles = selectedPosts.map(p => `"${p.title}" (ID: ${p.id})`).join(', ');
+
+            updateModelContext(
+                `User has selected ${ids.length} post(s): ${titles}`,
+                {
+                    selectedPostIds: ids,
+                    selectionCount: ids.length,
+                    selectedPosts: selectedPosts.map(p => ({
+                        id: p.id,
+                        title: p.title,
+                        status: p.status,
+                        post_type: p.post_type,
+                    })),
+                }
+            );
+        }
+
+        async function sendSelectionToAi() {
+            const ids = Array.from(state.selectedIds);
+            if (ids.length === 0) return;
+
+            const selectedPosts = state.posts.filter(p => ids.includes(p.id));
+            const postList = selectedPosts.map(p => `- "${p.title}" (ID: ${p.id}, ${p.post_type}, ${p.status})`).join('\n');
+
+            await sendChatMessage(
+                `I've selected the following ${ids.length} post(s):\n${postList}\n\nPlease help me with these posts.`
+            );
+        }
+
+        // =========================================================================
+        // DATA LOADING
+        // =========================================================================
+
+        async function loadPosts() {
+            setLoading(true);
+            setStatus('Loading...');
+
+            const search = elements.searchInput.value.trim();
+            const postType = elements.postTypeSelect.value || 'any';
+            const postStatus = elements.postStatusSelect.value || 'any';
+            const limit = parseInt(elements.limitInput.value, 10) || 10;
+            const offset = (state.currentPage - 1) * limit;
+
+            state.postsPerPage = limit;
+
+            const args = {
+                post_type: [postType],
+                limit: limit,
+                offset: offset,
+            };
+
+            // Handle post status
+            if (postStatus === 'any') {
+                args.post_status = ['publish', 'draft', 'pending', 'private', 'future'];
+            } else {
+                args.post_status = [postStatus];
+            }
+
+            if (search) {
+                args.search = search;
+            }
+
+            try {
+                const result = await callTool(TOOL_NAME, args);
+                const data = parseToolResult(result);
+
+                if (data) {
+                    renderPosts(data);
+                } else {
+                    setStatus('Failed to parse response', 'error');
+                    setLoading(false);
+                }
+            } catch (error) {
+                setStatus('Failed to load: ' + (error.message || error), 'error');
+                setLoading(false);
+            }
+        }
+
+        // =========================================================================
+        // POST TYPE DROPDOWN
+        // =========================================================================
+
+        function populatePostTypeDropdown() {
+            const config = window.__mcpAppConfig;
+            if (!config || !config.postTypes) {
+                log('No post types config found');
+                return;
+            }
+
+            elements.postTypeSelect.innerHTML = '';
+
+            config.postTypes.forEach(pt => {
+                const option = document.createElement('option');
+                option.value = pt.value;
+                option.textContent = pt.label;
+                elements.postTypeSelect.appendChild(option);
+            });
+
+            elements.postTypeSelect.value = 'any';
+        }
+
+        // =========================================================================
+        // EVENT HANDLERS
+        // =========================================================================
+
+        function setupEventListeners() {
+            // Form submission
+            elements.controls.addEventListener('submit', (e) => {
+                e.preventDefault();
+                state.currentPage = 1;
+                loadPosts();
+            });
+
+            // Select all checkbox
+            elements.selectAllCheckbox.addEventListener('change', selectAll);
+
+            // Post selection via checkbox
+            elements.postsBody.addEventListener('change', (e) => {
+                if (e.target.classList.contains('post-checkbox')) {
+                    const postId = parseInt(e.target.dataset.postId, 10);
+                    toggleSelection(postId);
+                }
+            });
+
+            // Handle link clicks
+            elements.postsBody.addEventListener('click', (e) => {
+                const link = e.target.closest('.post-title');
+                if (link) {
+                    e.preventDefault();
+                    openLink(link.dataset.link || link.href);
+                }
+            });
+
+            // Clear selection
+            elements.clearSelectionBtn.addEventListener('click', clearSelection);
+
+            // Send to AI
+            elements.sendToAiBtn.addEventListener('click', sendSelectionToAi);
+
+            // Pagination
+            const totalPages = () => Math.ceil(state.totalPosts / state.postsPerPage);
+
+            elements.firstBtn.addEventListener('click', () => loadPage(1));
+            elements.prevBtn.addEventListener('click', () => {
+                if (state.currentPage > 1) loadPage(state.currentPage - 1);
+            });
+            elements.nextBtn.addEventListener('click', () => {
+                if (state.currentPage < totalPages()) loadPage(state.currentPage + 1);
+            });
+            elements.lastBtn.addEventListener('click', () => loadPage(totalPages()));
+        }
+
+        // =========================================================================
+        // INITIALIZATION
+        // =========================================================================
+
+        async function initialize() {
+            setStatus('Connecting...');
+
+            try {
+                const result = await sendRequest('ui/initialize', {
+                    appInfo: {
+                        name: APP_NAME,
+                        version: APP_VERSION,
+                    },
+                    appCapabilities: {
+                        tools: { listChanged: false },
+                        availableDisplayModes: ['inline', 'fullscreen'],
+                    },
+                    protocolVersion: PROTOCOL_VERSION,
+                });
+
+                state.hostCapabilities = result.hostCapabilities || {};
+                state.hostContext = result.hostContext || {};
+                state.initialized = true;
+
+                log('Initialized', result);
+
+                if (state.hostContext.theme) {
+                    applyTheme(state.hostContext.theme);
+                }
+                if (state.hostContext.styles?.variables) {
+                    applyHostStyles(state.hostContext.styles.variables);
+                }
+
+                sendNotification('ui/notifications/initialized');
+                setupSizeReporting();
+                populatePostTypeDropdown();
+                setupEventListeners();
+
+                // Auto-load posts
+                setStatus('Loading...');
+                loadPosts();
+
+            } catch (error) {
+                setStatus('Failed to initialize: ' + (error.message || error), 'error');
+                log('Initialization failed', error);
+            }
+        }
+
+        // =========================================================================
+        // STARTUP
+        // =========================================================================
+
+        window.addEventListener('message', handleMessage);
+        initialize();
+
+        if (DEBUG) {
+            window.__mcpApp = {
+                state,
+                callTool,
+                updateModelContext,
+                sendChatMessage,
+                openLink,
+                loadPosts,
+            };
+        }
+
+    })();
+    </script>
+</body>
+</html>

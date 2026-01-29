@@ -109,9 +109,37 @@ final class GetSiteSettings implements RegistersAbility {
 			$settings['permalink'] = self::get_permalink_settings();
 		}
 
+		if ( ! $include_private ) {
+			$settings = self::filter_private_settings( $settings );
+		}
+
 		return array(
 			'settings' => $settings,
 		);
+	}
+
+	/**
+	 * Filter out private settings unless explicitly requested.
+	 *
+	 * @param array $settings Settings array to filter.
+	 * @return array Filtered settings.
+	 */
+	private static function filter_private_settings( array $settings ): array {
+		$filtered = array();
+
+		foreach ( $settings as $key => $value ) {
+			if ( is_string( $key ) && \str_starts_with( $key, '_' ) ) {
+				continue;
+			}
+
+			if ( is_array( $value ) ) {
+				$value = self::filter_private_settings( $value );
+			}
+
+			$filtered[ $key ] = $value;
+		}
+
+		return $filtered;
 	}
 
 	/**

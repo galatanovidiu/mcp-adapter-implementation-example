@@ -128,7 +128,7 @@ final class ActivateTheme implements RegistersAbility {
 
 		// Check if theme is allowed (for multisite)
 		if ( \is_multisite() ) {
-			$allowed_themes = \get_site_option( 'allowedthemes' );
+			$allowed_themes = (array) \get_site_option( 'allowedthemes' );
 			$is_allowed     = isset( $allowed_themes[ $stylesheet ] ) || \current_user_can( 'manage_network_themes' );
 
 			if ( ! $is_allowed ) {

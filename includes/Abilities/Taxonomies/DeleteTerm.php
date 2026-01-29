@@ -75,11 +75,44 @@ final class DeleteTerm implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
-		$term_id  = (int) $input['term_id'];
-		$args     = array();
-		if ( ! empty( $input['reassign'] ) ) {
-			$args['default'] = (int) $input['reassign'];
+		$taxonomy = isset( $input['taxonomy'] ) ? \sanitize_key( (string) $input['taxonomy'] ) : '';
+		if ( '' === $taxonomy ) {
+			return array(
+				'error' => array(
+					'code'    => 'missing_taxonomy',
+					'message' => 'Taxonomy is required.',
+				),
+			);
+		}
+		if ( ! \taxonomy_exists( $taxonomy ) ) {
+			return array(
+				'error' => array(
+					'code'    => 'invalid_taxonomy',
+					'message' => 'Invalid taxonomy.',
+				),
+			);
+		}
+		$term_id = isset( $input['term_id'] ) ? \absint( $input['term_id'] ) : 0;
+		if ( $term_id < 1 ) {
+			return array(
+				'error' => array(
+					'code'    => 'missing_term_id',
+					'message' => 'Term ID is required.',
+				),
+			);
+		}
+		$term = \get_term( $term_id, $taxonomy );
+		if ( \is_wp_error( $term ) || ! $term ) {
+			return array(
+				'error' => array(
+					'code'    => 'term_not_found',
+					'message' => 'Term not found.',
+				),
+			);
+		}
+		$args = array();
+		if ( array_key_exists( 'reassign', $input ) ) {
+			$args['default'] = \absint( $input['reassign'] );
 		}
 		$deleted = \wp_delete_term( $term_id, $taxonomy, $args );
 		if ( \is_wp_error( $deleted ) ) {

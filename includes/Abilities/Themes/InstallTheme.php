@@ -138,6 +138,17 @@ final class InstallTheme implements RegistersAbility {
 			$theme_name    = $api->name ?? $theme_slug;
 			$theme_version = $api->version ?? 'unknown';
 			$install_log[] = "Found theme: {$theme_name} v{$theme_version}";
+
+			if ( '' === $download_url ) {
+				$install_log[] = 'Theme API response missing download link.';
+				return array(
+					'error' => array(
+						'code'        => 'theme_download_missing',
+						'message'     => 'Theme download URL is missing from WordPress.org. Try another theme slug or provide a direct download URL.',
+						'install_log' => $install_log,
+					),
+				);
+			}
 		}
 
 		// Check if theme already exists
@@ -246,7 +257,7 @@ final class InstallTheme implements RegistersAbility {
 			// Check if theme is allowed (for multisite)
 			$can_activate = true;
 			if ( \is_multisite() ) {
-				$allowed_themes = \get_site_option( 'allowedthemes' );
+				$allowed_themes = (array) \get_site_option( 'allowedthemes' );
 				$can_activate   = isset( $allowed_themes[ $stylesheet ] ) || \current_user_can( 'manage_network_themes' );
 			}
 

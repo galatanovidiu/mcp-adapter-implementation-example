@@ -190,6 +190,7 @@ abstract class TestCase extends WP_UnitTestCase {
 		return $term_id;
 	}
 
+
 	/**
 	 * Get the MCP adapter instance for testing.
 	 *

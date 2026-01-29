@@ -46,23 +46,25 @@ final class GetTerms implements RegistersAbility {
 				),
 				'output_schema'       => array(
 					'type'       => 'object',
-					'required'   => array( 'terms' ),
+					'required'   => array( 'terms', 'total' ),
 					'properties' => array(
 						'terms' => array(
 							'type'  => 'array',
 							'items' => array(
 								'type'       => 'object',
-								'required'   => array( 'id', 'name', 'slug' ),
+								'required'   => array( 'id', 'name', 'slug', 'taxonomy' ),
 								'properties' => array(
 									'id'          => array( 'type' => 'integer' ),
 									'name'        => array( 'type' => 'string' ),
 									'slug'        => array( 'type' => 'string' ),
 									'description' => array( 'type' => 'string' ),
+									'taxonomy'    => array( 'type' => 'string' ),
 									'count'       => array( 'type' => 'integer' ),
 									'parent'      => array( 'type' => 'integer' ),
 								),
 							),
 						),
+						'total' => array( 'type' => 'integer' ),
 					),
 				),
 				'permission_callback' => array( self::class, 'check_permission' ),

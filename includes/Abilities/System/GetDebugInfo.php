@@ -139,6 +139,7 @@ final class GetDebugInfo implements RegistersAbility {
 		$include_php_info  = (bool) ( $input['include_php_info'] ?? false );
 		$include_error_log = (bool) ( $input['include_error_log'] ?? false );
 		$error_log_lines   = (int) ( $input['error_log_lines'] ?? 50 );
+		$error_log_lines   = max( 1, min( 500, $error_log_lines ) );
 
 		$result = array();
 
@@ -274,17 +275,52 @@ final class GetDebugInfo implements RegistersAbility {
 			return array();
 		}
 
-		$entries    = array();
-		$file_lines = file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES );
+		$lines = max( 1, min( 500, $lines ) );
 
-		if ( $file_lines === false ) {
+		$entries    = array();
+		$handle     = fopen( $log_file, 'rb' );
+		if ( ! $handle ) {
 			return array();
 		}
 
-		// Get the last N lines
-		$recent_lines = array_slice( $file_lines, -$lines );
+		$chunk_size  = 8192;
+		$buffer      = '';
+		$line_count  = 0;
+		$stat        = fstat( $handle );
+		$file_size   = is_array( $stat ) && isset( $stat['size'] ) ? (int) $stat['size'] : 0;
+		$offset      = $file_size;
+
+		while ( $offset > 0 && $line_count <= $lines ) {
+			$read_size = min( $chunk_size, $offset );
+			$offset   -= $read_size;
+			if ( fseek( $handle, $offset ) !== 0 ) {
+				break;
+			}
+			$chunk = fread( $handle, $read_size );
+			if ( $chunk === false ) {
+				break;
+			}
+			$buffer     = $chunk . $buffer;
+			$line_count += substr_count( $chunk, "\n" );
+		}
+
+		fclose( $handle );
+
+		if ( '' === $buffer ) {
+			return array();
+		}
+
+		$raw_lines = preg_split( "/\r\n|\n|\r/", $buffer );
+		if ( ! is_array( $raw_lines ) ) {
+			return array();
+		}
+
+		$recent_lines = array_slice( $raw_lines, -$lines );
 
 		foreach ( $recent_lines as $line ) {
+			if ( '' === trim( $line ) ) {
+				continue;
+			}
 			// Parse PHP error log format: [timestamp] PHP Level: message
 			if ( preg_match( '/^\[([^\]]+)\]\s+PHP\s+([^:]+):\s+(.+)$/', $line, $matches ) ) {
 				$entries[] = array(

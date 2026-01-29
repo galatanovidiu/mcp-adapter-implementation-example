@@ -102,8 +102,15 @@ class GetStoreInfo implements RegistersAbility {
 			);
 		}
 
-		$include_stats           = $input['include_stats'] ?? true;
-		$include_recent_activity = $input['include_recent_activity'] ?? true;
+		$include_stats = filter_var( $input['include_stats'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_stats ) {
+			$include_stats = true;
+		}
+
+		$include_recent_activity = filter_var( $input['include_recent_activity'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_recent_activity ) {
+			$include_recent_activity = true;
+		}
 
 		// Get basic store information
 		$store_info = self::get_basic_store_info();

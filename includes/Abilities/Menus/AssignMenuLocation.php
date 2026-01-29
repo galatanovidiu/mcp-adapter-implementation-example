@@ -107,17 +107,19 @@ final class AssignMenuLocation implements RegistersAbility {
 	public static function execute( array $input ) {
 		$assignments = $input['assignments'] ?? array();
 		$replace_all = (bool) ( $input['replace_all'] ?? false );
+		$current_assignments = \get_nav_menu_locations();
 
 		if ( empty( $assignments ) || ! is_array( $assignments ) ) {
 			return array(
-				'success' => false,
-				'message' => 'No assignments provided.',
+				'success'             => false,
+				'assignments'         => array(),
+				'updated_assignments' => $current_assignments,
+				'message'             => 'No assignments provided.',
 			);
 		}
 
 		// Get registered locations and current assignments
 		$registered_locations = \get_registered_nav_menus();
-		$current_assignments  = \get_nav_menu_locations();
 		$new_assignments      = $replace_all ? array() : $current_assignments;
 
 		$assignment_results = array();

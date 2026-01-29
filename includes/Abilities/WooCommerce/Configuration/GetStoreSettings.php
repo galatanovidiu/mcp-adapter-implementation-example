@@ -95,8 +95,21 @@ class GetStoreSettings implements RegistersAbility {
 			);
 		}
 
-		$category         = $input['category'] ?? 'all';
-		$include_defaults = $input['include_defaults'] ?? true;
+		$category = isset( $input['category'] ) ? sanitize_text_field( $input['category'] ) : 'all';
+		$allowed  = array( 'general', 'products', 'shipping', 'tax', 'checkout', 'account', 'email', 'advanced', 'all' );
+
+		if ( ! in_array( $category, $allowed, true ) ) {
+			return array(
+				'settings'   => array(),
+				'store_info' => array(),
+				'message'    => 'Invalid settings category.',
+			);
+		}
+
+		$include_defaults = filter_var( $input['include_defaults'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_defaults ) {
+			$include_defaults = true;
+		}
 
 		$settings = array();
 

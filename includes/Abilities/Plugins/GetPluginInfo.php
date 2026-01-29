@@ -98,6 +98,14 @@ final class GetPluginInfo implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$plugin_file = \sanitize_text_field( (string) $input['plugin_file'] );
+		if ( $plugin_file === '' || \validate_file( $plugin_file ) !== 0 ) {
+			return array(
+				'error' => array(
+					'code'    => 'invalid_plugin_file',
+					'message' => 'Invalid plugin file path provided.',
+				),
+			);
+		}
 
 		// Ensure plugin functions are available
 		if ( ! function_exists( 'get_plugins' ) ) {

@@ -81,6 +81,18 @@ class CreateProductAttribute implements RegistersAbility {
 									'id'   => array( 'type' => 'integer' ),
 									'name' => array( 'type' => 'string' ),
 									'slug' => array( 'type' => 'string' ),
+									),
+								),
+						),
+						'term_errors'   => array(
+							'type'  => 'array',
+							'items' => array(
+								'type'       => 'object',
+								'properties' => array(
+									'action'  => array( 'type' => 'string' ),
+									'name'    => array( 'type' => 'string' ),
+									'slug'    => array( 'type' => 'string' ),
+									'message' => array( 'type' => 'string' ),
 								),
 							),
 						),
@@ -118,16 +130,31 @@ class CreateProductAttribute implements RegistersAbility {
 				'success'       => false,
 				'attribute'     => null,
 				'terms_created' => array(),
+				'term_errors'   => array(),
 				'message'       => 'WooCommerce is not active.',
 			);
 		}
 
-		$name         = $input['name'];
-		$slug         = $input['slug'] ?? sanitize_title( $name );
-		$type         = $input['type'] ?? 'select';
-		$order_by     = $input['order_by'] ?? 'menu_order';
-		$has_archives = $input['has_archives'] ?? false;
-		$terms        = $input['terms'] ?? array();
+		$name = sanitize_text_field( (string) $input['name'] );
+		$slug = isset( $input['slug'] ) ? sanitize_title( (string) $input['slug'] ) : '';
+		if ( '' === $slug ) {
+			$slug = sanitize_title( $name );
+		}
+
+		$type          = sanitize_key( (string) ( $input['type'] ?? 'select' ) );
+		$allowed_types = array( 'select', 'text' );
+		if ( ! in_array( $type, $allowed_types, true ) ) {
+			$type = 'select';
+		}
+
+		$order_by          = sanitize_key( (string) ( $input['order_by'] ?? 'menu_order' ) );
+		$allowed_order_bys = array( 'menu_order', 'name', 'name_num', 'id' );
+		if ( ! in_array( $order_by, $allowed_order_bys, true ) ) {
+			$order_by = 'menu_order';
+		}
+
+		$has_archives = ! empty( $input['has_archives'] );
+		$terms        = self::sanitize_terms( $input['terms'] ?? array() );
 
 		// Check if attribute already exists
 		$existing_attribute = wc_attribute_taxonomy_name( $slug );
@@ -136,9 +163,12 @@ class CreateProductAttribute implements RegistersAbility {
 				'success'       => false,
 				'attribute'     => null,
 				'terms_created' => array(),
+				'term_errors'   => array(),
 				'message'       => 'Attribute with this name already exists.',
 			);
 		}
+
+		$term_errors = array();
 
 		try {
 			// Create the attribute
@@ -157,6 +187,7 @@ class CreateProductAttribute implements RegistersAbility {
 					'success'       => false,
 					'attribute'     => null,
 					'terms_created' => array(),
+					'term_errors'   => $term_errors,
 					'message'       => 'Error creating attribute: ' . $attribute_id->get_error_message(),
 				);
 			}
@@ -176,6 +207,7 @@ class CreateProductAttribute implements RegistersAbility {
 					'success'       => false,
 					'attribute'     => null,
 					'terms_created' => array(),
+					'term_errors'   => $term_errors,
 					'message'       => 'Failed to retrieve created attribute.',
 				);
 			}
@@ -215,6 +247,12 @@ class CreateProductAttribute implements RegistersAbility {
 					);
 
 					if ( is_wp_error( $term ) ) {
+						$term_errors[] = array(
+							'action'  => 'create',
+							'name'    => $term_name,
+							'slug'    => $term_slug,
+							'message' => $term->get_error_message(),
+						);
 						continue;
 					}
 
@@ -238,6 +276,7 @@ class CreateProductAttribute implements RegistersAbility {
 					'taxonomy'     => $taxonomy,
 				),
 				'terms_created' => $terms_created,
+				'term_errors'   => $term_errors,
 				'message'       => sprintf(
 					'Successfully created attribute "%s" with %d terms.',
 					$name,
@@ -249,8 +288,43 @@ class CreateProductAttribute implements RegistersAbility {
 				'success'       => false,
 				'attribute'     => null,
 				'terms_created' => array(),
+				'term_errors'   => $term_errors,
 				'message'       => 'Error creating attribute: ' . $e->getMessage(),
 			);
 		}
+	}
+
+	private static function sanitize_terms( $terms ): array {
+		if ( ! is_array( $terms ) ) {
+			return array();
+		}
+
+		$sanitized_terms = array();
+
+		foreach ( $terms as $term_data ) {
+			if ( ! is_array( $term_data ) ) {
+				continue;
+			}
+
+			$term_name = isset( $term_data['name'] ) ? sanitize_text_field( (string) $term_data['name'] ) : '';
+			if ( '' === $term_name ) {
+				continue;
+			}
+
+			$term_slug = isset( $term_data['slug'] ) ? sanitize_title( (string) $term_data['slug'] ) : '';
+			if ( '' === $term_slug ) {
+				$term_slug = sanitize_title( $term_name );
+			}
+
+			$term_description = isset( $term_data['description'] ) ? sanitize_textarea_field( (string) $term_data['description'] ) : '';
+
+			$sanitized_terms[] = array(
+				'name'        => $term_name,
+				'slug'        => $term_slug,
+				'description' => $term_description,
+			);
+		}
+
+		return $sanitized_terms;
 	}
 }

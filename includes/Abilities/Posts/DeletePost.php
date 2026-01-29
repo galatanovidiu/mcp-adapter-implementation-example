@@ -100,10 +100,34 @@ final class DeletePost implements RegistersAbility {
 	public static function execute( array $input ) {
 		$post_id = (int) $input['id'];
 		$force   = ! empty( $input['force'] );
+		$post    = \get_post( $post_id );
+		if ( ! $post ) {
+			return array(
+				'error' => array(
+					'code'    => 'post_not_found',
+					'message' => 'Post not found.',
+				),
+			);
+		}
 
 		$deleted = \wp_delete_post( $post_id, $force );
+		if ( \is_wp_error( $deleted ) ) {
+			return array(
+				'error' => array(
+					'code'    => $deleted->get_error_code(),
+					'message' => $deleted->get_error_message(),
+				),
+			);
+		}
 		if ( false === $deleted ) {
-			return new \WP_Error( 'delete_failed', 'Failed to delete the post.' );
+			return array(
+				'error' => array(
+					'code'    => 'delete_failed',
+					'message' => $force
+						? 'Failed to permanently delete the post.'
+						: 'Failed to move the post to the trash.',
+				),
+			);
 		}
 
 		return array(

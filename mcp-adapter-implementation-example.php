@@ -229,6 +229,8 @@ add_action(
 			array(
 				'resources/posts-list',
 				'resources/site-settings',
+				// UI Resources for MCP Apps
+				'core/list-posts-ui',
 			),
 			// Prompts
 			array(

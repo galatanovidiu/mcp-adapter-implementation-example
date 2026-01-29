@@ -123,14 +123,32 @@ final class UpdatePost implements RegistersAbility {
 		if ( array_key_exists( 'excerpt', $input ) ) {
 			$postarr['post_excerpt'] = \wp_kses_post( (string) $input['excerpt'] );
 		}
+		$requested_status = null;
 		if ( array_key_exists( 'status', $input ) ) {
-			$postarr['post_status'] = \sanitize_key( (string) $input['status'] );
+			$requested_status       = \sanitize_key( (string) $input['status'] );
+			$postarr['post_status'] = $requested_status;
 		}
 		if ( array_key_exists( 'author', $input ) ) {
 			$postarr['post_author'] = (int) $input['author'];
 		}
 
-		$has_tax_input = ( ! empty( $input['tax_input'] ) && \is_array( $input['tax_input'] ) );
+		$has_tax_input  = ( ! empty( $input['tax_input'] ) && \is_array( $input['tax_input'] ) );
+		$has_meta_input = array_key_exists( 'meta', $input );
+
+		if ( $requested_status && $requested_status !== $post->post_status && self::status_requires_publish_cap( $requested_status ) ) {
+			$pto = \get_post_type_object( $post->post_type );
+			if ( $pto ) {
+				$publish_cap = $pto->cap->publish_posts ?? 'publish_posts';
+				if ( ! \current_user_can( $publish_cap ) ) {
+					return array(
+						'error' => array(
+							'code'    => 'insufficient_permissions',
+							'message' => 'You do not have permission to publish this post type.',
+						),
+					);
+				}
+			}
+		}
 
 		$updated = \wp_update_post( $postarr, true );
 		if ( \is_wp_error( $updated ) ) {
@@ -151,6 +169,78 @@ final class UpdatePost implements RegistersAbility {
 			);
 		}
 
+		if ( $has_meta_input ) {
+			if ( empty( $input['meta'] ) || ! \is_array( $input['meta'] ) ) {
+				return array(
+					'error' => array(
+						'code'    => 'invalid_meta',
+						'message' => 'Meta must be an object.',
+					),
+				);
+			}
+
+			$post_type         = $updated_post->post_type;
+			$include_private   = false;
+			$only_show_in_rest = true;
+			$registered        = function_exists( 'get_registered_meta_keys' )
+				? (array) \get_registered_meta_keys( 'post', $post_type )
+				: array();
+
+			foreach ( $input['meta'] as $key => $value ) {
+				if ( ! is_string( $key ) ) {
+					continue;
+				}
+				if ( ! $include_private && str_starts_with( $key, '_' ) ) {
+					continue;
+				}
+				if ( ! array_key_exists( $key, $registered ) ) {
+					continue;
+				}
+				$args = $registered[ $key ];
+
+				$show_in_rest = false;
+				if ( isset( $args['show_in_rest'] ) ) {
+					$show_in_rest = is_bool( $args['show_in_rest'] ) ? (bool) $args['show_in_rest'] : true;
+				}
+				if ( $only_show_in_rest && ! $show_in_rest ) {
+					continue;
+				}
+
+				if ( ! \current_user_can( 'edit_post_meta', $post_id, $key ) ) {
+					continue;
+				}
+
+				$schema = null;
+				if ( is_array( $args['show_in_rest'] ?? null ) && isset( $args['show_in_rest']['schema'] ) ) {
+					$schema = $args['show_in_rest']['schema'];
+				} elseif ( isset( $args['type'] ) ) {
+					$schema = array( 'type' => (string) $args['type'] );
+				}
+				if ( $schema ) {
+					$valid = \rest_validate_value_from_schema( $value, $schema );
+					if ( \is_wp_error( $valid ) ) {
+						return array(
+							'error' => array(
+								'code'    => $valid->get_error_code(),
+								'message' => $valid->get_error_message(),
+							),
+						);
+					}
+				}
+
+				$single = isset( $args['single'] ) ? (bool) $args['single'] : true;
+				if ( $single ) {
+					\update_post_meta( $post_id, $key, $value );
+				} else {
+					\delete_post_meta( $post_id, $key );
+					$values = is_array( $value ) ? array_values( $value ) : array( $value );
+					foreach ( $values as $meta_value ) {
+						\add_post_meta( $post_id, $key, $meta_value, false );
+					}
+				}
+			}
+		}
+
 		if ( $has_tax_input ) {
 			$append               = array_key_exists( 'append_terms', $input ) ? (bool) $input['append_terms'] : true;
 			$create_if_missing    = ! empty( $input['create_terms_if_missing'] );
@@ -161,6 +251,14 @@ final class UpdatePost implements RegistersAbility {
 					continue;
 				}
 				if ( ! \in_array( $taxonomy, $supported_taxonomies, true ) ) {
+					continue;
+				}
+				$taxonomy_object = \get_taxonomy( $taxonomy );
+				if ( ! $taxonomy_object ) {
+					continue;
+				}
+				$assign_cap = $taxonomy_object->cap->assign_terms ?? 'assign_terms';
+				if ( ! \current_user_can( $assign_cap ) ) {
 					continue;
 				}
 				$term_ids = array();
@@ -180,7 +278,11 @@ final class UpdatePost implements RegistersAbility {
 					}
 					if ( $term instanceof \WP_Term ) {
 						$term_ids[] = (int) $term->term_id;
-					} elseif ( $create_if_missing && \current_user_can( 'manage_terms' ) ) {
+					} elseif ( $create_if_missing ) {
+						$manage_cap = $taxonomy_object->cap->manage_terms ?? 'manage_terms';
+						if ( ! \current_user_can( $manage_cap ) ) {
+							continue;
+						}
 						$created = \wp_insert_term( $t, $taxonomy );
 						if ( ! \is_wp_error( $created ) && isset( $created['term_id'] ) ) {
 							$term_ids[] = (int) $created['term_id'];
@@ -202,5 +304,9 @@ final class UpdatePost implements RegistersAbility {
 			'link'      => (string) \get_permalink( $updated_post->ID ),
 			'title'     => (string) $updated_post->post_title,
 		);
+	}
+
+	private static function status_requires_publish_cap( string $status ): bool {
+		return in_array( $status, array( 'publish', 'private', 'future' ), true );
 	}
 }

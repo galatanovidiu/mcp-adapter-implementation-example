@@ -376,6 +376,61 @@ final class ListPostsTest extends TestCase {
 	}
 
 	/**
+	 * Test post listing with array meta query values.
+	 */
+	public function test_post_listing_with_meta_query_array_values(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'author' ) );
+		wp_set_current_user( $user_id );
+
+		$this->create_test_post(
+			array(
+				'post_title'  => 'Priority One Post',
+				'post_status' => 'publish',
+				'meta_input'  => array(
+					'priority' => 1,
+				),
+			)
+		);
+
+		$this->create_test_post(
+			array(
+				'post_title'  => 'Priority Three Post',
+				'post_status' => 'publish',
+				'meta_input'  => array(
+					'priority' => 3,
+				),
+			)
+		);
+
+		$input = array(
+			'post_type'   => array( 'post' ),
+			'post_status' => array( 'publish' ),
+			'meta_query'  => array(
+				array(
+					'key'     => 'priority',
+					'value'   => array( 1, 2 ),
+					'compare' => 'IN',
+				),
+			),
+		);
+
+		$result = ListPosts::execute( $input );
+
+		$this->assertIsArray( $result );
+		$posts = $result['posts'];
+		$this->assertNotEmpty( $posts, 'Should find posts with priority 1 or 2' );
+
+		$found_priority_one = false;
+		foreach ( $posts as $post ) {
+			if ( $post['title'] === 'Priority One Post' ) {
+				$found_priority_one = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found_priority_one, 'Should find the priority one post' );
+	}
+
+	/**
 	 * Test post listing with taxonomy query.
 	 */
 	public function test_post_listing_with_taxonomy_query(): void {

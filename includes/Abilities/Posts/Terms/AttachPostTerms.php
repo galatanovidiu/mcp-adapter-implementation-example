@@ -136,6 +136,10 @@ final class AttachPostTerms implements RegistersAbility {
 		if ( ! \is_object_in_taxonomy( $post->post_type, $taxonomy ) ) {
 			return new \WP_Error( 'invalid_taxonomy', 'Taxonomy not supported by post type.' );
 		}
+		$tax = \get_taxonomy( $taxonomy );
+		if ( ! $tax ) {
+			return new \WP_Error( 'invalid_taxonomy', 'Taxonomy not found.' );
+		}
 		$append            = array_key_exists( 'append', $input ) ? (bool) $input['append'] : true;
 		$create_if_missing = ! empty( $input['create_if_missing'] );
 		$term_ids          = array();
@@ -155,7 +159,11 @@ final class AttachPostTerms implements RegistersAbility {
 			}
 			if ( $term instanceof \WP_Term ) {
 				$term_ids[] = (int) $term->term_id;
-			} elseif ( $create_if_missing && \current_user_can( 'manage_terms' ) ) {
+			} elseif ( $create_if_missing ) {
+				$manage_cap = $tax->cap->manage_terms ?? 'manage_terms';
+				if ( ! \current_user_can( $manage_cap ) ) {
+					continue;
+				}
 				$created = \wp_insert_term( $t, $taxonomy );
 				if ( ! \is_wp_error( $created ) && isset( $created['term_id'] ) ) {
 					$term_ids[] = (int) $created['term_id'];

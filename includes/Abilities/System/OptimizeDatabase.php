@@ -232,23 +232,17 @@ final class OptimizeDatabase implements RegistersAbility {
 
 			case 'clean_revisions':
 				$revisions_query = "
-					SELECT ID FROM {$wpdb->posts} 
-					WHERE post_type = 'revision' 
-					AND post_date < %s
-					AND ID NOT IN (
-						SELECT p.ID FROM {$wpdb->posts} p
-						INNER JOIN (
-							SELECT post_parent, MAX(post_date) as max_date
-							FROM {$wpdb->posts}
-							WHERE post_type = 'revision'
-							GROUP BY post_parent
-							ORDER BY max_date DESC
-							LIMIT %d
-						) recent ON p.post_parent = recent.post_parent
-					)
+					SELECT ID FROM (
+						SELECT ID, post_date,
+							ROW_NUMBER() OVER (PARTITION BY post_parent ORDER BY post_date DESC) AS revision_rank
+						FROM {$wpdb->posts}
+						WHERE post_type = 'revision'
+					) ranked
+					WHERE ranked.revision_rank > %d
+					AND ranked.post_date < %s
 				";
 
-				$revisions             = $wpdb->get_col( $wpdb->prepare( $revisions_query, $cutoff_date, $limit_revisions ) );
+				$revisions             = $wpdb->get_col( $wpdb->prepare( $revisions_query, $limit_revisions, $cutoff_date ) );
 				$result['items_found'] = count( $revisions );
 
 				if ( ! $dry_run && ! empty( $revisions ) ) {

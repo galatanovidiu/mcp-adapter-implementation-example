@@ -84,7 +84,6 @@ final class CreateUser implements RegistersAbility {
 						'email'        => array( 'type' => 'string' ),
 						'display_name' => array( 'type' => 'string' ),
 						'role'         => array( 'type' => 'string' ),
-						'password'     => array( 'type' => 'string' ),
 						'message'      => array( 'type' => 'string' ),
 					),
 				),
@@ -258,7 +257,6 @@ final class CreateUser implements RegistersAbility {
 			'email'        => $user->user_email,
 			'display_name' => $user->display_name,
 			'role'         => $role,
-			'password'     => $password,
 			'message'      => $send_notification ? 'User created successfully. Notification email sent.' : 'User created successfully.',
 		);
 	}

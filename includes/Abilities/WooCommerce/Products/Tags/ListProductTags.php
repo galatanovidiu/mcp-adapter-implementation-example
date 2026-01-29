@@ -143,12 +143,28 @@ class ListProductTags implements RegistersAbility {
 
 		$limit            = $input['limit'] ?? 50;
 		$offset           = $input['offset'] ?? 0;
-		$search           = $input['search'] ?? '';
+		$search           = isset( $input['search'] ) ? sanitize_text_field( (string) $input['search'] ) : '';
 		$hide_empty       = $input['hide_empty'] ?? false;
 		$include_products = $input['include_products'] ?? false;
 		$min_count        = $input['min_count'] ?? null;
-		$orderby          = $input['orderby'] ?? 'name';
-		$order            = $input['order'] ?? 'asc';
+		$orderby          = sanitize_key( (string) ( $input['orderby'] ?? 'name' ) );
+		$order            = sanitize_key( (string) ( $input['order'] ?? 'asc' ) );
+		$allowed_orderby  = array( 'name', 'count', 'term_id', 'slug' );
+		$allowed_order    = array( 'asc', 'desc' );
+
+		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'name';
+		}
+
+		if ( ! in_array( $order, $allowed_order, true ) ) {
+			$order = 'asc';
+		}
+
+		$filters_applied              = $input;
+		$filters_applied['search']    = $search;
+		$filters_applied['orderby']   = $orderby;
+		$filters_applied['order']     = $order;
+		$filters_applied['min_count'] = $min_count;
 
 		// Build query args
 		$args = array(
@@ -173,7 +189,7 @@ class ListProductTags implements RegistersAbility {
 				'tags'            => array(),
 				'statistics'      => array(),
 				'pagination'      => array(),
-				'filters_applied' => array_filter( $input ),
+				'filters_applied' => array_filter( $filters_applied ),
 				'message'         => 'Error retrieving tags: ' . $tags->get_error_message(),
 			);
 		}
@@ -194,10 +210,13 @@ class ListProductTags implements RegistersAbility {
 		$total_args = $args;
 		unset( $total_args['number'], $total_args['offset'] );
 		$all_tags = get_terms( $total_args );
-		$total    = is_wp_error( $all_tags ) ? 0 : count( $all_tags );
+		if ( is_wp_error( $all_tags ) ) {
+			$all_tags = array();
+		}
+		$total = count( $all_tags );
 
 		// Apply min_count filter to total if needed
-		if ( $min_count !== null ) {
+		if ( $min_count !== null && ! empty( $all_tags ) ) {
 			$filtered_total = 0;
 			foreach ( $all_tags as $tag ) {
 				if ( $tag->count < $min_count ) {
@@ -207,6 +226,8 @@ class ListProductTags implements RegistersAbility {
 				++$filtered_total;
 			}
 			$total = $filtered_total;
+		} elseif ( $min_count !== null ) {
+			$total = 0;
 		}
 
 		// Calculate pagination
@@ -229,7 +250,7 @@ class ListProductTags implements RegistersAbility {
 			'tags'            => $formatted_tags,
 			'statistics'      => $statistics,
 			'pagination'      => $pagination,
-			'filters_applied' => array_filter( $input ),
+			'filters_applied' => array_filter( $filters_applied ),
 			'message'         => sprintf(
 				'Found %d tags (showing %d-%d of %d total).',
 				count( $formatted_tags ),
@@ -241,13 +262,18 @@ class ListProductTags implements RegistersAbility {
 	}
 
 	private static function format_tag( \WP_Term $tag, bool $include_products ): array {
+		$link = get_term_link( $tag );
+		if ( is_wp_error( $link ) ) {
+			$link = '';
+		}
+
 		$data = array(
 			'id'          => $tag->term_id,
 			'name'        => $tag->name,
 			'slug'        => $tag->slug,
 			'description' => $tag->description,
 			'count'       => $tag->count,
-			'link'        => get_term_link( $tag ),
+			'link'        => $link,
 			'products'    => array(),
 		);
 

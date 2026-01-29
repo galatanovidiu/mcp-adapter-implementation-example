@@ -229,7 +229,7 @@ final class ListComments implements RegistersAbility {
 
 		// Filter by author name
 		if ( ! empty( $author_name ) ) {
-			$args['author__in'] = array( \sanitize_text_field( $author_name ) );
+			$args['author'] = \sanitize_text_field( $author_name );
 		}
 
 		// Filter by user ID
@@ -272,15 +272,6 @@ final class ListComments implements RegistersAbility {
 
 		// Ensure total_comments is an integer
 		$total_comments = is_numeric( $total_comments ) ? (int) $total_comments : count( $comments );
-
-		// Debug: Check what we got
-		if ( empty( $comments ) && $total_comments > 0 ) {
-			// Try a simple query without filters
-			$simple_comments = \get_comments( array( 'number' => 10 ) );
-			if ( ! empty( $simple_comments ) ) {
-				$comments = $simple_comments;
-			}
-		}
 
 		$comments_data = array();
 

@@ -89,9 +89,16 @@ class DeleteProduct implements RegistersAbility {
 			);
 		}
 
-		$product_id        = $input['id'];
-		$force             = $input['force'] ?? false;
-		$delete_variations = $input['delete_variations'] ?? true;
+		$product_id = absint( $input['id'] ?? 0 );
+		$force      = filter_var( $input['force'] ?? false, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $force ) {
+			$force = false;
+		}
+
+		$delete_variations = filter_var( $input['delete_variations'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $delete_variations ) {
+			$delete_variations = true;
+		}
 
 		$product = wc_get_product( $product_id );
 

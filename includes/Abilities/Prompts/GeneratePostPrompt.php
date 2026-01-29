@@ -77,6 +77,13 @@ final class GeneratePostPrompt implements RegistersAbility {
 		$length   = $input['length'] ?? 'medium';
 		$keywords = $input['keywords'] ?? '';
 
+		if ( is_array( $keywords ) ) {
+			$keywords = array_filter( array_map( 'sanitize_text_field', $keywords ) );
+			$keywords = implode( ', ', $keywords );
+		} else {
+			$keywords = \sanitize_text_field( (string) $keywords );
+		}
+
 		// Build the prompt message
 		$prompt = "Write a WordPress blog post about: {$topic}\n\n";
 

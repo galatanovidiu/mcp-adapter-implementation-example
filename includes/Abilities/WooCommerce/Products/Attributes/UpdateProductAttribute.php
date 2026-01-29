@@ -94,6 +94,18 @@ class UpdateProductAttribute implements RegistersAbility {
 						'terms_added'   => array( 'type' => 'array' ),
 						'terms_updated' => array( 'type' => 'array' ),
 						'terms_deleted' => array( 'type' => 'integer' ),
+						'term_errors'   => array(
+							'type'  => 'array',
+							'items' => array(
+								'type'       => 'object',
+								'properties' => array(
+									'action'  => array( 'type' => 'string' ),
+									'id'      => array( 'type' => 'integer' ),
+									'name'    => array( 'type' => 'string' ),
+									'message' => array( 'type' => 'string' ),
+								),
+							),
+						),
 						'message'       => array( 'type' => 'string' ),
 					),
 				),
@@ -131,11 +143,12 @@ class UpdateProductAttribute implements RegistersAbility {
 				'terms_added'   => array(),
 				'terms_updated' => array(),
 				'terms_deleted' => 0,
+				'term_errors'   => array(),
 				'message'       => 'WooCommerce is not active.',
 			);
 		}
 
-		$attribute_id = $input['attribute_id'];
+		$attribute_id = absint( $input['attribute_id'] );
 
 		// Get the attribute
 		$wc_attributes = wc_get_attribute_taxonomies();
@@ -155,6 +168,7 @@ class UpdateProductAttribute implements RegistersAbility {
 				'terms_added'   => array(),
 				'terms_updated' => array(),
 				'terms_deleted' => 0,
+				'term_errors'   => array(),
 				'message'       => 'Attribute not found.',
 			);
 		}
@@ -164,28 +178,40 @@ class UpdateProductAttribute implements RegistersAbility {
 		$terms_added   = array();
 		$terms_updated = array();
 		$terms_deleted = 0;
+		$term_errors   = array();
 
 		try {
 			// Update attribute properties
 			$update_data = array();
 
 			if ( isset( $input['name'] ) ) {
-				$update_data['attribute_label'] = $input['name'];
-				$changes_made[]                 = 'name';
+				$attribute_name = sanitize_text_field( (string) $input['name'] );
+				if ( '' !== $attribute_name ) {
+					$update_data['attribute_label'] = $attribute_name;
+					$changes_made[]                 = 'name';
+				}
 			}
 
 			if ( isset( $input['type'] ) ) {
-				$update_data['attribute_type'] = $input['type'];
-				$changes_made[]                = 'type';
+				$type          = sanitize_key( (string) $input['type'] );
+				$allowed_types = array( 'select', 'text' );
+				if ( in_array( $type, $allowed_types, true ) ) {
+					$update_data['attribute_type'] = $type;
+					$changes_made[]                = 'type';
+				}
 			}
 
 			if ( isset( $input['order_by'] ) ) {
-				$update_data['attribute_orderby'] = $input['order_by'];
-				$changes_made[]                   = 'order_by';
+				$order_by          = sanitize_key( (string) $input['order_by'] );
+				$allowed_order_bys = array( 'menu_order', 'name', 'name_num', 'id' );
+				if ( in_array( $order_by, $allowed_order_bys, true ) ) {
+					$update_data['attribute_orderby'] = $order_by;
+					$changes_made[]                   = 'order_by';
+				}
 			}
 
 			if ( isset( $input['has_archives'] ) ) {
-				$update_data['attribute_public'] = $input['has_archives'] ? 1 : 0;
+				$update_data['attribute_public'] = ! empty( $input['has_archives'] ) ? 1 : 0;
 				$changes_made[]                  = 'has_archives';
 			}
 
@@ -200,6 +226,7 @@ class UpdateProductAttribute implements RegistersAbility {
 						'terms_added'   => array(),
 						'terms_updated' => array(),
 						'terms_deleted' => 0,
+						'term_errors'   => $term_errors,
 						'message'       => 'Error updating attribute: ' . $result->get_error_message(),
 					);
 				}
@@ -208,9 +235,19 @@ class UpdateProductAttribute implements RegistersAbility {
 			// Add new terms
 			if ( ! empty( $input['add_terms'] ) ) {
 				foreach ( $input['add_terms'] as $term_data ) {
-					$term_name        = $term_data['name'];
-					$term_slug        = $term_data['slug'] ?? sanitize_title( $term_name );
-					$term_description = $term_data['description'] ?? '';
+					if ( ! is_array( $term_data ) ) {
+						continue;
+					}
+
+					$term_name = isset( $term_data['name'] ) ? sanitize_text_field( (string) $term_data['name'] ) : '';
+					if ( '' === $term_name ) {
+						continue;
+					}
+					$term_slug = isset( $term_data['slug'] ) ? sanitize_title( (string) $term_data['slug'] ) : '';
+					if ( '' === $term_slug ) {
+						$term_slug = sanitize_title( $term_name );
+					}
+					$term_description = isset( $term_data['description'] ) ? sanitize_textarea_field( (string) $term_data['description'] ) : '';
 
 					$term = wp_insert_term(
 						$term_name,
@@ -222,6 +259,12 @@ class UpdateProductAttribute implements RegistersAbility {
 					);
 
 					if ( is_wp_error( $term ) ) {
+						$term_errors[] = array(
+							'action'  => 'add',
+							'id'      => 0,
+							'name'    => $term_name,
+							'message' => $term->get_error_message(),
+						);
 						continue;
 					}
 
@@ -236,17 +279,30 @@ class UpdateProductAttribute implements RegistersAbility {
 			// Update existing terms
 			if ( ! empty( $input['update_terms'] ) ) {
 				foreach ( $input['update_terms'] as $term_data ) {
-					$term_id     = $term_data['id'];
+					if ( ! is_array( $term_data ) ) {
+						continue;
+					}
+					$term_id     = absint( $term_data['id'] ?? 0 );
 					$update_args = array();
 
+					if ( ! $term_id ) {
+						continue;
+					}
+
 					if ( isset( $term_data['name'] ) ) {
-						$update_args['name'] = $term_data['name'];
+						$name = sanitize_text_field( (string) $term_data['name'] );
+						if ( '' !== $name ) {
+							$update_args['name'] = $name;
+						}
 					}
 					if ( isset( $term_data['slug'] ) ) {
-						$update_args['slug'] = $term_data['slug'];
+						$slug = sanitize_title( (string) $term_data['slug'] );
+						if ( '' !== $slug ) {
+							$update_args['slug'] = $slug;
+						}
 					}
 					if ( isset( $term_data['description'] ) ) {
-						$update_args['description'] = $term_data['description'];
+						$update_args['description'] = sanitize_textarea_field( (string) $term_data['description'] );
 					}
 
 					if ( empty( $update_args ) ) {
@@ -255,6 +311,12 @@ class UpdateProductAttribute implements RegistersAbility {
 
 					$result = wp_update_term( $term_id, $taxonomy, $update_args );
 					if ( is_wp_error( $result ) ) {
+						$term_errors[] = array(
+							'action'  => 'update',
+							'id'      => $term_id,
+							'name'    => $update_args['name'] ?? '',
+							'message' => $result->get_error_message(),
+						);
 						continue;
 					}
 
@@ -267,9 +329,16 @@ class UpdateProductAttribute implements RegistersAbility {
 
 			// Delete terms
 			if ( ! empty( $input['delete_terms'] ) ) {
-				foreach ( $input['delete_terms'] as $term_id ) {
+				$delete_terms = array_values( array_filter( array_map( 'absint', (array) $input['delete_terms'] ) ) );
+				foreach ( $delete_terms as $term_id ) {
 					$result = wp_delete_term( $term_id, $taxonomy );
 					if ( is_wp_error( $result ) ) {
+						$term_errors[] = array(
+							'action'  => 'delete',
+							'id'      => $term_id,
+							'name'    => '',
+							'message' => $result->get_error_message(),
+						);
 						continue;
 					}
 
@@ -302,6 +371,7 @@ class UpdateProductAttribute implements RegistersAbility {
 				'terms_added'   => $terms_added,
 				'terms_updated' => $terms_updated,
 				'terms_deleted' => $terms_deleted,
+				'term_errors'   => $term_errors,
 				'message'       => sprintf(
 					'Successfully updated attribute "%s". Changes: %s. Terms: +%d, ~%d, -%d',
 					$updated_attribute->attribute_label,
@@ -319,6 +389,7 @@ class UpdateProductAttribute implements RegistersAbility {
 				'terms_added'   => array(),
 				'terms_updated' => array(),
 				'terms_deleted' => 0,
+				'term_errors'   => $term_errors,
 				'message'       => 'Error updating attribute: ' . $e->getMessage(),
 			);
 		}

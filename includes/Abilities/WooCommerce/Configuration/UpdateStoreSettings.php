@@ -74,6 +74,25 @@ class UpdateStoreSettings implements RegistersAbility {
 	public static function execute( array $input ): array {
 		$category = isset( $input['category'] ) ? sanitize_text_field( $input['category'] ) : 'general';
 		$settings = $input['settings'] ?? array();
+		$allowed  = self::allowed_settings_by_category();
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return array(
+				'success'          => false,
+				'category'         => $category,
+				'updated_settings' => array(),
+				'message'          => 'WooCommerce is not active.',
+			);
+		}
+
+		if ( ! array_key_exists( $category, $allowed ) ) {
+			return array(
+				'success'          => false,
+				'category'         => $category,
+				'updated_settings' => array(),
+				'message'          => 'Invalid settings category.',
+			);
+		}
 
 		if ( empty( $settings ) ) {
 			return array(
@@ -87,6 +106,10 @@ class UpdateStoreSettings implements RegistersAbility {
 
 		foreach ( $settings as $key => $value ) {
 			$sanitized_key   = sanitize_key( $key );
+			if ( ! in_array( $sanitized_key, $allowed[ $category ], true ) ) {
+				$errors[] = sprintf( 'Setting "%s" is not allowed for %s category.', $sanitized_key, $category );
+				continue;
+			}
 			$sanitized_value = self::sanitize_setting_value( $sanitized_key, $value );
 
 			// Validate setting
@@ -242,5 +265,84 @@ class UpdateStoreSettings implements RegistersAbility {
 		}
 
 		return true;
+	}
+
+	private static function allowed_settings_by_category(): array {
+		return array(
+			'general'  => array(
+				'woocommerce_store_address',
+				'woocommerce_store_address_2',
+				'woocommerce_store_city',
+				'woocommerce_store_postcode',
+				'woocommerce_default_country',
+				'woocommerce_currency',
+				'woocommerce_currency_pos',
+				'woocommerce_price_thousand_sep',
+				'woocommerce_price_decimal_sep',
+				'woocommerce_price_num_decimals',
+			),
+			'products' => array(
+				'woocommerce_shop_page_id',
+				'woocommerce_cart_page_id',
+				'woocommerce_checkout_page_id',
+				'woocommerce_myaccount_page_id',
+				'woocommerce_manage_stock',
+				'woocommerce_hold_stock_minutes',
+				'woocommerce_notify_low_stock',
+				'woocommerce_notify_no_stock',
+				'woocommerce_stock_email_recipient',
+				'woocommerce_notify_low_stock_amount',
+				'woocommerce_notify_no_stock_amount',
+				'woocommerce_hide_out_of_stock_items',
+			),
+			'shipping' => array(
+				'woocommerce_calc_shipping',
+				'woocommerce_enable_shipping_calc',
+				'woocommerce_shipping_cost_requires_address',
+				'woocommerce_ship_to_destination',
+				'woocommerce_shipping_debug_mode',
+			),
+			'tax'      => array(
+				'woocommerce_calc_taxes',
+				'woocommerce_prices_include_tax',
+				'woocommerce_tax_based_on',
+				'woocommerce_shipping_tax_class',
+				'woocommerce_tax_round_at_subtotal',
+				'woocommerce_tax_display_shop',
+				'woocommerce_tax_display_cart',
+				'woocommerce_price_display_suffix',
+			),
+			'checkout' => array(
+				'woocommerce_enable_guest_checkout',
+				'woocommerce_enable_checkout_login_reminder',
+				'woocommerce_enable_signup_and_login_from_checkout',
+				'woocommerce_enable_myaccount_registration',
+				'woocommerce_registration_generate_username',
+				'woocommerce_registration_generate_password',
+			),
+			'account'  => array(
+				'woocommerce_enable_reviews',
+				'woocommerce_review_rating_required',
+				'woocommerce_review_rating_verification_label',
+				'woocommerce_review_rating_verification_required',
+			),
+			'email'    => array(
+				'woocommerce_email_from_name',
+				'woocommerce_email_from_address',
+				'woocommerce_email_header_image',
+				'woocommerce_email_footer_text',
+				'woocommerce_email_base_color',
+				'woocommerce_email_background_color',
+				'woocommerce_email_body_background_color',
+				'woocommerce_email_text_color',
+			),
+			'advanced' => array(
+				'woocommerce_terms_page_id',
+				'woocommerce_force_ssl_checkout',
+				'woocommerce_unforce_ssl_checkout',
+				'woocommerce_cart_redirect_after_add',
+				'woocommerce_enable_ajax_add_to_cart',
+			),
+		);
 	}
 }

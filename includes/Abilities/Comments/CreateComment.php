@@ -164,6 +164,15 @@ final class CreateComment implements RegistersAbility {
 			);
 		}
 
+		$allowed_comment_statuses = array( '1', '0', 'spam', 'trash' );
+		if ( ! in_array( $comment_approved, $allowed_comment_statuses, true ) ) {
+			return array(
+				'success'    => false,
+				'comment_id' => 0,
+				'message'    => 'Invalid comment approval status.',
+			);
+		}
+
 		// Check if post exists
 		$post = \get_post( $comment_post_ID );
 		if ( ! $post ) {

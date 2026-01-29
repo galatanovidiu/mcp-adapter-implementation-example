@@ -126,7 +126,7 @@ class UpdateProductCategory implements RegistersAbility {
 			);
 		}
 
-		$category_id = $input['category_id'];
+		$category_id = absint( $input['category_id'] );
 
 		$category = get_term( $category_id, 'product_cat' );
 		if ( is_wp_error( $category ) || ! $category ) {
@@ -157,24 +157,25 @@ class UpdateProductCategory implements RegistersAbility {
 
 		// Update basic fields
 		if ( isset( $input['name'] ) ) {
-			$update_args['name'] = $input['name'];
+			$update_args['name'] = sanitize_text_field( (string) $input['name'] );
 			$changes_made[]      = 'name';
 		}
 
 		if ( isset( $input['slug'] ) ) {
-			$update_args['slug'] = $input['slug'];
+			$update_args['slug'] = sanitize_title( (string) $input['slug'] );
 			$changes_made[]      = 'slug';
 		}
 
 		if ( isset( $input['description'] ) ) {
-			$update_args['description'] = $input['description'];
+			$update_args['description'] = sanitize_textarea_field( (string) $input['description'] );
 			$changes_made[]             = 'description';
 		}
 
 		if ( isset( $input['parent'] ) ) {
+			$parent_id = absint( $input['parent'] );
 			// Validate new parent
-			if ( $input['parent'] > 0 ) {
-				$new_parent_term = get_term( $input['parent'], 'product_cat' );
+			if ( $parent_id > 0 ) {
+				$new_parent_term = get_term( $parent_id, 'product_cat' );
 				if ( is_wp_error( $new_parent_term ) || ! $new_parent_term ) {
 					return array(
 						'success'      => false,
@@ -187,7 +188,7 @@ class UpdateProductCategory implements RegistersAbility {
 				}
 
 				// Check for circular reference
-				if ( $input['parent'] === $category_id ) {
+				if ( $parent_id === $category_id ) {
 					return array(
 						'success'      => false,
 						'category'     => array(),
@@ -200,7 +201,7 @@ class UpdateProductCategory implements RegistersAbility {
 
 				// Check if new parent is a descendant
 				$descendants = get_term_children( $category_id, 'product_cat' );
-				if ( ! is_wp_error( $descendants ) && in_array( $input['parent'], $descendants ) ) {
+				if ( ! is_wp_error( $descendants ) && in_array( $parent_id, $descendants, true ) ) {
 					return array(
 						'success'      => false,
 						'category'     => array(),
@@ -212,7 +213,7 @@ class UpdateProductCategory implements RegistersAbility {
 				}
 			}
 
-			$update_args['parent'] = $input['parent'];
+			$update_args['parent'] = $parent_id;
 			$changes_made[]        = 'parent';
 		}
 
@@ -268,6 +269,11 @@ class UpdateProductCategory implements RegistersAbility {
 				}
 			}
 
+			$link = get_term_link( $updated_category );
+			if ( is_wp_error( $link ) ) {
+				$link = '';
+			}
+
 			return array(
 				'success'      => true,
 				'category'     => array(
@@ -279,7 +285,7 @@ class UpdateProductCategory implements RegistersAbility {
 					'count'       => $updated_category->count,
 					'display'     => get_term_meta( $category_id, 'display_type', true ),
 					'menu_order'  => (int) get_term_meta( $category_id, 'order', true ),
-					'link'        => get_term_link( $updated_category ),
+					'link'        => $link,
 				),
 				'changes_made' => $changes_made,
 				'old_parent'   => $old_parent,

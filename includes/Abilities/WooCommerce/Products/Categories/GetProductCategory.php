@@ -144,11 +144,11 @@ class GetProductCategory implements RegistersAbility {
 			);
 		}
 
-		$category_id       = $input['category_id'];
+		$category_id       = absint( $input['category_id'] );
 		$include_products  = $input['include_products'] ?? true;
 		$include_children  = $input['include_children'] ?? true;
 		$include_ancestors = $input['include_ancestors'] ?? true;
-		$products_limit    = $input['products_limit'] ?? 10;
+		$products_limit    = isset( $input['products_limit'] ) ? absint( $input['products_limit'] ) : 10;
 
 		$category = get_term( $category_id, 'product_cat' );
 
@@ -213,6 +213,11 @@ class GetProductCategory implements RegistersAbility {
 			}
 		}
 
+		$link = get_term_link( $category );
+		if ( is_wp_error( $link ) ) {
+			$link = '';
+		}
+
 		return array(
 			'id'          => $category->term_id,
 			'name'        => $category->name,
@@ -223,7 +228,7 @@ class GetProductCategory implements RegistersAbility {
 			'image'       => $image_data,
 			'display'     => get_term_meta( $category->term_id, 'display_type', true ) ?: 'default',
 			'menu_order'  => (int) get_term_meta( $category->term_id, 'order', true ),
-			'link'        => get_term_link( $category ),
+			'link'        => $link,
 		);
 	}
 
@@ -268,12 +273,17 @@ class GetProductCategory implements RegistersAbility {
 
 		$children = array();
 		foreach ( $children_terms as $child ) {
+			$link = get_term_link( $child );
+			if ( is_wp_error( $link ) ) {
+				$link = '';
+			}
+
 			$children[] = array(
 				'id'    => $child->term_id,
 				'name'  => $child->name,
 				'slug'  => $child->slug,
 				'count' => $child->count,
-				'link'  => get_term_link( $child ),
+				'link'  => $link,
 			);
 		}
 
@@ -291,11 +301,16 @@ class GetProductCategory implements RegistersAbility {
 				continue;
 			}
 
+			$link = get_term_link( $ancestor );
+			if ( is_wp_error( $link ) ) {
+				$link = '';
+			}
+
 			$ancestors[] = array(
 				'id'   => $ancestor->term_id,
 				'name' => $ancestor->name,
 				'slug' => $ancestor->slug,
-				'link' => get_term_link( $ancestor ),
+				'link' => $link,
 			);
 		}
 

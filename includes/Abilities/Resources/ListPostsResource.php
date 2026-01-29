@@ -37,24 +37,28 @@ final class ListPostsResource implements RegistersAbility {
 	/**
 	 * Check permission for listing posts resource.
 	 *
-	 * Note: This ability has no input_schema, so this callback is invoked with NO arguments.
-	 * The parameter must have a default value to prevent PHP errors.
+	 * Note: This ability has no input_schema, so this callback may be invoked
+	 * with an empty array or no arguments. The parameter must have a default
+	 * value to prevent PHP errors.
 	 *
+	 * @param array $input Input parameters (empty for resources without input_schema).
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission() {
+	public static function check_permission( array $input = array() ): bool {
 		return \current_user_can( 'read' );
 	}
 
 	/**
 	 * Execute the posts list resource retrieval.
 	 *
-	 * Note: This ability has no input_schema, so this callback is invoked with NO arguments.
-	 * The parameter must have a default value to prevent PHP errors.
+	 * Note: This ability has no input_schema, so this callback may be invoked
+	 * with an empty array or no arguments. The parameter must have a default
+	 * value to prevent PHP errors.
 	 *
+	 * @param array $input Input parameters (empty for resources without input_schema).
 	 * @return array|\\WP_Error Resource content or error.
 	 */
-	public static function execute() {
+	public static function execute( array $input = array() ) {
 		$args = array(
 			'post_type'      => 'post',
 			'post_status'    => 'publish',

@@ -121,13 +121,26 @@ class DuplicateProduct implements RegistersAbility {
 			);
 		}
 
-		$product_id         = $input['id'];
-		$new_name           = $input['name'] ?? '';
-		$new_sku            = $input['sku'] ?? '';
-		$new_status         = $input['status'] ?? 'draft';
-		$include_variations = $input['include_variations'] ?? true;
-		$include_images     = $input['include_images'] ?? true;
-		$include_reviews    = $input['include_reviews'] ?? false;
+		$product_id = absint( $input['id'] );
+		$new_name   = isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : '';
+		$new_sku    = isset( $input['sku'] ) ? sanitize_text_field( $input['sku'] ) : '';
+
+		$allowed_statuses = array( 'publish', 'draft', 'pending', 'private' );
+		$new_status       = isset( $input['status'] ) ? sanitize_key( $input['status'] ) : 'draft';
+		if ( isset( $input['status'] ) && ! in_array( $new_status, $allowed_statuses, true ) ) {
+			return array(
+				'success'               => false,
+				'original_product'      => null,
+				'duplicated_product'    => null,
+				'duplicated_variations' => 0,
+				'duplicated_images'     => 0,
+				'message'               => 'Invalid product status.',
+			);
+		}
+
+		$include_variations = array_key_exists( 'include_variations', $input ) ? (bool) $input['include_variations'] : true;
+		$include_images     = array_key_exists( 'include_images', $input ) ? (bool) $input['include_images'] : true;
+		$include_reviews    = array_key_exists( 'include_reviews', $input ) ? (bool) $input['include_reviews'] : false;
 
 		$original_product = wc_get_product( $product_id );
 

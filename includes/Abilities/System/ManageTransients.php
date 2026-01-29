@@ -142,8 +142,8 @@ final class ManageTransients implements RegistersAbility {
 		$action         = \sanitize_text_field( (string) $input['action'] );
 		$transient_name = isset( $input['transient_name'] ) ? \sanitize_text_field( (string) $input['transient_name'] ) : '';
 		$value          = $input['value'] ?? '';
-		$expiration     = (int) ( $input['expiration'] ?? 3600 );
-		$limit          = (int) ( $input['limit'] ?? 50 );
+		$expiration     = $input['expiration'] ?? 3600;
+		$limit          = $input['limit'] ?? 50;
 		$filter         = isset( $input['filter'] ) ? \sanitize_text_field( (string) $input['filter'] ) : '';
 		$show_expired   = (bool) ( $input['show_expired'] ?? true );
 
@@ -159,7 +159,23 @@ final class ManageTransients implements RegistersAbility {
 
 		switch ( $action ) {
 			case 'list':
+				if ( isset( $input['limit'] ) && ! is_numeric( $input['limit'] ) ) {
+					$result['message'] = 'Limit must be an integer between 1 and 500.';
+					break;
+				}
+				$limit          = (int) $limit;
+				$limit_clamped  = false;
+				if ( $limit < 1 ) {
+					$limit         = 1;
+					$limit_clamped = true;
+				} elseif ( $limit > 500 ) {
+					$limit         = 500;
+					$limit_clamped = true;
+				}
 				$result = array_merge( $result, self::list_transients( $limit, $filter, $show_expired ) );
+				if ( $limit_clamped && ! empty( $result['message'] ) ) {
+					$result['message'] .= ' Limit clamped to ' . $limit . '.';
+				}
 				break;
 
 			case 'get':
@@ -175,7 +191,20 @@ final class ManageTransients implements RegistersAbility {
 					$result['message'] = 'Transient name is required for set action.';
 					break;
 				}
+				if ( isset( $input['expiration'] ) && ! is_numeric( $input['expiration'] ) ) {
+					$result['message'] = 'Expiration must be a non-negative integer.';
+					break;
+				}
+				$expiration         = (int) $expiration;
+				$expiration_clamped = false;
+				if ( $expiration < 0 ) {
+					$expiration         = 0;
+					$expiration_clamped = true;
+				}
 				$result = array_merge( $result, self::set_transient( $transient_name, $value, $expiration ) );
+				if ( $expiration_clamped && ! empty( $result['message'] ) ) {
+					$result['message'] .= ' Expiration clamped to 0 seconds.';
+				}
 				break;
 
 			case 'delete':
