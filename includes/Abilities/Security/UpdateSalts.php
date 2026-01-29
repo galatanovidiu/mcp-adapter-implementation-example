@@ -73,10 +73,9 @@ class UpdateSalts implements RegistersAbility {
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.5,
-						'readOnlyHint'         => false,
-						'destructiveHint'      => true,
-						'idempotentHint'       => false,
-						'openWorldHint'        => false,
+						'readonly'         => false,
+						'destructive'      => true,
+						'idempotent'       => false,
 						'requiresConfirmation' => true,
 					),
 				),
@@ -286,22 +285,26 @@ class UpdateSalts implements RegistersAbility {
 		global $wpdb;
 
 		// Get count of active sessions before clearing
-		$session_count = $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key LIKE 'session_tokens'"
+		$session_count = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = 'session_tokens'"
 		);
 
-		// Clear all user sessions
-		$wpdb->delete(
-			$wpdb->usermeta,
-			array( 'meta_key' => 'session_tokens' ),
-			array( '%s' )
+		$user_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+				'session_tokens'
+			)
 		);
 
-		// Also clear any user meta that might contain session data
-		$wpdb->query(
-			"DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE '%session%'"
-		);
+		if ( empty( $user_ids ) ) {
+			return $session_count;
+		}
 
-		return (int) $session_count;
+		foreach ( array_map( 'intval', $user_ids ) as $user_id ) {
+			$tokens = \WP_Session_Tokens::get_instance( $user_id );
+			$tokens->destroy_all();
+		}
+
+		return $session_count;
 	}
 }

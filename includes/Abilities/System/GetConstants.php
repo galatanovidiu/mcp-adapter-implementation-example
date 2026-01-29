@@ -88,17 +88,16 @@ final class GetConstants implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'system',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -201,7 +200,7 @@ final class GetConstants implements RegistersAbility {
 			),
 			'database'    => array(
 				'DB_NAME'         => defined( 'DB_NAME' ) ? DB_NAME : 'undefined',
-				'DB_USER'         => defined( 'DB_USER' ) ? DB_USER : 'undefined',
+				'DB_USER'         => defined( 'DB_USER' ) ? '***HIDDEN***' : 'undefined',
 				'DB_PASSWORD'     => defined( 'DB_PASSWORD' ) ? '***HIDDEN***' : 'undefined',
 				'DB_HOST'         => defined( 'DB_HOST' ) ? DB_HOST : 'undefined',
 				'DB_CHARSET'      => defined( 'DB_CHARSET' ) ? DB_CHARSET : 'undefined',

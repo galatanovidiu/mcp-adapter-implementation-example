@@ -119,17 +119,16 @@ class CreateProductVariation implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -151,8 +150,8 @@ class CreateProductVariation implements RegistersAbility {
 			);
 		}
 
-		$product_id = $input['product_id'];
-		$attributes = $input['attributes'];
+		$product_id = absint( $input['product_id'] );
+		$attributes = isset( $input['attributes'] ) && is_array( $input['attributes'] ) ? $input['attributes'] : array();
 
 		$product = wc_get_product( $product_id );
 
@@ -185,16 +184,36 @@ class CreateProductVariation implements RegistersAbility {
 
 			// Set attributes
 			$formatted_attributes = array();
+			$normalized_values    = array();
 			foreach ( $attributes as $attr_name => $attr_value ) {
-				$attr_key                          = 'attribute_' . sanitize_title( $attr_name );
-				$formatted_attributes[ $attr_key ] = $attr_value;
+				$normalized_name = sanitize_title( (string) $attr_name );
+				if ( '' === $normalized_name ) {
+					continue;
+				}
+				$normalized_value                      = sanitize_text_field( (string) $attr_value );
+				$attr_key                              = 'attribute_' . $normalized_name;
+				$formatted_attributes[ $attr_key ]     = $normalized_value;
+				$normalized_values[ $normalized_name ] = $normalized_value;
 			}
 			$variation->set_attributes( $formatted_attributes );
 
 			// Set optional properties
 			if ( ! empty( $input['sku'] ) ) {
+				$sku = sanitize_text_field( (string) $input['sku'] );
+				if ( '' === $sku ) {
+					return array(
+						'success'        => false,
+						'parent_product' => array(
+							'id'   => $product->get_id(),
+							'name' => $product->get_name(),
+							'type' => $product->get_type(),
+						),
+						'variation'      => null,
+						'message'        => 'SKU cannot be empty.',
+					);
+				}
 				// Check if SKU already exists
-				$existing_product_id = wc_get_product_id_by_sku( $input['sku'] );
+				$existing_product_id = wc_get_product_id_by_sku( $sku );
 				if ( $existing_product_id ) {
 					return array(
 						'success'        => false,
@@ -207,15 +226,15 @@ class CreateProductVariation implements RegistersAbility {
 						'message'        => 'SKU already exists.',
 					);
 				}
-				$variation->set_sku( $input['sku'] );
+				$variation->set_sku( $sku );
 			}
 
 			if ( ! empty( $input['regular_price'] ) ) {
-				$variation->set_regular_price( $input['regular_price'] );
+				$variation->set_regular_price( wc_format_decimal( $input['regular_price'] ) );
 			}
 
 			if ( ! empty( $input['sale_price'] ) ) {
-				$variation->set_sale_price( $input['sale_price'] );
+				$variation->set_sale_price( wc_format_decimal( $input['sale_price'] ) );
 			}
 
 			// Set stock management
@@ -223,7 +242,7 @@ class CreateProductVariation implements RegistersAbility {
 			$variation->set_manage_stock( $manage_stock );
 
 			if ( $manage_stock && isset( $input['stock_quantity'] ) ) {
-				$variation->set_stock_quantity( $input['stock_quantity'] );
+				$variation->set_stock_quantity( absint( $input['stock_quantity'] ) );
 			}
 
 			if ( ! empty( $input['stock_status'] ) ) {
@@ -232,30 +251,30 @@ class CreateProductVariation implements RegistersAbility {
 
 			// Set physical properties
 			if ( ! empty( $input['weight'] ) ) {
-				$variation->set_weight( $input['weight'] );
+				$variation->set_weight( wc_format_decimal( $input['weight'] ) );
 			}
 
 			if ( ! empty( $input['dimensions'] ) ) {
 				$dimensions = $input['dimensions'];
 				if ( ! empty( $dimensions['length'] ) ) {
-					$variation->set_length( $dimensions['length'] );
+					$variation->set_length( wc_format_decimal( $dimensions['length'] ) );
 				}
 				if ( ! empty( $dimensions['width'] ) ) {
-					$variation->set_width( $dimensions['width'] );
+					$variation->set_width( wc_format_decimal( $dimensions['width'] ) );
 				}
 				if ( ! empty( $dimensions['height'] ) ) {
-					$variation->set_height( $dimensions['height'] );
+					$variation->set_height( wc_format_decimal( $dimensions['height'] ) );
 				}
 			}
 
 			// Set image
 			if ( ! empty( $input['image_id'] ) ) {
-				$variation->set_image_id( $input['image_id'] );
+				$variation->set_image_id( absint( $input['image_id'] ) );
 			}
 
 			// Set status and menu order
 			$variation->set_status( $input['status'] ?? 'publish' );
-			$variation->set_menu_order( $input['menu_order'] ?? 0 );
+			$variation->set_menu_order( isset( $input['menu_order'] ) ? (int) $input['menu_order'] : 0 );
 
 			// Save the variation
 			$variation_id = $variation->save();
@@ -300,12 +319,12 @@ class CreateProductVariation implements RegistersAbility {
 					$product->get_name(),
 					implode(
 						', ',
-						array_map(
-							static function ( $k, $v ) {
-								return "$k: $v"; },
-							array_keys( $attributes ),
-							$attributes
-						)
+					array_map(
+						static function ( $k, $v ) {
+							return "$k: $v"; },
+						array_keys( $normalized_values ),
+						$normalized_values
+					)
 					)
 				),
 			);

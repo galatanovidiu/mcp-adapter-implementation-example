@@ -118,8 +118,20 @@ final class ListPosts implements RegistersAbility {
 										'description' => 'Meta key to query.',
 									),
 									'value'   => array(
-										'type'        => 'string',
-										'description' => 'Meta value to match.',
+										'description' => 'Meta value to match. Arrays are supported for operators like IN/BETWEEN.',
+										'oneOf'       => array(
+											array( 'type' => 'string' ),
+											array( 'type' => 'number' ),
+											array(
+												'type'  => 'array',
+												'items' => array(
+													'oneOf' => array(
+														array( 'type' => 'string' ),
+														array( 'type' => 'number' ),
+													),
+												),
+											),
+										),
 									),
 									'compare' => array(
 										'type'        => 'string',
@@ -227,14 +239,80 @@ final class ListPosts implements RegistersAbility {
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
+						'ui'     => array(
+							'resourceUri' => 'ui://core/list-posts',
+							// 'visibility'  => array( 'app' ),
+						),
 					),
 					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
-						'priority'        => 0.9,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'audience'    => array( 'user', 'assistant' ),
+						'priority'    => 0.9,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+
+		\wp_register_ability(
+			'core/list-posts-ui',
+			array(
+				'label'               => 'List Posts UI',
+				'description'         => 'UI resource for listing WordPress posts.',
+				'execute_callback'    => static function ( array $input = array() ) {
+					$ui_template = __DIR__ . '/ListPosts.html';
+					$html        = '<html><body><p>UI template not found.</p></body></html>';
+
+					if ( is_readable( $ui_template ) ) {
+						$file_contents = file_get_contents( $ui_template );
+						if ( false !== $file_contents ) {
+							$html = $file_contents;
+						}
+					}
+
+					// Get available post types with labels for the UI dropdown.
+					$post_type_objects = \get_post_types( array( 'public' => true ), 'objects' );
+					$post_types_data   = array(
+						array(
+							'value' => 'any',
+							'label' => 'All Post Types',
+						),
+					);
+					foreach ( $post_type_objects as $post_type ) {
+						$post_types_data[] = array(
+							'value' => $post_type->name,
+							'label' => $post_type->labels->singular_name ?? $post_type->name,
+						);
+					}
+
+					// Inject post types data into the HTML as a global variable.
+					$post_types_json   = wp_json_encode( $post_types_data );
+					$inject_script     = '<script>window.__mcpAppConfig = { postTypes: ' . $post_types_json . ' };</script>';
+					$html              = str_replace( '</head>', $inject_script . '</head>', $html );
+
+					// Return an array of content items. The MCP adapter's ResourcesHandler
+					// wraps this in the final ReadResourceResult { contents: [...] } structure.
+					// Each item must have uri/text keys to be recognized as a content item.
+					// @see mcp-adapter/includes/Handlers/Resources/ResourcesHandler.php:163-175
+					return array(
+						array(
+							'uri'      => 'ui://core/list-posts',
+							'mimeType' => 'text/html;profile=mcp-app',
+							'text'     => $html,
+						),
+					);
+				},
+				'permission_callback' => static function ( array $input = array() ) {
+					return true;
+				},
+				'category'            => 'content',
+				'meta'                => array(
+					'mcp' => array(
+						'public'   => true,
+						'type'     => 'resource',
+						'uri'      => 'ui://core/list-posts',
+						'mimeType' => 'text/html;profile=mcp-app',
 					),
 				),
 			)
@@ -344,7 +422,7 @@ final class ListPosts implements RegistersAbility {
 				);
 
 				if ( isset( $meta_condition['value'] ) ) {
-					$condition['value'] = \sanitize_text_field( (string) $meta_condition['value'] );
+					$condition['value'] = self::sanitize_meta_query_value( $meta_condition['value'] );
 				}
 
 				$meta_query[] = $condition;
@@ -397,6 +475,7 @@ final class ListPosts implements RegistersAbility {
 
 		$include_meta       = ! empty( $input['include_meta'] );
 		$include_taxonomies = ! empty( $input['include_taxonomies'] );
+		$meta_keys_by_type  = array();
 
 		$posts = array();
 		while ( $query->have_posts() ) {
@@ -422,7 +501,14 @@ final class ListPosts implements RegistersAbility {
 
 			// Include meta if requested
 			if ( $include_meta ) {
-				$post_data['meta'] = \get_post_meta( $post->ID );
+				if ( ! isset( $meta_keys_by_type[ $post->post_type ] ) ) {
+					$meta_keys_by_type[ $post->post_type ] = self::get_show_in_rest_meta_keys( $post->post_type );
+				}
+				$meta_out = array();
+				foreach ( $meta_keys_by_type[ $post->post_type ] as $meta_key => $single ) {
+					$meta_out[ $meta_key ] = \get_post_meta( $post->ID, $meta_key, $single );
+				}
+				$post_data['meta'] = $meta_out;
 			}
 
 			// Include taxonomies if requested
@@ -463,5 +549,57 @@ final class ListPosts implements RegistersAbility {
 			'found_posts' => (int) $query->found_posts,
 			'max_pages'   => (int) $query->max_num_pages,
 		);
+	}
+
+	/**
+	 * Sanitize meta query values without forcing strings.
+	 *
+	 * @param mixed $value Meta query value.
+	 * @return mixed Sanitized value.
+	 */
+	private static function sanitize_meta_query_value( $value ) {
+		if ( \is_array( $value ) ) {
+			$sanitized = array();
+			foreach ( $value as $item ) {
+				$sanitized[] = self::sanitize_meta_query_value( $item );
+			}
+			return $sanitized;
+		}
+
+		if ( \is_string( $value ) ) {
+			return \sanitize_text_field( $value );
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get post meta keys registered for REST output.
+	 *
+	 * @param string $post_type Post type.
+	 * @return array<string,bool> Meta keys mapped to single flags.
+	 */
+	private static function get_show_in_rest_meta_keys( string $post_type ): array {
+		if ( ! function_exists( 'get_registered_meta_keys' ) ) {
+			return array();
+		}
+
+		$registered = (array) \get_registered_meta_keys( 'post', $post_type );
+		$allowed    = array();
+		foreach ( $registered as $key => $args ) {
+			if ( ! is_string( $key ) ) {
+				continue;
+			}
+			$show_in_rest = false;
+			if ( isset( $args['show_in_rest'] ) ) {
+				$show_in_rest = is_bool( $args['show_in_rest'] ) ? (bool) $args['show_in_rest'] : true;
+			}
+			if ( ! $show_in_rest ) {
+				continue;
+			}
+			$allowed[ $key ] = isset( $args['single'] ) ? (bool) $args['single'] : true;
+		}
+
+		return $allowed;
 	}
 }

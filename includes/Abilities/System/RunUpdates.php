@@ -21,16 +21,16 @@ final class RunUpdates implements RegistersAbility {
 							'description' => 'Whether to update WordPress core. Default: false.',
 							'default'     => false,
 						),
-						'update_plugins' => array(
-							'type'        => 'array',
-							'description' => 'Array of plugin files to update. Empty array means update all available.',
-							'items'       => array( 'type' => 'string' ),
-						),
-						'update_themes'  => array(
-							'type'        => 'array',
-							'description' => 'Array of theme slugs to update. Empty array means update all available.',
-							'items'       => array( 'type' => 'string' ),
-						),
+					'update_plugins' => array(
+						'type'        => 'array',
+						'description' => 'Array of plugin files to update. Empty array means update all available. Omit to skip plugin updates.',
+						'items'       => array( 'type' => 'string' ),
+					),
+					'update_themes'  => array(
+						'type'        => 'array',
+						'description' => 'Array of theme slugs to update. Empty array means update all available. Omit to skip theme updates.',
+						'items'       => array( 'type' => 'string' ),
+					),
 						'dry_run'        => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to perform a dry run (check what would be updated without actually updating). Default: false.',
@@ -102,17 +102,16 @@ final class RunUpdates implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'system',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.5,
-						'readOnlyHint'    => false,
-						'destructiveHint' => true,
-						'idempotentHint'  => false,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -126,19 +125,21 @@ final class RunUpdates implements RegistersAbility {
 	 * @return bool Whether the user has permission.
 	 */
 	public static function check_permission( array $input ): bool {
-		$update_core    = (bool) ( $input['update_core'] ?? false );
-		$update_plugins = $input['update_plugins'] ?? array();
-		$update_themes  = $input['update_themes'] ?? array();
+		$update_core        = (bool) ( $input['update_core'] ?? false );
+		$has_update_plugins = array_key_exists( 'update_plugins', $input );
+		$has_update_themes  = array_key_exists( 'update_themes', $input );
+		$update_plugins     = $has_update_plugins ? (array) $input['update_plugins'] : array();
+		$update_themes      = $has_update_themes ? (array) $input['update_themes'] : array();
 
 		if ( $update_core && ! \current_user_can( 'update_core' ) ) {
 			return false;
 		}
 
-		if ( ! empty( $update_plugins ) && ! \current_user_can( 'update_plugins' ) ) {
+		if ( $has_update_plugins && ! \current_user_can( 'update_plugins' ) ) {
 			return false;
 		}
 
-		if ( ! empty( $update_themes ) && ! \current_user_can( 'update_themes' ) ) {
+		if ( $has_update_themes && ! \current_user_can( 'update_themes' ) ) {
 			return false;
 		}
 
@@ -152,10 +153,12 @@ final class RunUpdates implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$update_core    = (bool) ( $input['update_core'] ?? false );
-		$update_plugins = $input['update_plugins'] ?? array();
-		$update_themes  = $input['update_themes'] ?? array();
-		$dry_run        = (bool) ( $input['dry_run'] ?? false );
+		$update_core        = (bool) ( $input['update_core'] ?? false );
+		$has_update_plugins = array_key_exists( 'update_plugins', $input );
+		$has_update_themes  = array_key_exists( 'update_themes', $input );
+		$update_plugins     = $has_update_plugins ? (array) $input['update_plugins'] : array();
+		$update_themes      = $has_update_themes ? (array) $input['update_themes'] : array();
+		$dry_run            = (bool) ( $input['dry_run'] ?? false );
 
 		// Include necessary files
 		if ( ! function_exists( 'get_core_updates' ) ) {
@@ -250,7 +253,7 @@ final class RunUpdates implements RegistersAbility {
 		}
 
 		// Update Plugins
-		if ( ! empty( $update_plugins ) && \current_user_can( 'update_plugins' ) ) {
+		if ( $has_update_plugins && \current_user_can( 'update_plugins' ) ) {
 			$plugin_updates = \get_plugin_updates();
 
 			// If empty array provided, update all available plugins
@@ -329,7 +332,7 @@ final class RunUpdates implements RegistersAbility {
 		}
 
 		// Update Themes
-		if ( ! empty( $update_themes ) && \current_user_can( 'update_themes' ) ) {
+		if ( $has_update_themes && \current_user_can( 'update_themes' ) ) {
 			$theme_updates = \get_theme_updates();
 
 			// If empty array provided, update all available themes

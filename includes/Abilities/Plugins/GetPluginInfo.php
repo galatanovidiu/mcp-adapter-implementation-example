@@ -64,17 +64,16 @@ final class GetPluginInfo implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'plugins',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -99,6 +98,14 @@ final class GetPluginInfo implements RegistersAbility {
 	 */
 	public static function execute( array $input ) {
 		$plugin_file = \sanitize_text_field( (string) $input['plugin_file'] );
+		if ( $plugin_file === '' || \validate_file( $plugin_file ) !== 0 ) {
+			return array(
+				'error' => array(
+					'code'    => 'invalid_plugin_file',
+					'message' => 'Invalid plugin file path provided.',
+				),
+			);
+		}
 
 		// Ensure plugin functions are available
 		if ( ! function_exists( 'get_plugins' ) ) {

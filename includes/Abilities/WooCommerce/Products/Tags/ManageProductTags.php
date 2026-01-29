@@ -95,17 +95,16 @@ class ManageProductTags implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -159,7 +158,9 @@ class ManageProductTags implements RegistersAbility {
 	private static function create_tag( array $input ): array {
 		$tag_data = $input['tag_data'] ?? array();
 
-		if ( empty( $tag_data['name'] ) ) {
+		$name = isset( $tag_data['name'] ) ? sanitize_text_field( (string) $tag_data['name'] ) : '';
+
+		if ( '' === $name ) {
 			return array(
 				'success'       => false,
 				'operation'     => 'create',
@@ -170,9 +171,11 @@ class ManageProductTags implements RegistersAbility {
 			);
 		}
 
-		$name        = $tag_data['name'];
-		$slug        = $tag_data['slug'] ?? sanitize_title( $name );
-		$description = $tag_data['description'] ?? '';
+		$slug        = isset( $tag_data['slug'] ) ? sanitize_title( (string) $tag_data['slug'] ) : '';
+		if ( '' === $slug ) {
+			$slug = sanitize_title( $name );
+		}
+		$description = isset( $tag_data['description'] ) ? sanitize_textarea_field( (string) $tag_data['description'] ) : '';
 
 		try {
 			$result = wp_insert_term(
@@ -255,17 +258,17 @@ class ManageProductTags implements RegistersAbility {
 		$update_args  = array();
 
 		if ( isset( $tag_data['name'] ) ) {
-			$update_args['name'] = $tag_data['name'];
+			$update_args['name'] = sanitize_text_field( (string) $tag_data['name'] );
 			$changes_made[]      = 'name';
 		}
 
 		if ( isset( $tag_data['slug'] ) ) {
-			$update_args['slug'] = $tag_data['slug'];
+			$update_args['slug'] = sanitize_title( (string) $tag_data['slug'] );
 			$changes_made[]      = 'slug';
 		}
 
 		if ( isset( $tag_data['description'] ) ) {
-			$update_args['description'] = $tag_data['description'];
+			$update_args['description'] = sanitize_textarea_field( (string) $tag_data['description'] );
 			$changes_made[]             = 'description';
 		}
 
@@ -427,16 +430,39 @@ class ManageProductTags implements RegistersAbility {
 		$total_success = 0;
 		$total_errors  = 0;
 
-		foreach ( $operations as $op ) {
+		foreach ( $operations as $index => $op ) {
+			if ( ! is_array( $op ) ) {
+				$batch_results[] = array(
+					'operation' => 'invalid',
+					'success'   => false,
+					'tag_id'    => 0,
+					'message'   => sprintf( 'Batch operation at index %d must be an object.', $index ),
+				);
+				++$total_errors;
+				continue;
+			}
+
+			$operation = isset( $op['operation'] ) ? (string) $op['operation'] : '';
+			if ( ! in_array( $operation, array( 'create', 'update', 'delete' ), true ) ) {
+				$batch_results[] = array(
+					'operation' => $operation ?: 'invalid',
+					'success'   => false,
+					'tag_id'    => 0,
+					'message'   => sprintf( 'Invalid batch operation at index %d.', $index ),
+				);
+				++$total_errors;
+				continue;
+			}
+
 			$op_input = array(
-				'operation'    => $op['operation'],
+				'operation'    => $operation,
 				'tag_data'     => $op['tag_data'] ?? array(),
 				'tag_id'       => $op['tag_id'] ?? 0,
 				'force_delete' => $input['force_delete'] ?? false,
 			);
 
 			$result = null;
-			switch ( $op['operation'] ) {
+			switch ( $operation ) {
 				case 'create':
 					$result = self::create_tag( $op_input );
 					break;
@@ -449,11 +475,18 @@ class ManageProductTags implements RegistersAbility {
 			}
 
 			if ( ! $result ) {
+				$batch_results[] = array(
+					'operation' => $operation,
+					'success'   => false,
+					'tag_id'    => 0,
+					'message'   => sprintf( 'Batch operation at index %d failed to execute.', $index ),
+				);
+				++$total_errors;
 				continue;
 			}
 
 			$batch_results[] = array(
-				'operation' => $op['operation'],
+				'operation' => $operation,
 				'success'   => $result['success'],
 				'tag_id'    => $result['tag'] ? $result['tag']['id'] : 0,
 				'message'   => $result['message'],

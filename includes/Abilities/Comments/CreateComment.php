@@ -95,19 +95,17 @@ final class CreateComment implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'engagement',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-					'annotations' => array(
+				'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => true,
-					),
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,				),
+				'mcp'         => array(
+					'public' => true,
+					'type'   => 'tool',
 				),
+			),
 			)
 		);
 	}
@@ -163,6 +161,15 @@ final class CreateComment implements RegistersAbility {
 				'success'    => false,
 				'comment_id' => 0,
 				'message'    => 'Valid comment author email is required.',
+			);
+		}
+
+		$allowed_comment_statuses = array( '1', '0', 'spam', 'trash' );
+		if ( ! in_array( $comment_approved, $allowed_comment_statuses, true ) ) {
+			return array(
+				'success'    => false,
+				'comment_id' => 0,
+				'message'    => 'Invalid comment approval status.',
 			);
 		}
 

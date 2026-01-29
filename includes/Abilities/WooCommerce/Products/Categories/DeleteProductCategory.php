@@ -87,10 +87,9 @@ class DeleteProductCategory implements RegistersAbility {
 					'annotations' => array(
 						'audience'             => array( 'user', 'assistant' ),
 						'priority'             => 0.6,
-						'readOnlyHint'         => false,
-						'destructiveHint'      => true,
-						'idempotentHint'       => true,
-						'openWorldHint'        => false,
+						'readonly'         => false,
+						'destructive'      => true,
+						'idempotent'       => true,
 						'requiresConfirmation' => true,
 					),
 				),
@@ -118,11 +117,11 @@ class DeleteProductCategory implements RegistersAbility {
 			);
 		}
 
-		$category_id          = $input['category_id'];
-		$force_delete         = $input['force_delete'] ?? false;
-		$reassign_products_to = $input['reassign_products_to'] ?? 0;
-		$delete_children      = $input['delete_children'] ?? false;
-		$reassign_children_to = $input['reassign_children_to'] ?? 0;
+		$category_id          = absint( $input['category_id'] );
+		$force_delete         = ! empty( $input['force_delete'] );
+		$reassign_products_to = isset( $input['reassign_products_to'] ) ? absint( $input['reassign_products_to'] ) : 0;
+		$delete_children      = ! empty( $input['delete_children'] );
+		$reassign_children_to = isset( $input['reassign_children_to'] ) ? absint( $input['reassign_children_to'] ) : 0;
 
 		$category = get_term( $category_id, 'product_cat' );
 		if ( is_wp_error( $category ) || ! $category ) {
@@ -179,6 +178,42 @@ class DeleteProductCategory implements RegistersAbility {
 			$category_info['children_count'] = count( $children );
 		}
 
+		$reassign_products_term = null;
+		if ( $reassign_products_to > 0 ) {
+			$reassign_products_term = get_term( $reassign_products_to, 'product_cat' );
+			if ( is_wp_error( $reassign_products_term ) || ! $reassign_products_term ) {
+				return array(
+					'success'             => false,
+					'category'            => $category_info,
+					'products_reassigned' => 0,
+					'children_handled'    => array(
+						'deleted'    => 0,
+						'reassigned' => 0,
+					),
+					'reassign_info'       => array(),
+					'message'             => 'Reassign products category not found.',
+				);
+			}
+		}
+
+		$reassign_children_term = null;
+		if ( ! $delete_children && $reassign_children_to > 0 ) {
+			$reassign_children_term = get_term( $reassign_children_to, 'product_cat' );
+			if ( is_wp_error( $reassign_children_term ) || ! $reassign_children_term ) {
+				return array(
+					'success'             => false,
+					'category'            => $category_info,
+					'products_reassigned' => 0,
+					'children_handled'    => array(
+						'deleted'    => 0,
+						'reassigned' => 0,
+					),
+					'reassign_info'       => array(),
+					'message'             => 'Reassign children category not found.',
+				);
+			}
+		}
+
 		// Check if category has products and force_delete is false
 		if ( ! $force_delete && $category->count > 0 ) {
 			return array(
@@ -207,8 +242,7 @@ class DeleteProductCategory implements RegistersAbility {
 				$products_reassigned = self::reassign_products( $category_id, $reassign_products_to );
 
 				if ( $reassign_products_to > 0 ) {
-					$reassign_category            = get_term( $reassign_products_to, 'product_cat' );
-					$reassign_info['products_to'] = $reassign_category ? $reassign_category->name : 'Unknown';
+					$reassign_info['products_to'] = $reassign_products_term ? $reassign_products_term->name : 'Unknown';
 				} else {
 					$reassign_info['products_to'] = 'Uncategorized';
 				}
@@ -242,8 +276,7 @@ class DeleteProductCategory implements RegistersAbility {
 					}
 
 					if ( $reassign_children_to > 0 ) {
-						$reassign_category            = get_term( $reassign_children_to, 'product_cat' );
-						$reassign_info['children_to'] = $reassign_category ? $reassign_category->name : 'Unknown';
+						$reassign_info['children_to'] = $reassign_children_term ? $reassign_children_term->name : 'Unknown';
 					} else {
 						$reassign_info['children_to'] = 'Top-level';
 					}
@@ -295,9 +328,14 @@ class DeleteProductCategory implements RegistersAbility {
 
 	private static function reassign_products( int $from_category_id, int $to_category_id ): int {
 		// Get products in the category
+		$from_category = get_term( $from_category_id, 'product_cat' );
+		if ( is_wp_error( $from_category ) || ! $from_category ) {
+			return 0;
+		}
+
 		$products = wc_get_products(
 			array(
-				'category' => array( $from_category_id ),
+				'category' => array( $from_category->slug ),
 				'limit'    => -1,
 				'status'   => 'any',
 			)

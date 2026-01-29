@@ -159,10 +159,9 @@ class ListProducts implements RegistersAbility {
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -184,21 +183,43 @@ class ListProducts implements RegistersAbility {
 			);
 		}
 
-		$limit        = $input['limit'] ?? 20;
-		$offset       = $input['offset'] ?? 0;
-		$search       = $input['search'] ?? '';
-		$status       = $input['status'] ?? 'publish';
-		$type         = $input['type'] ?? 'any';
-		$category     = $input['category'] ?? '';
-		$tag          = $input['tag'] ?? '';
-		$sku          = $input['sku'] ?? '';
-		$featured     = $input['featured'] ?? null;
-		$on_sale      = $input['on_sale'] ?? null;
-		$stock_status = $input['stock_status'] ?? '';
-		$min_price    = $input['min_price'] ?? null;
-		$max_price    = $input['max_price'] ?? null;
-		$orderby      = $input['orderby'] ?? 'date';
-		$order        = $input['order'] ?? 'desc';
+		$limit        = isset( $input['limit'] ) ? absint( $input['limit'] ) : 20;
+		$offset       = isset( $input['offset'] ) ? absint( $input['offset'] ) : 0;
+		$search       = isset( $input['search'] ) ? sanitize_text_field( $input['search'] ) : '';
+		$status       = isset( $input['status'] ) ? sanitize_key( $input['status'] ) : 'publish';
+		$type         = isset( $input['type'] ) ? sanitize_key( $input['type'] ) : 'any';
+		$category     = isset( $input['category'] ) ? sanitize_title( $input['category'] ) : '';
+		$tag          = isset( $input['tag'] ) ? sanitize_title( $input['tag'] ) : '';
+		$sku          = isset( $input['sku'] ) ? sanitize_text_field( $input['sku'] ) : '';
+		$featured     = array_key_exists( 'featured', $input ) ? (bool) $input['featured'] : null;
+		$on_sale      = array_key_exists( 'on_sale', $input ) ? (bool) $input['on_sale'] : null;
+		$stock_status = isset( $input['stock_status'] ) ? sanitize_key( $input['stock_status'] ) : '';
+		$min_price    = array_key_exists( 'min_price', $input ) ? max( 0, (float) wc_format_decimal( $input['min_price'] ) ) : null;
+		$max_price    = array_key_exists( 'max_price', $input ) ? max( 0, (float) wc_format_decimal( $input['max_price'] ) ) : null;
+		$orderby      = isset( $input['orderby'] ) ? sanitize_key( $input['orderby'] ) : 'date';
+		$order        = isset( $input['order'] ) ? sanitize_key( $input['order'] ) : 'desc';
+
+		$limit = max( 1, min( 100, $limit ) );
+
+		$valid_statuses = array( 'publish', 'draft', 'pending', 'private', 'trash', 'any' );
+		if ( ! in_array( $status, $valid_statuses, true ) ) {
+			$status = 'publish';
+		}
+
+		$valid_types = array( 'simple', 'grouped', 'external', 'variable', 'any' );
+		if ( ! in_array( $type, $valid_types, true ) ) {
+			$type = 'any';
+		}
+
+		$valid_orderby = array( 'date', 'title', 'menu_order', 'price', 'popularity', 'rating' );
+		if ( ! in_array( $orderby, $valid_orderby, true ) ) {
+			$orderby = 'date';
+		}
+
+		$valid_order = array( 'asc', 'desc' );
+		if ( ! in_array( $order, $valid_order, true ) ) {
+			$order = 'desc';
+		}
 
 		// Build query args
 		$args = array(
@@ -290,7 +311,7 @@ class ListProducts implements RegistersAbility {
 
 		// Calculate pagination
 		$current_page = floor( $offset / $limit ) + 1;
-		$total_pages  = ceil( $total / $limit );
+		$total_pages  = $total > 0 ? (int) ceil( $total / $limit ) : 0;
 
 		$pagination = array(
 			'total'        => $total,
@@ -301,17 +322,46 @@ class ListProducts implements RegistersAbility {
 			'has_prev'     => $current_page > 1,
 		);
 
-		return array(
-			'products'        => $formatted_products,
-			'pagination'      => $pagination,
-			'filters_applied' => array_filter( $input ),
-			'message'         => sprintf(
+		$filters_applied = array(
+			'limit'        => array_key_exists( 'limit', $input ) ? $limit : null,
+			'offset'       => array_key_exists( 'offset', $input ) ? $offset : null,
+			'search'       => array_key_exists( 'search', $input ) ? $search : null,
+			'status'       => array_key_exists( 'status', $input ) ? $status : null,
+			'type'         => array_key_exists( 'type', $input ) ? $type : null,
+			'category'     => array_key_exists( 'category', $input ) ? $category : null,
+			'tag'          => array_key_exists( 'tag', $input ) ? $tag : null,
+			'sku'          => array_key_exists( 'sku', $input ) ? $sku : null,
+			'featured'     => array_key_exists( 'featured', $input ) ? $featured : null,
+			'on_sale'      => array_key_exists( 'on_sale', $input ) ? $on_sale : null,
+			'stock_status' => array_key_exists( 'stock_status', $input ) ? $stock_status : null,
+			'min_price'    => array_key_exists( 'min_price', $input ) ? $min_price : null,
+			'max_price'    => array_key_exists( 'max_price', $input ) ? $max_price : null,
+			'orderby'      => array_key_exists( 'orderby', $input ) ? $orderby : null,
+			'order'        => array_key_exists( 'order', $input ) ? $order : null,
+		);
+
+		$filters_applied = array_filter(
+			$filters_applied,
+			static function ( $value ): bool {
+				return null !== $value && '' !== $value;
+			}
+		);
+
+		$message = $total > 0
+			? sprintf(
 				'Found %d products (showing %d-%d of %d total).',
 				count( $formatted_products ),
 				$offset + 1,
 				min( $offset + $limit, $total ),
 				$total
-			),
+			)
+			: 'Found 0 products.';
+
+		return array(
+			'products'        => $formatted_products,
+			'pagination'      => $pagination,
+			'filters_applied' => $filters_applied,
+			'message'         => $message,
 		);
 	}
 

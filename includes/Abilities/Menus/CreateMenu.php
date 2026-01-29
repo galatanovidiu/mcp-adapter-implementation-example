@@ -112,17 +112,16 @@ final class CreateMenu implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'content',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -182,13 +181,20 @@ final class CreateMenu implements RegistersAbility {
 
 		// Update menu description if provided
 		if ( ! empty( $menu_description ) ) {
-			\wp_update_term(
+			$term_update = \wp_update_term(
 				$menu_id,
 				'nav_menu',
 				array(
 					'description' => $menu_description,
 				)
 			);
+			if ( \is_wp_error( $term_update ) ) {
+				return array(
+					'success' => false,
+					'menu_id' => $menu_id,
+					'message' => 'Failed to update menu description: ' . $term_update->get_error_message(),
+				);
+			}
 		}
 
 		// Get the created menu object
@@ -266,6 +272,10 @@ final class CreateMenu implements RegistersAbility {
 
 			if ( isset( $item_data['parent_id'] ) ) {
 				$menu_item_args['menu-item-parent-id'] = (int) $item_data['parent_id'];
+			}
+
+			if ( isset( $item_data['menu_order'] ) ) {
+				$menu_item_args['menu-item-position'] = (int) $item_data['menu_order'];
 			}
 
 			if ( isset( $item_data['object_id'] ) ) {

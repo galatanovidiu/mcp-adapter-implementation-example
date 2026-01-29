@@ -94,17 +94,16 @@ final class UploadMedia implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'media',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -168,7 +167,7 @@ final class UploadMedia implements RegistersAbility {
 					$file_data,
 					array(
 						'timeout'   => 30,
-						'sslverify' => false,
+						'sslverify' => true,
 					)
 				);
 
@@ -193,7 +192,7 @@ final class UploadMedia implements RegistersAbility {
 				}
 			} else {
 				// Assume base64 encoded data
-				$file_content = base64_decode( $file_data );
+				$file_content = base64_decode( $file_data, true );
 				if ( $file_content === false ) {
 					return array(
 						'success'       => false,
@@ -211,6 +210,20 @@ final class UploadMedia implements RegistersAbility {
 				);
 			}
 
+			$finfo         = finfo_open( FILEINFO_MIME_TYPE );
+			$detected_mime = $finfo ? finfo_buffer( $finfo, $file_content ) : '';
+			if ( $finfo ) {
+				finfo_close( $finfo );
+			}
+			$allowed_mimes = \get_allowed_mime_types();
+			if ( empty( $detected_mime ) || ! in_array( $detected_mime, $allowed_mimes, true ) ) {
+				return array(
+					'success'       => false,
+					'attachment_id' => 0,
+					'message'       => 'Invalid or unsupported file type.',
+				);
+			}
+
 			// Determine filename
 			if ( empty( $filename ) ) {
 				$filename = $original_filename ?: 'upload_' . time();
@@ -218,11 +231,7 @@ final class UploadMedia implements RegistersAbility {
 
 			// Ensure filename has extension
 			if ( ! pathinfo( $filename, PATHINFO_EXTENSION ) ) {
-				$finfo     = finfo_open( FILEINFO_MIME_TYPE );
-				$mime_type = finfo_buffer( $finfo, $file_content );
-				finfo_close( $finfo );
-
-				$extension = self::get_extension_from_mime_type( $mime_type );
+				$extension = self::get_extension_from_mime_type( (string) $detected_mime );
 				if ( $extension ) {
 					$filename .= '.' . $extension;
 				}

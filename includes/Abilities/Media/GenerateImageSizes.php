@@ -95,17 +95,16 @@ final class GenerateImageSizes implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'media',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -279,10 +278,10 @@ final class GenerateImageSizes implements RegistersAbility {
 							$width     = null;
 							$height    = null;
 
-							if ( isset( $size_data[ $size ] ) ) {
-								$width  = $size_data[ $size ]['width'];
-								$height = $size_data[ $size ]['height'];
-							} else {
+						if ( isset( $size_data[ $size ] ) ) {
+							$width  = (int) $size_data[ $size ]['width'];
+							$height = (int) $size_data[ $size ]['height'];
+						} else {
 								// Handle built-in sizes
 								switch ( $size ) {
 									case 'thumbnail':
@@ -304,8 +303,8 @@ final class GenerateImageSizes implements RegistersAbility {
 								}
 							}
 
-							if ( $width && $height ) {
-								$resized = \image_make_intermediate_size( $file_path, $width, $height, true );
+						if ( null !== $width && null !== $height && ( 0 !== $width || 0 !== $height ) ) {
+							$resized = \image_make_intermediate_size( $file_path, $width, $height, true );
 								if ( $resized ) {
 									$generated_sizes[] = $size;
 

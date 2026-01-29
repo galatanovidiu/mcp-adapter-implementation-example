@@ -17,17 +17,17 @@ final class SiteSettingsResource implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'settings',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'resource',
-					),
-					'uri'         => 'wordpress://settings',
-					'mimeType'    => 'application/json',
-					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
-						'priority'        => 0.7,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
+					'mcp' => array(
+						'public'      => true,
+						'type'        => 'resource',
+						'uri'         => 'wordpress://settings',
+						'mimeType'    => 'application/json',
+						'annotations' => array(
+							'audience'        => array( 'user', 'assistant' ),
+							'priority'        => 0.7,
+							'readonly'    => true,
+							'destructive' => false,
+						),
 					),
 				),
 			)
@@ -40,7 +40,7 @@ final class SiteSettingsResource implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( array $input = array() ): bool {
 		return \current_user_can( 'read' );
 	}
 
@@ -50,7 +50,7 @@ final class SiteSettingsResource implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\\WP_Error Resource content or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( array $input = array() ) {
 		$settings = array(
 			'blogname'        => \get_option( 'blogname' ),
 			'blogdescription' => \get_option( 'blogdescription' ),

@@ -102,17 +102,16 @@ class ManageShippingMethods implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -132,6 +131,14 @@ class ManageShippingMethods implements RegistersAbility {
 		$method_type     = isset( $input['method_type'] ) ? sanitize_text_field( $input['method_type'] ) : '';
 		$method_title    = isset( $input['method_title'] ) ? sanitize_text_field( $input['method_title'] ) : '';
 		$method_settings = $input['method_settings'] ?? array();
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return array(
+				'success' => false,
+				'action'  => $action,
+				'message' => 'WooCommerce is not active.',
+			);
+		}
 
 		switch ( $action ) {
 			case 'list_zones':
@@ -168,12 +175,13 @@ class ManageShippingMethods implements RegistersAbility {
 			$methods_data = array();
 
 			foreach ( $methods as $method ) {
+				$settings = $method->get_instance_settings();
 				$methods_data[] = array(
 					'id'       => $method->get_id(),
 					'title'    => $method->get_title(),
 					'type'     => $method->get_method_title(),
 					'enabled'  => $method->is_enabled(),
-					'settings' => $method->get_instance_option(),
+					'settings' => $settings,
 				);
 			}
 
@@ -192,12 +200,13 @@ class ManageShippingMethods implements RegistersAbility {
 		$methods_data  = array();
 
 		foreach ( $methods as $method ) {
+			$settings = $method->get_instance_settings();
 			$methods_data[] = array(
 				'id'       => $method->get_id(),
 				'title'    => $method->get_title(),
 				'type'     => $method->get_method_title(),
 				'enabled'  => $method->is_enabled(),
-				'settings' => $method->get_instance_option(),
+				'settings' => $settings,
 			);
 		}
 
@@ -223,12 +232,13 @@ class ManageShippingMethods implements RegistersAbility {
 		$methods_data = array();
 
 		foreach ( $methods as $method ) {
+			$settings = $method->get_instance_settings();
 			$methods_data[] = array(
 				'id'       => $method->get_id(),
 				'title'    => $method->get_title(),
 				'type'     => $method->get_method_title(),
 				'enabled'  => $method->is_enabled(),
-				'settings' => $method->get_instance_option(),
+				'settings' => $settings,
 			);
 		}
 
@@ -255,7 +265,15 @@ class ManageShippingMethods implements RegistersAbility {
 
 		// Add locations
 		foreach ( $zone_locations as $location ) {
-			$zone->add_location( $location['code'], $location['type'] );
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+			$code = isset( $location['code'] ) ? sanitize_text_field( $location['code'] ) : '';
+			$type = isset( $location['type'] ) ? sanitize_text_field( $location['type'] ) : '';
+			if ( '' === $code || '' === $type ) {
+				continue;
+			}
+			$zone->add_location( $code, $type );
 		}
 
 		$zone_id = $zone->save();
@@ -327,8 +345,9 @@ class ManageShippingMethods implements RegistersAbility {
 		}
 
 		// Update method settings
+		$method_settings = self::sanitize_settings( $method_settings );
 		foreach ( $method_settings as $key => $value ) {
-			$method->set_instance_option( $key, sanitize_text_field( $value ) );
+			$method->set_instance_option( $key, $value );
 		}
 
 		$method->save();
@@ -340,5 +359,25 @@ class ManageShippingMethods implements RegistersAbility {
 			'method_id' => $method_id,
 			'message'   => 'Shipping method configured successfully.',
 		);
+	}
+
+	private static function sanitize_settings( array $settings ): array {
+		$sanitized = array();
+		foreach ( $settings as $key => $value ) {
+			$sanitized_key = is_string( $key ) ? sanitize_text_field( $key ) : $key;
+			if ( is_array( $value ) ) {
+				$sanitized[ $sanitized_key ] = self::sanitize_settings( $value );
+				continue;
+			}
+
+			if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
+				$sanitized[ $sanitized_key ] = $value;
+				continue;
+			}
+
+			$sanitized[ $sanitized_key ] = sanitize_text_field( (string) $value );
+		}
+
+		return $sanitized;
 	}
 }

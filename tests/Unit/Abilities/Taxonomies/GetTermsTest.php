@@ -33,6 +33,29 @@ final class GetTermsTest extends TestCase {
 	}
 
 	/**
+	 * Test output schema matches response payload.
+	 */
+	public function test_output_schema_matches_response(): void {
+		$ability = wp_get_ability( 'wpmcp-example/get-terms' );
+		$this->assertNotNull( $ability, 'Ability should be registered' );
+
+		$output_schema = $ability->get_output_schema();
+		$this->assertIsArray( $output_schema );
+		$this->assertArrayHasKey( 'properties', $output_schema );
+
+		$properties = $output_schema['properties'];
+		$this->assertArrayHasKey( 'terms', $properties );
+		$this->assertArrayHasKey( 'total', $properties );
+
+		$terms_schema = $properties['terms'];
+		$this->assertArrayHasKey( 'items', $terms_schema );
+		$this->assertArrayHasKey( 'properties', $terms_schema['items'] );
+
+		$term_properties = $terms_schema['items']['properties'];
+		$this->assertArrayHasKey( 'taxonomy', $term_properties );
+	}
+
+	/**
 	 * Test permission checking with valid user.
 	 */
 	public function test_permission_check_with_valid_user(): void {

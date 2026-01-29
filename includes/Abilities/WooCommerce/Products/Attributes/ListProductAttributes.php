@@ -66,17 +66,16 @@ class ListProductAttributes implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -97,9 +96,9 @@ class ListProductAttributes implements RegistersAbility {
 			);
 		}
 
-		$include_terms       = $input['include_terms'] ?? true;
-		$include_usage_count = $input['include_usage_count'] ?? true;
-		$attribute_name      = $input['attribute_name'] ?? '';
+		$include_terms       = isset( $input['include_terms'] ) ? (bool) $input['include_terms'] : true;
+		$include_usage_count = isset( $input['include_usage_count'] ) ? (bool) $input['include_usage_count'] : true;
+		$attribute_name      = isset( $input['attribute_name'] ) ? sanitize_title( (string) $input['attribute_name'] ) : '';
 
 		// Get WooCommerce product attributes
 		$wc_attributes = wc_get_attribute_taxonomies();

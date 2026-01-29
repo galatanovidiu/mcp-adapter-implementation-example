@@ -90,6 +90,11 @@ class CreateProduct implements RegistersAbility {
 							'description' => 'Product tag IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
+						'categories'         => array(
+							'type'        => 'array',
+							'description' => 'Product category IDs.',
+							'items'       => array( 'type' => 'integer' ),
+						),
 						'featured'           => array(
 							'type'        => 'boolean',
 							'description' => 'Mark as featured product.',
@@ -182,20 +187,19 @@ class CreateProduct implements RegistersAbility {
 				),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array(
 							'user',
 							'assistant',
 						),
 						'priority'        => 0.8,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -216,9 +220,17 @@ class CreateProduct implements RegistersAbility {
 			);
 		}
 
-		$name   = $input['name'];
-		$type   = $input['type'] ?? 'simple';
-		$status = $input['status'] ?? 'publish';
+		$name = isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : '';
+		if ( '' === $name ) {
+			return array(
+				'success' => false,
+				'product' => null,
+				'message' => 'Product name is required.',
+			);
+		}
+
+		$type   = isset( $input['type'] ) ? sanitize_key( $input['type'] ) : 'simple';
+		$status = isset( $input['status'] ) ? sanitize_key( $input['status'] ) : 'publish';
 
 		try {
 			// Create product based on type
@@ -243,20 +255,21 @@ class CreateProduct implements RegistersAbility {
 			$product->set_status( $status );
 
 			if ( ! empty( $input['slug'] ) ) {
-				$product->set_slug( $input['slug'] );
+				$product->set_slug( sanitize_title( $input['slug'] ) );
 			}
 
 			if ( ! empty( $input['description'] ) ) {
-				$product->set_description( $input['description'] );
+				$product->set_description( wp_kses_post( $input['description'] ) );
 			}
 
 			if ( ! empty( $input['short_description'] ) ) {
-				$product->set_short_description( $input['short_description'] );
+				$product->set_short_description( wp_kses_post( $input['short_description'] ) );
 			}
 
 			if ( ! empty( $input['sku'] ) ) {
 				// Check if SKU already exists
-				$existing_product_id = wc_get_product_id_by_sku( $input['sku'] );
+				$sku                 = sanitize_text_field( $input['sku'] );
+				$existing_product_id = wc_get_product_id_by_sku( $sku );
 				if ( $existing_product_id ) {
 					return array(
 						'success' => false,
@@ -264,80 +277,80 @@ class CreateProduct implements RegistersAbility {
 						'message' => 'SKU already exists.',
 					);
 				}
-				$product->set_sku( $input['sku'] );
+				$product->set_sku( $sku );
 			}
 
 			// Set pricing
 			if ( ! empty( $input['regular_price'] ) ) {
-				$product->set_regular_price( $input['regular_price'] );
+				$product->set_regular_price( wc_format_decimal( $input['regular_price'] ) );
 			}
 
 			if ( ! empty( $input['sale_price'] ) ) {
-				$product->set_sale_price( $input['sale_price'] );
+				$product->set_sale_price( wc_format_decimal( $input['sale_price'] ) );
 			}
 
 			// Set stock management
-			$manage_stock = $input['manage_stock'] ?? false;
+			$manage_stock = isset( $input['manage_stock'] ) ? (bool) $input['manage_stock'] : false;
 			$product->set_manage_stock( $manage_stock );
 
 			if ( $manage_stock && isset( $input['stock_quantity'] ) ) {
-				$product->set_stock_quantity( $input['stock_quantity'] );
+				$product->set_stock_quantity( wc_stock_amount( $input['stock_quantity'] ) );
 			}
 
 			if ( ! empty( $input['stock_status'] ) ) {
-				$product->set_stock_status( $input['stock_status'] );
+				$product->set_stock_status( sanitize_key( $input['stock_status'] ) );
 			}
 
 			// Set physical properties
 			if ( ! empty( $input['weight'] ) ) {
-				$product->set_weight( $input['weight'] );
+				$product->set_weight( wc_format_decimal( $input['weight'] ) );
 			}
 
 			if ( ! empty( $input['dimensions'] ) ) {
 				$dimensions = $input['dimensions'];
 				if ( ! empty( $dimensions['length'] ) ) {
-					$product->set_length( $dimensions['length'] );
+					$product->set_length( wc_format_decimal( $dimensions['length'] ) );
 				}
 				if ( ! empty( $dimensions['width'] ) ) {
-					$product->set_width( $dimensions['width'] );
+					$product->set_width( wc_format_decimal( $dimensions['width'] ) );
 				}
 				if ( ! empty( $dimensions['height'] ) ) {
-					$product->set_height( $dimensions['height'] );
+					$product->set_height( wc_format_decimal( $dimensions['height'] ) );
 				}
 			}
 
 			// Set categories
 			if ( ! empty( $input['categories'] ) ) {
-				$product->set_category_ids( $input['categories'] );
+				$product->set_category_ids( self::sanitize_id_list( $input['categories'] ) );
 			}
 
 			// Set tags
 			if ( ! empty( $input['tags'] ) ) {
-				$product->set_tag_ids( $input['tags'] );
+				$product->set_tag_ids( self::sanitize_id_list( $input['tags'] ) );
 			}
 
 			// Set featured status
 			if ( isset( $input['featured'] ) ) {
-				$product->set_featured( $input['featured'] );
+				$product->set_featured( (bool) $input['featured'] );
 			}
 
 			// Set catalog visibility
 			if ( ! empty( $input['catalog_visibility'] ) ) {
-				$product->set_catalog_visibility( $input['catalog_visibility'] );
+				$product->set_catalog_visibility( sanitize_key( $input['catalog_visibility'] ) );
 			}
 
 			// Set tax properties
 			if ( ! empty( $input['tax_status'] ) ) {
-				$product->set_tax_status( $input['tax_status'] );
+				$product->set_tax_status( sanitize_key( $input['tax_status'] ) );
 			}
 
 			if ( isset( $input['tax_class'] ) ) {
-				$product->set_tax_class( $input['tax_class'] );
+				$product->set_tax_class( sanitize_text_field( $input['tax_class'] ) );
 			}
 
 			// Set shipping class
 			if ( ! empty( $input['shipping_class'] ) ) {
-				$shipping_class = get_term_by( 'slug', $input['shipping_class'], 'product_shipping_class' );
+				$shipping_class = get_term_by( 'slug', sanitize_title( $input['shipping_class'] ), 'product_shipping_class' );
 				if ( $shipping_class ) {
 					$product->set_shipping_class_id( $shipping_class->term_id );
 				}
@@ -346,33 +359,33 @@ class CreateProduct implements RegistersAbility {
 			// Set type-specific properties
 			if ( $type === 'external' ) {
 				if ( ! empty( $input['external_url'] ) ) {
-					$product->set_product_url( $input['external_url'] );
+					$product->set_product_url( esc_url_raw( $input['external_url'] ) );
 				}
 				if ( ! empty( $input['button_text'] ) ) {
-					$product->set_button_text( $input['button_text'] );
+					$product->set_button_text( sanitize_text_field( $input['button_text'] ) );
 				}
 			}
 
 			if ( $type === 'grouped' && ! empty( $input['grouped_products'] ) ) {
-				$product->set_children( $input['grouped_products'] );
+				$product->set_children( self::sanitize_id_list( $input['grouped_products'] ) );
 			}
 
 			// Set upsells and cross-sells
 			if ( ! empty( $input['upsell_ids'] ) ) {
-				$product->set_upsell_ids( $input['upsell_ids'] );
+				$product->set_upsell_ids( self::sanitize_id_list( $input['upsell_ids'] ) );
 			}
 
 			if ( ! empty( $input['cross_sell_ids'] ) ) {
-				$product->set_cross_sell_ids( $input['cross_sell_ids'] );
+				$product->set_cross_sell_ids( self::sanitize_id_list( $input['cross_sell_ids'] ) );
 			}
 
 			// Set images
 			if ( ! empty( $input['image_id'] ) ) {
-				$product->set_image_id( $input['image_id'] );
+				$product->set_image_id( absint( $input['image_id'] ) );
 			}
 
 			if ( ! empty( $input['gallery_image_ids'] ) ) {
-				$product->set_gallery_image_ids( $input['gallery_image_ids'] );
+				$product->set_gallery_image_ids( self::sanitize_id_list( $input['gallery_image_ids'] ) );
 			}
 
 			// Save the product
@@ -411,5 +424,14 @@ class CreateProduct implements RegistersAbility {
 				'message' => 'Error creating product: ' . $e->getMessage(),
 			);
 		}
+	}
+
+	private static function sanitize_id_list( $values ): array {
+		if ( ! is_array( $values ) ) {
+			return array();
+		}
+
+		$ids = array_map( 'absint', $values );
+		return array_values( array_filter( $ids ) );
 	}
 }

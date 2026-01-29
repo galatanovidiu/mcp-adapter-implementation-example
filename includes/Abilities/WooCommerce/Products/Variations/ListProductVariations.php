@@ -123,17 +123,16 @@ class ListProductVariations implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -156,13 +155,13 @@ class ListProductVariations implements RegistersAbility {
 			);
 		}
 
-		$product_id   = $input['product_id'];
+		$product_id   = absint( $input['product_id'] );
 		$limit        = $input['limit'] ?? 20;
 		$offset       = $input['offset'] ?? 0;
 		$status       = $input['status'] ?? 'publish';
 		$stock_status = $input['stock_status'] ?? '';
 		$on_sale      = $input['on_sale'] ?? null;
-		$attributes   = $input['attributes'] ?? array();
+		$attributes   = isset( $input['attributes'] ) && is_array( $input['attributes'] ) ? $input['attributes'] : array();
 		$orderby      = $input['orderby'] ?? 'menu_order';
 		$order        = $input['order'] ?? 'asc';
 
@@ -272,24 +271,34 @@ class ListProductVariations implements RegistersAbility {
 				continue;
 			}
 
-			// Filter by attributes
-			if ( ! empty( $attributes ) ) {
-				$variation_attributes = $variation->get_variation_attributes();
-				$matches              = true;
+		// Filter by attributes
+		if ( ! empty( $attributes ) ) {
+			$variation_attributes = $variation->get_variation_attributes();
+			$matches              = true;
+			$normalized_attributes = array();
 
-				foreach ( $attributes as $attr_name => $attr_value ) {
-					$attr_key = 'attribute_' . sanitize_title( $attr_name );
-					if ( ! isset( $variation_attributes[ $attr_key ] ) ||
-						$variation_attributes[ $attr_key ] !== $attr_value ) {
-						$matches = false;
-						break;
-					}
-				}
-
-				if ( ! $matches ) {
+			foreach ( $attributes as $attr_name => $attr_value ) {
+				$normalized_name = sanitize_title( (string) $attr_name );
+				if ( '' === $normalized_name ) {
 					continue;
 				}
+				$normalized_attributes[ 'attribute_' . $normalized_name ] = sanitize_text_field( (string) $attr_value );
 			}
+
+			foreach ( $normalized_attributes as $attr_key => $attr_value ) {
+				$variation_value = isset( $variation_attributes[ $attr_key ] )
+					? sanitize_text_field( (string) $variation_attributes[ $attr_key ] )
+					: null;
+				if ( null === $variation_value || $variation_value !== $attr_value ) {
+					$matches = false;
+					break;
+				}
+			}
+
+			if ( ! $matches ) {
+				continue;
+			}
+		}
 
 			$filtered_ids[] = $variation_id;
 		}

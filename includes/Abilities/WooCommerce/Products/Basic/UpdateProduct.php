@@ -86,6 +86,11 @@ class UpdateProduct implements RegistersAbility {
 							'description' => 'Product tag IDs.',
 							'items'       => array( 'type' => 'integer' ),
 						),
+						'categories'         => array(
+							'type'        => 'array',
+							'description' => 'Product category IDs.',
+							'items'       => array( 'type' => 'integer' ),
+						),
 						'featured'           => array(
 							'type'        => 'boolean',
 							'description' => 'Mark as featured product.',
@@ -169,17 +174,16 @@ class UpdateProduct implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -201,7 +205,7 @@ class UpdateProduct implements RegistersAbility {
 			);
 		}
 
-		$product_id = $input['id'];
+		$product_id = absint( $input['id'] );
 		$product    = wc_get_product( $product_id );
 
 		if ( ! $product || ! $product instanceof \WC_Product ) {
@@ -218,33 +222,34 @@ class UpdateProduct implements RegistersAbility {
 		try {
 			// Update basic properties
 			if ( isset( $input['name'] ) ) {
-				$product->set_name( $input['name'] );
+				$product->set_name( sanitize_text_field( $input['name'] ) );
 				$changes_made[] = 'name';
 			}
 
 			if ( isset( $input['status'] ) ) {
-				$product->set_status( $input['status'] );
+				$product->set_status( sanitize_key( $input['status'] ) );
 				$changes_made[] = 'status';
 			}
 
 			if ( isset( $input['slug'] ) ) {
-				$product->set_slug( $input['slug'] );
+				$product->set_slug( sanitize_title( $input['slug'] ) );
 				$changes_made[] = 'slug';
 			}
 
 			if ( isset( $input['description'] ) ) {
-				$product->set_description( $input['description'] );
+				$product->set_description( wp_kses_post( $input['description'] ) );
 				$changes_made[] = 'description';
 			}
 
 			if ( isset( $input['short_description'] ) ) {
-				$product->set_short_description( $input['short_description'] );
+				$product->set_short_description( wp_kses_post( $input['short_description'] ) );
 				$changes_made[] = 'short_description';
 			}
 
 			if ( isset( $input['sku'] ) ) {
 				// Check if SKU already exists (excluding current product)
-				$existing_product_id = wc_get_product_id_by_sku( $input['sku'] );
+				$sku                 = sanitize_text_field( $input['sku'] );
+				$existing_product_id = wc_get_product_id_by_sku( $sku );
 				if ( $existing_product_id && $existing_product_id !== $product_id ) {
 					return array(
 						'success'      => false,
@@ -253,97 +258,97 @@ class UpdateProduct implements RegistersAbility {
 						'message'      => 'SKU already exists on another product.',
 					);
 				}
-				$product->set_sku( $input['sku'] );
+				$product->set_sku( $sku );
 				$changes_made[] = 'sku';
 			}
 
 			// Update pricing
 			if ( isset( $input['regular_price'] ) ) {
-				$product->set_regular_price( $input['regular_price'] );
+				$product->set_regular_price( wc_format_decimal( $input['regular_price'] ) );
 				$changes_made[] = 'regular_price';
 			}
 
 			if ( isset( $input['sale_price'] ) ) {
-				$product->set_sale_price( $input['sale_price'] );
+				$product->set_sale_price( wc_format_decimal( $input['sale_price'] ) );
 				$changes_made[] = 'sale_price';
 			}
 
 			// Update stock management
 			if ( isset( $input['manage_stock'] ) ) {
-				$product->set_manage_stock( $input['manage_stock'] );
+				$product->set_manage_stock( (bool) $input['manage_stock'] );
 				$changes_made[] = 'manage_stock';
 			}
 
 			if ( isset( $input['stock_quantity'] ) ) {
-				$product->set_stock_quantity( $input['stock_quantity'] );
+				$product->set_stock_quantity( wc_stock_amount( $input['stock_quantity'] ) );
 				$changes_made[] = 'stock_quantity';
 			}
 
 			if ( isset( $input['stock_status'] ) ) {
-				$product->set_stock_status( $input['stock_status'] );
+				$product->set_stock_status( sanitize_key( $input['stock_status'] ) );
 				$changes_made[] = 'stock_status';
 			}
 
 			// Update physical properties
 			if ( isset( $input['weight'] ) ) {
-				$product->set_weight( $input['weight'] );
+				$product->set_weight( wc_format_decimal( $input['weight'] ) );
 				$changes_made[] = 'weight';
 			}
 
 			if ( isset( $input['dimensions'] ) ) {
 				$dimensions = $input['dimensions'];
 				if ( isset( $dimensions['length'] ) ) {
-					$product->set_length( $dimensions['length'] );
+					$product->set_length( wc_format_decimal( $dimensions['length'] ) );
 					$changes_made[] = 'length';
 				}
 				if ( isset( $dimensions['width'] ) ) {
-					$product->set_width( $dimensions['width'] );
+					$product->set_width( wc_format_decimal( $dimensions['width'] ) );
 					$changes_made[] = 'width';
 				}
 				if ( isset( $dimensions['height'] ) ) {
-					$product->set_height( $dimensions['height'] );
+					$product->set_height( wc_format_decimal( $dimensions['height'] ) );
 					$changes_made[] = 'height';
 				}
 			}
 
 			// Update categories
 			if ( isset( $input['categories'] ) ) {
-				$product->set_category_ids( $input['categories'] );
+				$product->set_category_ids( self::sanitize_id_list( $input['categories'] ) );
 				$changes_made[] = 'categories';
 			}
 
 			// Update tags
 			if ( isset( $input['tags'] ) ) {
-				$product->set_tag_ids( $input['tags'] );
+				$product->set_tag_ids( self::sanitize_id_list( $input['tags'] ) );
 				$changes_made[] = 'tags';
 			}
 
 			// Update featured status
 			if ( isset( $input['featured'] ) ) {
-				$product->set_featured( $input['featured'] );
+				$product->set_featured( (bool) $input['featured'] );
 				$changes_made[] = 'featured';
 			}
 
 			// Update catalog visibility
 			if ( isset( $input['catalog_visibility'] ) ) {
-				$product->set_catalog_visibility( $input['catalog_visibility'] );
+				$product->set_catalog_visibility( sanitize_key( $input['catalog_visibility'] ) );
 				$changes_made[] = 'catalog_visibility';
 			}
 
 			// Update tax properties
 			if ( isset( $input['tax_status'] ) ) {
-				$product->set_tax_status( $input['tax_status'] );
+				$product->set_tax_status( sanitize_key( $input['tax_status'] ) );
 				$changes_made[] = 'tax_status';
 			}
 
 			if ( isset( $input['tax_class'] ) ) {
-				$product->set_tax_class( $input['tax_class'] );
+				$product->set_tax_class( sanitize_text_field( $input['tax_class'] ) );
 				$changes_made[] = 'tax_class';
 			}
 
 			// Update shipping class
 			if ( isset( $input['shipping_class'] ) ) {
-				$shipping_class = get_term_by( 'slug', $input['shipping_class'], 'product_shipping_class' );
+				$shipping_class = get_term_by( 'slug', sanitize_title( $input['shipping_class'] ), 'product_shipping_class' );
 				if ( $shipping_class ) {
 					$product->set_shipping_class_id( $shipping_class->term_id );
 					$changes_made[] = 'shipping_class';
@@ -353,39 +358,39 @@ class UpdateProduct implements RegistersAbility {
 			// Update type-specific properties
 			if ( $product->is_type( 'external' ) ) {
 				if ( isset( $input['external_url'] ) ) {
-					$product->set_product_url( $input['external_url'] );
+					$product->set_product_url( esc_url_raw( $input['external_url'] ) );
 					$changes_made[] = 'external_url';
 				}
 				if ( isset( $input['button_text'] ) ) {
-					$product->set_button_text( $input['button_text'] );
+					$product->set_button_text( sanitize_text_field( $input['button_text'] ) );
 					$changes_made[] = 'button_text';
 				}
 			}
 
 			if ( $product->is_type( 'grouped' ) && isset( $input['grouped_products'] ) ) {
-				$product->set_children( $input['grouped_products'] );
+				$product->set_children( self::sanitize_id_list( $input['grouped_products'] ) );
 				$changes_made[] = 'grouped_products';
 			}
 
 			// Update upsells and cross-sells
 			if ( isset( $input['upsell_ids'] ) ) {
-				$product->set_upsell_ids( $input['upsell_ids'] );
+				$product->set_upsell_ids( self::sanitize_id_list( $input['upsell_ids'] ) );
 				$changes_made[] = 'upsell_ids';
 			}
 
 			if ( isset( $input['cross_sell_ids'] ) ) {
-				$product->set_cross_sell_ids( $input['cross_sell_ids'] );
+				$product->set_cross_sell_ids( self::sanitize_id_list( $input['cross_sell_ids'] ) );
 				$changes_made[] = 'cross_sell_ids';
 			}
 
 			// Update images
 			if ( isset( $input['image_id'] ) ) {
-				$product->set_image_id( $input['image_id'] );
+				$product->set_image_id( absint( $input['image_id'] ) );
 				$changes_made[] = 'image_id';
 			}
 
 			if ( isset( $input['gallery_image_ids'] ) ) {
-				$product->set_gallery_image_ids( $input['gallery_image_ids'] );
+				$product->set_gallery_image_ids( self::sanitize_id_list( $input['gallery_image_ids'] ) );
 				$changes_made[] = 'gallery_image_ids';
 			}
 
@@ -421,5 +426,14 @@ class UpdateProduct implements RegistersAbility {
 				'message'      => 'Error updating product: ' . $e->getMessage(),
 			);
 		}
+	}
+
+	private static function sanitize_id_list( $values ): array {
+		if ( ! is_array( $values ) ) {
+			return array();
+		}
+
+		$ids = array_map( 'absint', $values );
+		return array_values( array_filter( $ids ) );
 	}
 }

@@ -52,17 +52,16 @@ final class DeleteComment implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'engagement',
 				'meta'                => array(
+					'annotations' => array(
+							'audience'        => array( 'user', 'assistant' ),
+							'priority'        => 0.6,
+							'readonly'    => false,
+							'destructive' => true,
+							'idempotent'  => true,
+						),
 					'mcp'         => array(
 						'public' => true,
 						'type'   => 'tool',
-					),
-					'annotations' => array(
-						'audience'        => array( 'user', 'assistant' ),
-						'priority'        => 0.6,
-						'readOnlyHint'    => false,
-						'destructiveHint' => true,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
 					),
 				),
 			)

@@ -112,17 +112,16 @@ class ListProductCategories implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -147,8 +146,8 @@ class ListProductCategories implements RegistersAbility {
 
 		$limit             = $input['limit'] ?? 50;
 		$offset            = $input['offset'] ?? 0;
-		$search            = $input['search'] ?? '';
-		$parent            = $input['parent'] ?? null;
+		$search            = isset( $input['search'] ) ? sanitize_text_field( (string) $input['search'] ) : '';
+		$parent            = isset( $input['parent'] ) ? absint( $input['parent'] ) : null;
 		$hide_empty        = $input['hide_empty'] ?? false;
 		$include_hierarchy = $input['include_hierarchy'] ?? true;
 		$orderby           = $input['orderby'] ?? 'name';
@@ -246,6 +245,11 @@ class ListProductCategories implements RegistersAbility {
 			}
 		}
 
+		$link = get_term_link( $category );
+		if ( is_wp_error( $link ) ) {
+			$link = '';
+		}
+
 		$data = array(
 			'id'          => $category->term_id,
 			'name'        => $category->name,
@@ -256,7 +260,7 @@ class ListProductCategories implements RegistersAbility {
 			'image'       => $image_data,
 			'display'     => get_term_meta( $category->term_id, 'display_type', true ) ?: 'default',
 			'menu_order'  => get_term_meta( $category->term_id, 'order', true ) ?: 0,
-			'link'        => get_term_link( $category ),
+			'link'        => $link,
 		);
 
 		// Add hierarchy information if requested

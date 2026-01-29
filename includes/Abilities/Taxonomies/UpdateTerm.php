@@ -36,17 +36,16 @@ final class UpdateTerm implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'content',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -75,20 +74,68 @@ final class UpdateTerm implements RegistersAbility {
 	 * @return array|\WP_Error Result array or error.
 	 */
 	public static function execute( array $input ) {
-		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
-		$term_id  = (int) $input['term_id'];
-		$args     = array();
+		$taxonomy = isset( $input['taxonomy'] ) ? \sanitize_key( (string) $input['taxonomy'] ) : '';
+		if ( '' === $taxonomy ) {
+			return array(
+				'error' => array(
+					'code'    => 'missing_taxonomy',
+					'message' => 'Taxonomy is required.',
+				),
+			);
+		}
+		if ( ! \taxonomy_exists( $taxonomy ) ) {
+			return array(
+				'error' => array(
+					'code'    => 'invalid_taxonomy',
+					'message' => 'Invalid taxonomy.',
+				),
+			);
+		}
+		$term_id = isset( $input['term_id'] ) ? \absint( $input['term_id'] ) : 0;
+		if ( $term_id < 1 ) {
+			return array(
+				'error' => array(
+					'code'    => 'missing_term_id',
+					'message' => 'Term ID is required.',
+				),
+			);
+		}
+		$term = \get_term( $term_id, $taxonomy );
+		if ( \is_wp_error( $term ) || ! $term ) {
+			return array(
+				'error' => array(
+					'code'    => 'term_not_found',
+					'message' => 'Term not found.',
+				),
+			);
+		}
+		$args = array();
 		if ( array_key_exists( 'name', $input ) ) {
-			$args['name'] = (string) $input['name'];
+			$name = \sanitize_text_field( (string) $input['name'] );
+			if ( '' !== $name ) {
+				$args['name'] = $name;
+			}
 		}
 		if ( array_key_exists( 'slug', $input ) ) {
 			$args['slug'] = \sanitize_title( (string) $input['slug'] );
 		}
 		if ( array_key_exists( 'description', $input ) ) {
-			$args['description'] = (string) $input['description'];
+			$args['description'] = \sanitize_textarea_field( (string) $input['description'] );
 		}
 		if ( array_key_exists( 'parent', $input ) ) {
-			$args['parent'] = (int) $input['parent'];
+			$parent_id = \absint( $input['parent'] );
+			if ( $parent_id > 0 ) {
+				$parent_term = \get_term( $parent_id, $taxonomy );
+				if ( \is_wp_error( $parent_term ) || ! $parent_term ) {
+					return array(
+						'error' => array(
+							'code'    => 'invalid_parent',
+							'message' => 'Parent term not found.',
+						),
+					);
+				}
+			}
+			$args['parent'] = $parent_id;
 		}
 		$updated = \wp_update_term( $term_id, $taxonomy, $args );
 		if ( \is_wp_error( $updated ) ) {

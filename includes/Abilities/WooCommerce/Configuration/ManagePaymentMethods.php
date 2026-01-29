@@ -65,17 +65,16 @@ class ManagePaymentMethods implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -87,9 +86,17 @@ class ManagePaymentMethods implements RegistersAbility {
 	}
 
 	public static function execute( array $input ): array {
-		$action     = sanitize_text_field( $input['action'] );
+		$action     = isset( $input['action'] ) ? sanitize_text_field( $input['action'] ) : '';
 		$gateway_id = isset( $input['gateway_id'] ) ? sanitize_text_field( $input['gateway_id'] ) : '';
-		$settings   = $input['settings'] ?? array();
+		$settings   = isset( $input['settings'] ) && is_array( $input['settings'] ) ? $input['settings'] : array();
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return array(
+				'success' => false,
+				'action'  => $action,
+				'message' => 'WooCommerce is not active.',
+			);
+		}
 
 		switch ( $action ) {
 			case 'list':
@@ -122,7 +129,7 @@ class ManagePaymentMethods implements RegistersAbility {
 				'id'          => $gateway->id,
 				'title'       => $gateway->get_title(),
 				'description' => $gateway->get_description(),
-				'enabled'     => $gateway->is_available(),
+				'enabled'     => self::get_gateway_enabled_state( $gateway ),
 				'available'   => $gateway->is_available(),
 				'supports'    => $gateway->supports,
 				'settings'    => $gateway->settings ?? array(),
@@ -233,8 +240,9 @@ class ManagePaymentMethods implements RegistersAbility {
 		$gateway_settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 
 		// Update settings
+		$settings = self::sanitize_settings( $settings );
 		foreach ( $settings as $key => $value ) {
-			$gateway_settings[ $key ] = sanitize_text_field( $value );
+			$gateway_settings[ $key ] = $value;
 		}
 
 		update_option( 'woocommerce_' . $gateway_id . '_settings', $gateway_settings );
@@ -245,5 +253,40 @@ class ManagePaymentMethods implements RegistersAbility {
 			'gateway_id' => $gateway_id,
 			'message'    => sprintf( 'Payment gateway "%s" configured successfully.', $gateway->get_title() ),
 		);
+	}
+
+	private static function get_gateway_enabled_state( $gateway ): bool {
+		if ( is_object( $gateway ) && method_exists( $gateway, 'get_option' ) ) {
+			$enabled = $gateway->get_option( 'enabled', 'no' );
+			if ( function_exists( 'wc_string_to_bool' ) ) {
+				return wc_string_to_bool( (string) $enabled );
+			}
+		}
+
+		if ( isset( $gateway->enabled ) ) {
+			return 'yes' === strtolower( (string) $gateway->enabled ) || true === $gateway->enabled;
+		}
+
+		return false;
+	}
+
+	private static function sanitize_settings( array $settings ): array {
+		$sanitized = array();
+		foreach ( $settings as $key => $value ) {
+			$sanitized_key = is_string( $key ) ? sanitize_text_field( $key ) : $key;
+			if ( is_array( $value ) ) {
+				$sanitized[ $sanitized_key ] = self::sanitize_settings( $value );
+				continue;
+			}
+
+			if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || null === $value ) {
+				$sanitized[ $sanitized_key ] = $value;
+				continue;
+			}
+
+			$sanitized[ $sanitized_key ] = sanitize_text_field( (string) $value );
+		}
+
+		return $sanitized;
 	}
 }

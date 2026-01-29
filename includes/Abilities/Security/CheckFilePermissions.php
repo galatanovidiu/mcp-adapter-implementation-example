@@ -84,17 +84,16 @@ class CheckFilePermissions implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'security',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -238,8 +237,12 @@ class CheckFilePermissions implements RegistersAbility {
 			);
 		}
 
-		$perms       = substr( sprintf( '%o', fileperms( $wp_config_path ) ), -4 );
+		$permissions = fileperms( $wp_config_path );
+		$perms       = substr( sprintf( '%o', $permissions ), -4 );
 		$is_writable = is_writable( $wp_config_path );
+		$world_read  = ( $permissions & 0x0004 ) !== 0;
+		$group_write = ( $permissions & 0x0010 ) !== 0;
+		$world_write = ( $permissions & 0x0002 ) !== 0;
 
 		$status         = 'good';
 		$recommendation = 'File permissions are appropriate.';
@@ -249,10 +252,15 @@ class CheckFilePermissions implements RegistersAbility {
 			$recommendation = 'wp-config.php is writable. Consider changing permissions to 644 or 600.';
 		}
 
-		// Check if permissions are too open
-		if ( intval( substr( $perms, -1 ) ) > 4 ) {
+		if ( $world_write ) {
 			$status         = 'critical';
-			$recommendation = 'wp-config.php has world-readable permissions. Change to 644 or 600.';
+			$recommendation = 'wp-config.php is world-writable. Change to 600 or 640.';
+		} elseif ( $group_write ) {
+			$status         = 'warning';
+			$recommendation = 'wp-config.php is group-writable. Change to 640 or 600.';
+		} elseif ( $world_read ) {
+			$status         = 'warning';
+			$recommendation = 'wp-config.php is world-readable. Consider 640 or 600.';
 		}
 
 		return array(
@@ -330,17 +338,23 @@ class CheckFilePermissions implements RegistersAbility {
 			);
 		}
 
-		$perms       = substr( sprintf( '%o', fileperms( $filepath ) ), -4 );
+		$permissions = fileperms( $filepath );
+		$perms       = substr( sprintf( '%o', $permissions ), -4 );
 		$is_writable = is_writable( $filepath );
+		$group_write = ( $permissions & 0x0010 ) !== 0;
+		$world_write = ( $permissions & 0x0002 ) !== 0;
 
 		$status = 'good';
 		$issue  = '';
 
 		// Check for overly permissive file permissions
-		if ( intval( substr( $perms, -1 ) ) > 4 ) {
+		if ( $world_write ) {
 			$status = 'critical';
 			$issue  = 'File has world-writable permissions';
-		} elseif ( $check_writable && $is_writable && in_array( $filename, array( '.htaccess', 'index.php' ) ) ) {
+		} elseif ( $group_write ) {
+			$status = 'warning';
+			$issue  = 'File has group-writable permissions';
+		} elseif ( $check_writable && $is_writable && in_array( $filename, array( '.htaccess', 'index.php' ), true ) ) {
 			$status = 'warning';
 			$issue  = 'File is writable by web server';
 		}

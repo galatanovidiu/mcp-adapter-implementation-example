@@ -114,17 +114,16 @@ final class GetThemeInfo implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'appearance',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -177,7 +176,7 @@ final class GetThemeInfo implements RegistersAbility {
 		// Check if theme is allowed (for multisite)
 		$is_allowed = true;
 		if ( \is_multisite() ) {
-			$allowed_themes = \get_site_option( 'allowedthemes' );
+			$allowed_themes = (array) \get_site_option( 'allowedthemes' );
 			$is_allowed     = isset( $allowed_themes[ $stylesheet ] ) || \current_user_can( 'manage_network_themes' );
 		}
 
@@ -205,12 +204,18 @@ final class GetThemeInfo implements RegistersAbility {
 
 		// Check for updates
 		$update_themes    = \get_site_transient( 'update_themes' );
+		$update_response  = array();
+		if ( is_object( $update_themes ) && isset( $update_themes->response ) && is_array( $update_themes->response ) ) {
+			$update_response = $update_themes->response;
+		} elseif ( is_array( $update_themes ) ) {
+			$update_response = $update_themes['response'] ?? array();
+		}
 		$update_available = false;
 		$new_version      = '';
 		$update_info      = array();
-		if ( isset( $update_themes->response[ $stylesheet ] ) ) {
+		if ( isset( $update_response[ $stylesheet ] ) ) {
 			$update_available = true;
-			$update_data      = $update_themes->response[ $stylesheet ];
+			$update_data      = $update_response[ $stylesheet ];
 			$new_version      = $update_data['new_version'] ?? '';
 			$update_info      = array(
 				'theme'   => $update_data['theme'] ?? '',

@@ -80,76 +80,163 @@ add_action(
 );
 
 add_action(
-/**
- * @throws \Exception
- */    'mcp_adapter_init',
+	'mcp_adapter_init',
+	/**
+	 * @throws \Exception
+	 */
 	static function ( McpAdapter $adapter ): void {
-
 		BootstrapAbilities::init();
 
-		// Server 1: API Expose (for discovering and executing REST API endpoints)
-		$adapter->create_server(
-			'mcp-api-expose',
-			'mcp-api-expose',
-			'mcp',
-			'Expose all API endpoints trough MCP',
-			'Exposing all API endpoints trough MCP',
-			'v1.0.0',
-			array( HttpTransport::class ),
-			RayMcpErrorHandler::class,
-			RayMcpObservabilityHandler::class,
-			array(
-				'mcp-api-expose/discover-api-endpoints',
-				'mcp-api-expose/get-api-endpoint-info',
-				'mcp-api-expose/execute-api-endpoint',
-			),
-			array(),
-			array()
-		);
+		// Full WordPress MCP Server with all tools, resources, and prompts
+		$site_name = get_bloginfo( 'name' );
+		$site_url  = home_url();
 
-		// Server 2: Pipeline Executor (for declarative pipelines with 90%+ token reduction)
 		$adapter->create_server(
-			'wordpress-pipeline',
+			'wordpress-full',
 			'mcp',
-			'pipeline',
-			'WordPress Declarative Pipeline Executor',
-			'Use this server when you need to perform multi-step WordPress operations like: batch processing content (analyzing/updating 10+ posts), complex workflows with loops and conditionals, data transformations (filtering, mapping, aggregating), error handling, or any task requiring 3+ sequential operations. Define workflows as JSON pipelines instead of making individual tool calls. Use the pipeline/get-capabilities tool to see all available operations. Best for: content migration, bulk updates, reporting, inventory management, user segmentation.',
+			'full',
+			sprintf( '%s - %s', $site_name, $site_url ),
+			sprintf(
+				'MCP server for "%s" (%s). Complete WordPress management with tools for content, media, users, plugins, themes, menus, comments, settings, system management, security, and WooCommerce operations.',
+				$site_name,
+				$site_url
+			),
 			'v1.0.0',
 			array( HttpTransport::class ),
 			RayMcpErrorHandler::class,
 			RayMcpObservabilityHandler::class,
+			// Tools
 			array(
-				'mcp-adapter/execute-pipeline',
-				'pipeline/get-capabilities',
+				// Posts
+				'core/create-post',
+				'core/get-post',
+				'core/list-posts',
+				'core/update-post',
+				'core/delete-post',
+				// Post Meta
+				'core/list-post-meta-keys',
+				'core/get-post-meta',
+				'core/update-post-meta',
+				'core/delete-post-meta',
+				// Blocks
+				'core/list-block-types',
+				// Taxonomies & Terms
+				'core/list-taxonomies',
+				'core/get-terms',
+				'core/create-term',
+				'core/update-term',
+				'core/delete-term',
+				'core/attach-post-terms',
+				'core/detach-post-terms',
+				// Settings
+				'core/get-site-settings',
+				'core/update-site-settings',
+				'core/list-site-options',
+				// Plugins
+				'core/list-plugins',
+				'core/get-plugin-info',
+				'core/activate-plugin',
+				'core/deactivate-plugin',
+				'core/install-plugin',
+				'core/delete-plugin',
+				// Users
+				'core/list-users',
+				'core/get-user',
+				'core/create-user',
+				'core/update-user',
+				'core/delete-user',
+				'core/get-user-meta',
+				'core/update-user-meta',
+				'core/change-user-role',
+				// Media
+				'core/list-media',
+				'core/get-attachment',
+				'core/upload-media',
+				'core/update-attachment',
+				'core/delete-attachment',
+				'core/get-media-sizes',
+				'core/generate-image-sizes',
+				// Themes
+				'core/list-themes',
+				'core/get-theme-info',
+				'core/activate-theme',
+				'core/install-theme',
+				'core/delete-theme',
+				'core/get-theme-customizer',
+				// Comments
+				'core/list-comments',
+				'core/get-comment',
+				'core/create-comment',
+				'core/update-comment',
+				'core/delete-comment',
+				'core/approve-comment',
+				'core/get-comment-meta',
+				// Menus
+				'core/list-menus',
+				'core/get-menu',
+				'core/create-menu',
+				'core/update-menu',
+				'core/delete-menu',
+				'core/get-menu-locations',
+				'core/assign-menu-location',
+				// System
+				'core/get-system-info',
+				'core/check-updates',
+				'core/run-updates',
+				'core/optimize-database',
+				'core/get-debug-info',
+				'core/manage-transients',
+				'core/get-constants',
+				// Security
+				'core/check-file-permissions',
+				'core/scan-malware',
+				'core/update-salts',
+				// WooCommerce Products
+				'woo/list-products',
+				'woo/get-product',
+				'woo/create-product',
+				'woo/update-product',
+				'woo/delete-product',
+				'woo/duplicate-product',
+				// WooCommerce Store
+				'woo/get-store-settings',
+				'woo/get-store-status',
+				'woo/get-store-info',
+				'woo/update-store-settings',
+				'woo/manage-payment-methods',
+				'woo/manage-shipping-methods',
+				// WooCommerce Variations
+				'woo/list-product-variations',
+				'woo/get-product-variation',
+				'woo/create-product-variation',
+				'woo/update-product-variation',
+				'woo/delete-product-variation',
+				// WooCommerce Attributes
+				'woo/list-product-attributes',
+				'woo/create-product-attribute',
+				'woo/update-product-attribute',
+				// WooCommerce Categories
+				'woo/list-product-categories',
+				'woo/get-product-category',
+				'woo/create-product-category',
+				'woo/update-product-category',
+				'woo/delete-product-category',
+				// WooCommerce Tags
+				'woo/list-product-tags',
+				'woo/manage-product-tags',
 			),
+			// Resources
 			array(
-				'pipeline/examples',
+				'resources/posts-list',
+				'resources/site-settings',
+				// UI Resources for MCP Apps
+				'core/list-posts-ui',
 			),
-			array()
-		);
-
-		// Server 3: Flattened Schema Demo (for testing flat input/output handling)
-		$adapter->create_server(
-			'mcp-flat-schema-demo',
-			'mcp',
-			'flat-demo',
-			'Flat Schema Demo Tools',
-			'Demo tools that use flattened schemas to validate MCP adapter wrapping/unwrapping.',
-			'v1.0.0',
-			array( HttpTransport::class ),
-			RayMcpErrorHandler::class,
-			RayMcpObservabilityHandler::class,
+			// Prompts
 			array(
-				'test/flat-echo-string',
-				'test/flat-add-ten',
-				'test/flat-toggle-boolean',
-				'test/flat-pick-first',
-				'test/flat-random-quote',
-				'test/flat-square-integer',
-				'test/flat-get-post',
-			),
-			array(),
-			array()
+				'prompts/generate-post',
+				'prompts/summarize-content',
+			)
 		);
 	}
 );

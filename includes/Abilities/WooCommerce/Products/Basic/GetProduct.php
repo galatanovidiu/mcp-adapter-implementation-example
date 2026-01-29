@@ -95,17 +95,16 @@ class GetProduct implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -125,11 +124,23 @@ class GetProduct implements RegistersAbility {
 			);
 		}
 
-		$product_id         = $input['id'] ?? null;
-		$sku                = $input['sku'] ?? '';
-		$include_variations = $input['include_variations'] ?? true;
-		$include_reviews    = $input['include_reviews'] ?? false;
-		$include_related    = $input['include_related'] ?? false;
+		$product_id = isset( $input['id'] ) ? absint( $input['id'] ) : 0;
+		$sku        = isset( $input['sku'] ) ? sanitize_text_field( (string) $input['sku'] ) : '';
+
+		$include_variations = filter_var( $input['include_variations'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_variations ) {
+			$include_variations = true;
+		}
+
+		$include_reviews = filter_var( $input['include_reviews'] ?? false, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_reviews ) {
+			$include_reviews = false;
+		}
+
+		$include_related = filter_var( $input['include_related'] ?? false, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_related ) {
+			$include_related = false;
+		}
 
 		// Get product by SKU if provided instead of ID
 		if ( empty( $product_id ) && ! empty( $sku ) ) {

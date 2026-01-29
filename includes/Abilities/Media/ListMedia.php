@@ -118,17 +118,16 @@ final class ListMedia implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'media',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.9,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -165,7 +164,18 @@ final class ListMedia implements RegistersAbility {
 
 		// Add MIME type filter
 		if ( ! empty( $input['mime_type'] ) ) {
-			$args['post_mime_type'] = \sanitize_mime_type( (string) $input['mime_type'] );
+			$mime_type = trim( (string) $input['mime_type'] );
+			if ( str_contains( $mime_type, '/*' ) ) {
+				$type = \sanitize_key( substr( $mime_type, 0, strpos( $mime_type, '/' ) ) );
+				if ( '' !== $type ) {
+					$args['post_mime_type'] = $type;
+				}
+			} else {
+				$sanitized = \sanitize_mime_type( $mime_type );
+				if ( '' !== $sanitized ) {
+					$args['post_mime_type'] = $sanitized;
+				}
+			}
 		}
 
 		// Add search filter

@@ -84,17 +84,16 @@ final class CreatePost implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'content',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -117,7 +116,17 @@ final class CreatePost implements RegistersAbility {
 			return false;
 		}
 		$cap = $pto->cap->create_posts ?? $pto->cap->edit_posts;
-		return \current_user_can( $cap );
+		if ( ! \current_user_can( $cap ) ) {
+			return false;
+		}
+
+		$status = isset( $input['status'] ) ? \sanitize_key( (string) $input['status'] ) : 'draft';
+		if ( self::status_requires_publish_cap( $status ) ) {
+			$publish_cap = $pto->cap->publish_posts ?? 'publish_posts';
+			return \current_user_can( $publish_cap );
+		}
+
+		return true;
 	}
 
 	/**
@@ -138,6 +147,18 @@ final class CreatePost implements RegistersAbility {
 		}
 
 		$status  = isset( $input['status'] ) ? \sanitize_key( (string) $input['status'] ) : 'draft';
+		$pto     = \get_post_type_object( $post_type );
+		if ( $pto && self::status_requires_publish_cap( $status ) ) {
+			$publish_cap = $pto->cap->publish_posts ?? 'publish_posts';
+			if ( ! \current_user_can( $publish_cap ) ) {
+				return array(
+					'error' => array(
+						'code'    => 'insufficient_permissions',
+						'message' => 'You do not have permission to publish this post type.',
+					),
+				);
+			}
+		}
 		$postarr = array(
 			'post_type'   => $post_type,
 			'post_status' => $status,
@@ -178,9 +199,22 @@ final class CreatePost implements RegistersAbility {
 				if ( ! \taxonomy_exists( $taxonomy ) ) {
 					continue;
 				}
+				$tax = \get_taxonomy( $taxonomy );
+				if ( ! $tax ) {
+					continue;
+				}
 				if ( ! \in_array( $taxonomy, $supported_taxonomies, true ) ) {
 					continue;
 				}
+				$can_assign_terms = isset( $tax->cap->assign_terms )
+					? \current_user_can( $tax->cap->assign_terms )
+					: \current_user_can( 'edit_post', $post_id );
+				if ( ! $can_assign_terms ) {
+					continue;
+				}
+				$can_manage_terms = isset( $tax->cap->manage_terms )
+					? \current_user_can( $tax->cap->manage_terms )
+					: \current_user_can( 'manage_categories' );
 				$term_ids = array();
 				$terms_in = is_array( $terms_in ) ? $terms_in : array( $terms_in );
 				foreach ( $terms_in as $t ) {
@@ -198,7 +232,7 @@ final class CreatePost implements RegistersAbility {
 					}
 					if ( $term instanceof \WP_Term ) {
 						$term_ids[] = (int) $term->term_id;
-					} elseif ( $create_if_missing && \current_user_can( 'manage_terms' ) ) {
+					} elseif ( $create_if_missing && $can_manage_terms ) {
 						$created = \wp_insert_term( $t, $taxonomy );
 						if ( ! \is_wp_error( $created ) && isset( $created['term_id'] ) ) {
 							$term_ids[] = (int) $created['term_id'];
@@ -230,5 +264,9 @@ final class CreatePost implements RegistersAbility {
 			'link'      => (string) \get_permalink( $post_id ),
 			'title'     => (string) $post->post_title,
 		);
+	}
+
+	private static function status_requires_publish_cap( string $status ): bool {
+		return in_array( $status, array( 'publish', 'private', 'future' ), true );
 	}
 }

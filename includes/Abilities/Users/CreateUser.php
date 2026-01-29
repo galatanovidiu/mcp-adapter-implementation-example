@@ -84,7 +84,6 @@ final class CreateUser implements RegistersAbility {
 						'email'        => array( 'type' => 'string' ),
 						'display_name' => array( 'type' => 'string' ),
 						'role'         => array( 'type' => 'string' ),
-						'password'     => array( 'type' => 'string' ),
 						'message'      => array( 'type' => 'string' ),
 					),
 				),
@@ -92,17 +91,16 @@ final class CreateUser implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'users',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -259,7 +257,6 @@ final class CreateUser implements RegistersAbility {
 			'email'        => $user->user_email,
 			'display_name' => $user->display_name,
 			'role'         => $role,
-			'password'     => $password,
 			'message'      => $send_notification ? 'User created successfully. Notification email sent.' : 'User created successfully.',
 		);
 	}

@@ -15,12 +15,7 @@ class BackupDatabase implements RegistersAbility {
 				'input_schema'        => array(
 					'type'                 => 'object',
 					'properties'           => array(
-						'include_uploads' => array(
-							'type'        => 'boolean',
-							'description' => 'Include uploads directory in backup (if supported).',
-							'default'     => false,
-						),
-						'compression'     => array(
+					'compression'     => array(
 							'type'        => 'string',
 							'description' => 'Compression method for backup file.',
 							'enum'        => array( 'none', 'gzip' ),
@@ -85,17 +80,16 @@ class BackupDatabase implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'security',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.6,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -107,10 +101,9 @@ class BackupDatabase implements RegistersAbility {
 	}
 
 	public static function execute( array $input ): array {
-		$include_uploads = $input['include_uploads'] ?? false;
-		$compression     = $input['compression'] ?? 'gzip';
-		$exclude_tables  = $input['exclude_tables'] ?? array();
-		$backup_name     = $input['backup_name'] ?? '';
+		$compression    = $input['compression'] ?? 'gzip';
+		$exclude_tables = $input['exclude_tables'] ?? array();
+		$backup_name    = $input['backup_name'] ?? '';
 
 		$start_time   = microtime( true );
 		$start_memory = memory_get_usage();
@@ -123,6 +116,14 @@ class BackupDatabase implements RegistersAbility {
 			'recommendations' => array(),
 			'message'         => '',
 		);
+
+		if ( $backup_name !== '' ) {
+			$backup_name = sanitize_file_name( (string) $backup_name );
+			if ( $backup_name === '' || ! preg_match( '/^[a-zA-Z0-9_-]+$/', $backup_name ) ) {
+				$result['message'] = 'Backup name must use letters, numbers, underscores, or dashes only.';
+				return $result;
+			}
+		}
 
 		// Create backup directory if it doesn't exist
 		$backup_dir = WP_CONTENT_DIR . '/backups';

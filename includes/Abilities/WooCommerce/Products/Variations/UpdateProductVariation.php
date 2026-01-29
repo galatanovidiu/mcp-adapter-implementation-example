@@ -132,17 +132,16 @@ class UpdateProductVariation implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -165,7 +164,7 @@ class UpdateProductVariation implements RegistersAbility {
 			);
 		}
 
-		$variation_id = $input['variation_id'];
+		$variation_id = absint( $input['variation_id'] );
 		$variation    = wc_get_product( $variation_id );
 
 		if ( ! $variation || ! $variation instanceof \WC_Product_Variation ) {
@@ -183,8 +182,9 @@ class UpdateProductVariation implements RegistersAbility {
 		try {
 			// Update SKU
 			if ( isset( $input['sku'] ) ) {
+				$sku = sanitize_text_field( (string) $input['sku'] );
 				// Check if SKU already exists (excluding current variation)
-				$existing_product_id = wc_get_product_id_by_sku( $input['sku'] );
+				$existing_product_id = wc_get_product_id_by_sku( $sku );
 				if ( $existing_product_id && $existing_product_id !== $variation_id ) {
 					return array(
 						'success'        => false,
@@ -194,18 +194,18 @@ class UpdateProductVariation implements RegistersAbility {
 						'message'        => 'SKU already exists on another product.',
 					);
 				}
-				$variation->set_sku( $input['sku'] );
+				$variation->set_sku( $sku );
 				$changes_made[] = 'sku';
 			}
 
 			// Update pricing
 			if ( isset( $input['regular_price'] ) ) {
-				$variation->set_regular_price( $input['regular_price'] );
+				$variation->set_regular_price( wc_format_decimal( $input['regular_price'] ) );
 				$changes_made[] = 'regular_price';
 			}
 
 			if ( isset( $input['sale_price'] ) ) {
-				$variation->set_sale_price( $input['sale_price'] );
+				$variation->set_sale_price( wc_format_decimal( $input['sale_price'] ) );
 				$changes_made[] = 'sale_price';
 			}
 
@@ -216,7 +216,7 @@ class UpdateProductVariation implements RegistersAbility {
 			}
 
 			if ( isset( $input['stock_quantity'] ) ) {
-				$variation->set_stock_quantity( $input['stock_quantity'] );
+				$variation->set_stock_quantity( absint( $input['stock_quantity'] ) );
 				$changes_made[] = 'stock_quantity';
 			}
 
@@ -227,29 +227,29 @@ class UpdateProductVariation implements RegistersAbility {
 
 			// Update physical properties
 			if ( isset( $input['weight'] ) ) {
-				$variation->set_weight( $input['weight'] );
+				$variation->set_weight( wc_format_decimal( $input['weight'] ) );
 				$changes_made[] = 'weight';
 			}
 
 			if ( isset( $input['dimensions'] ) ) {
 				$dimensions = $input['dimensions'];
 				if ( isset( $dimensions['length'] ) ) {
-					$variation->set_length( $dimensions['length'] );
+					$variation->set_length( wc_format_decimal( $dimensions['length'] ) );
 					$changes_made[] = 'length';
 				}
 				if ( isset( $dimensions['width'] ) ) {
-					$variation->set_width( $dimensions['width'] );
+					$variation->set_width( wc_format_decimal( $dimensions['width'] ) );
 					$changes_made[] = 'width';
 				}
 				if ( isset( $dimensions['height'] ) ) {
-					$variation->set_height( $dimensions['height'] );
+					$variation->set_height( wc_format_decimal( $dimensions['height'] ) );
 					$changes_made[] = 'height';
 				}
 			}
 
 			// Update image
 			if ( isset( $input['image_id'] ) ) {
-				$variation->set_image_id( $input['image_id'] );
+				$variation->set_image_id( absint( $input['image_id'] ) );
 				$changes_made[] = 'image_id';
 			}
 
@@ -260,7 +260,7 @@ class UpdateProductVariation implements RegistersAbility {
 			}
 
 			if ( isset( $input['menu_order'] ) ) {
-				$variation->set_menu_order( $input['menu_order'] );
+				$variation->set_menu_order( (int) $input['menu_order'] );
 				$changes_made[] = 'menu_order';
 			}
 
@@ -268,8 +268,12 @@ class UpdateProductVariation implements RegistersAbility {
 			if ( isset( $input['attributes'] ) ) {
 				$formatted_attributes = array();
 				foreach ( $input['attributes'] as $attr_name => $attr_value ) {
-					$attr_key                          = 'attribute_' . sanitize_title( $attr_name );
-					$formatted_attributes[ $attr_key ] = $attr_value;
+					$normalized_name = sanitize_title( (string) $attr_name );
+					if ( '' === $normalized_name ) {
+						continue;
+					}
+					$attr_key                          = 'attribute_' . $normalized_name;
+					$formatted_attributes[ $attr_key ] = sanitize_text_field( (string) $attr_value );
 				}
 				$variation->set_attributes( $formatted_attributes );
 				$changes_made[] = 'attributes';
@@ -292,12 +296,42 @@ class UpdateProductVariation implements RegistersAbility {
 
 			// Update sale dates
 			if ( isset( $input['date_on_sale_from'] ) ) {
-				$variation->set_date_on_sale_from( $input['date_on_sale_from'] );
+				$date_on_sale_from = sanitize_text_field( (string) $input['date_on_sale_from'] );
+				if ( '' === $date_on_sale_from ) {
+					$variation->set_date_on_sale_from( null );
+				} else {
+					$date_from = wc_string_to_datetime( $date_on_sale_from );
+					if ( ! $date_from ) {
+						return array(
+							'success'        => false,
+							'variation'      => null,
+							'changes_made'   => array(),
+							'parent_product' => null,
+							'message'        => 'Invalid date_on_sale_from value.',
+						);
+					}
+					$variation->set_date_on_sale_from( $date_from );
+				}
 				$changes_made[] = 'date_on_sale_from';
 			}
 
 			if ( isset( $input['date_on_sale_to'] ) ) {
-				$variation->set_date_on_sale_to( $input['date_on_sale_to'] );
+				$date_on_sale_to = sanitize_text_field( (string) $input['date_on_sale_to'] );
+				if ( '' === $date_on_sale_to ) {
+					$variation->set_date_on_sale_to( null );
+				} else {
+					$date_to = wc_string_to_datetime( $date_on_sale_to );
+					if ( ! $date_to ) {
+						return array(
+							'success'        => false,
+							'variation'      => null,
+							'changes_made'   => array(),
+							'parent_product' => null,
+							'message'        => 'Invalid date_on_sale_to value.',
+						);
+					}
+					$variation->set_date_on_sale_to( $date_to );
+				}
 				$changes_made[] = 'date_on_sale_to';
 			}
 

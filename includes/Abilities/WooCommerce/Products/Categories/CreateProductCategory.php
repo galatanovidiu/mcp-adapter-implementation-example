@@ -83,17 +83,16 @@ class CreateProductCategory implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.7,
-						'readOnlyHint'    => false,
-						'destructiveHint' => false,
-						'idempotentHint'  => false,
-						'openWorldHint'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -115,10 +114,13 @@ class CreateProductCategory implements RegistersAbility {
 			);
 		}
 
-		$name         = $input['name'];
-		$slug         = $input['slug'] ?? sanitize_title( $name );
-		$description  = $input['description'] ?? '';
-		$parent       = $input['parent'] ?? 0;
+		$name = sanitize_text_field( (string) $input['name'] );
+		$slug = isset( $input['slug'] ) ? sanitize_title( (string) $input['slug'] ) : '';
+		if ( '' === $slug ) {
+			$slug = sanitize_title( $name );
+		}
+		$description  = isset( $input['description'] ) ? sanitize_textarea_field( (string) $input['description'] ) : '';
+		$parent       = isset( $input['parent'] ) ? absint( $input['parent'] ) : 0;
 		$display_type = $input['display_type'] ?? 'default';
 		$image_id     = $input['image_id'] ?? 0;
 		$menu_order   = $input['menu_order'] ?? 0;
@@ -188,6 +190,11 @@ class CreateProductCategory implements RegistersAbility {
 				);
 			}
 
+			$link = get_term_link( $created_category );
+			if ( is_wp_error( $link ) ) {
+				$link = '';
+			}
+
 			return array(
 				'success'     => true,
 				'category'    => array(
@@ -199,7 +206,7 @@ class CreateProductCategory implements RegistersAbility {
 					'count'       => $created_category->count,
 					'display'     => get_term_meta( $category_id, 'display_type', true ),
 					'menu_order'  => get_term_meta( $category_id, 'order', true ),
-					'link'        => get_term_link( $created_category ),
+					'link'        => $link,
 				),
 				'parent_info' => $parent_info ?: array(),
 				'message'     => sprintf(

@@ -63,17 +63,16 @@ class GetStoreStatus implements RegistersAbility {
 				'execute_callback'    => array( self::class, 'execute' ),
 				'category'            => 'ecommerce',
 				'meta'                => array(
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
 					'annotations' => array(
 						'audience'        => array( 'user', 'assistant' ),
 						'priority'        => 0.8,
-						'readOnlyHint'    => true,
-						'destructiveHint' => false,
-						'idempotentHint'  => true,
-						'openWorldHint'   => false,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -85,9 +84,20 @@ class GetStoreStatus implements RegistersAbility {
 	}
 
 	public static function execute( array $input ): array {
-		$include_system_info   = $input['include_system_info'] ?? true;
-		$include_database_info = $input['include_database_info'] ?? true;
-		$include_plugin_info   = $input['include_plugin_info'] ?? true;
+		$include_system_info = filter_var( $input['include_system_info'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_system_info ) {
+			$include_system_info = true;
+		}
+
+		$include_database_info = filter_var( $input['include_database_info'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_database_info ) {
+			$include_database_info = true;
+		}
+
+		$include_plugin_info = filter_var( $input['include_plugin_info'] ?? true, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE );
+		if ( null === $include_plugin_info ) {
+			$include_plugin_info = true;
+		}
 
 		// Check if WooCommerce is active
 		$woocommerce_active = class_exists( 'WooCommerce' );

@@ -59,6 +59,22 @@ final class CreatePostTest extends TestCase {
 	}
 
 	/**
+	 * Test permission checking for publish status without capability.
+	 */
+	public function test_permission_check_blocks_publish_without_capability(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'contributor' ) );
+		wp_set_current_user( $user_id );
+
+		$input          = array(
+			'post_type' => 'post',
+			'status'    => 'publish',
+		);
+		$has_permission = CreatePost::check_permission( $input );
+
+		$this->assertFalse( $has_permission, 'Contributor should not have publish permissions' );
+	}
+
+	/**
 	 * Test permission checking with invalid post type.
 	 */
 	public function test_permission_check_with_invalid_post_type(): void {
@@ -103,6 +119,25 @@ final class CreatePostTest extends TestCase {
 		$this->assertNotNull( $post );
 		$this->assertEquals( 'Test Post Title', $post->post_title );
 		$this->assertEquals( 'Test post content', $post->post_content );
+	}
+
+	/**
+	 * Test post creation with publish status without capability.
+	 */
+	public function test_post_creation_blocks_publish_without_capability(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'contributor' ) );
+		wp_set_current_user( $user_id );
+
+		$input = array(
+			'post_type' => 'post',
+			'title'     => 'Unauthorized Publish',
+			'status'    => 'publish',
+		);
+
+		$result = CreatePost::execute( $input );
+
+		$this->assertArrayHasKey( 'error', $result );
+		$this->assertSame( 'insufficient_permissions', $result['error']['code'] );
 	}
 
 	/**
