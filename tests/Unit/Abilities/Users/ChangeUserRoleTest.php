@@ -29,7 +29,7 @@ final class ChangeUserRoleTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/change-user-role' );
+		$this->assertAbilityRegistered( 'core/change-user-role' );
 	}
 
 	/**

@@ -29,7 +29,7 @@ final class ListTaxonomiesTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/list-taxonomies' );
+		$this->assertAbilityRegistered( 'core/list-taxonomies' );
 	}
 
 	/**
@@ -224,7 +224,7 @@ final class ListTaxonomiesTest extends TestCase {
 		$user_id = $this->factory()->user->create( array( 'role' => 'author' ) );
 		wp_set_current_user( $user_id );
 
-		$result = $this->execute_ability( 'wpmcp-example/list-taxonomies', array() );
+		$result = $this->execute_ability( 'core/list-taxonomies', array() );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'taxonomies', $result );

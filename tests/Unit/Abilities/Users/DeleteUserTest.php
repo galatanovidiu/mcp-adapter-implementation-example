@@ -29,7 +29,7 @@ final class DeleteUserTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/delete-user' );
+		$this->assertAbilityRegistered( 'core/delete-user' );
 	}
 
 	/**

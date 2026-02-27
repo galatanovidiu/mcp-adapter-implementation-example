@@ -29,7 +29,7 @@ final class UpdateTermTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/update-term' );
+		$this->assertAbilityRegistered( 'core/update-term' );
 	}
 
 	/**
@@ -187,7 +187,7 @@ final class UpdateTermTest extends TestCase {
 			'name'     => 'API Updated Category',
 		);
 
-		$result = $this->execute_ability( 'wpmcp-example/update-term', $input );
+		$result = $this->execute_ability( 'core/update-term', $input );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'id', $result );

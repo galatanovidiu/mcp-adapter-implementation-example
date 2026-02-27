@@ -29,7 +29,7 @@ final class InstallThemeTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/install-theme' );
+		$this->assertAbilityRegistered( 'core/install-theme' );
 	}
 
 	/**

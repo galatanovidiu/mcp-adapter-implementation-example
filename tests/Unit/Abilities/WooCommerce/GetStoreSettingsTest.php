@@ -26,7 +26,11 @@ final class GetStoreSettingsTest extends TestCase {
 	}
 
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/get-store-settings' );
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not available.' );
+		}
+
+		$this->assertAbilityRegistered( 'woo/get-store-settings' );
 	}
 
 	public function test_invalid_category_returns_error(): void {

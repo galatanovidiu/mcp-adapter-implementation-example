@@ -29,7 +29,7 @@ final class CreatePostTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/create-post' );
+		$this->assertAbilityRegistered( 'core/create-post' );
 	}
 
 	/**
@@ -297,7 +297,7 @@ final class CreatePostTest extends TestCase {
 			'content'   => 'Created via Abilities API',
 		);
 
-		$result = $this->execute_ability( 'wpmcp-example/create-post', $input );
+		$result = $this->execute_ability( 'core/create-post', $input );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'id', $result );
