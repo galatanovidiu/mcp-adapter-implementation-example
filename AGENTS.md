@@ -75,6 +75,16 @@ FastMcp/
 
 ### 1. Running Tests
 
+#### Plugin Unit Tests (wp-env)
+```bash
+# Quick structure tests (no WordPress required)
+composer test
+
+# Full WordPress tests with wp-env (requires Docker + Node.js)
+composer env:setup
+composer test:env
+```
+
 #### Quick Start
 ```bash
 cd /path/to/mcp-adapter/FastMcp
