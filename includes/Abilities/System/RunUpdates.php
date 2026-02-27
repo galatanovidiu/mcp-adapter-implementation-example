@@ -124,7 +124,8 @@ final class RunUpdates implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input = null ): bool {
+		$input = $input ?? array();
 		$update_core        = (bool) ( $input['update_core'] ?? false );
 		$has_update_plugins = array_key_exists( 'update_plugins', $input );
 		$has_update_themes  = array_key_exists( 'update_themes', $input );
@@ -152,7 +153,8 @@ final class RunUpdates implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input = null ) {
+		$input = $input ?? array();
 		$update_core        = (bool) ( $input['update_core'] ?? false );
 		$has_update_plugins = array_key_exists( 'update_plugins', $input );
 		$has_update_themes  = array_key_exists( 'update_themes', $input );
@@ -266,7 +268,7 @@ final class RunUpdates implements RegistersAbility {
 
 				if ( ! isset( $plugin_updates[ $plugin_file ] ) ) {
 					$results['plugins'][] = array(
-						'plugin'       => $plugin_file,
+						'plugin'       => (string) $plugin_file,
 						'name'         => $plugin_file,
 						'success'      => false,
 						'from_version' => 'Unknown',
@@ -283,7 +285,7 @@ final class RunUpdates implements RegistersAbility {
 
 				if ( $dry_run ) {
 					$results['plugins'][] = array(
-						'plugin'       => $plugin_file,
+						'plugin'       => (string) $plugin_file,
 						'name'         => $plugin_data->Name,
 						'success'      => true,
 						'from_version' => $from_version,
@@ -298,7 +300,7 @@ final class RunUpdates implements RegistersAbility {
 
 					if ( \is_wp_error( $result ) ) {
 						$results['plugins'][] = array(
-							'plugin'       => $plugin_file,
+							'plugin'       => (string) $plugin_file,
 							'name'         => $plugin_data->Name,
 							'success'      => false,
 							'from_version' => $from_version,
@@ -308,7 +310,7 @@ final class RunUpdates implements RegistersAbility {
 						++$total_failed;
 					} elseif ( $result === false ) {
 						$results['plugins'][] = array(
-							'plugin'       => $plugin_file,
+							'plugin'       => (string) $plugin_file,
 							'name'         => $plugin_data->Name,
 							'success'      => false,
 							'from_version' => $from_version,
@@ -318,7 +320,7 @@ final class RunUpdates implements RegistersAbility {
 						++$total_failed;
 					} else {
 						$results['plugins'][] = array(
-							'plugin'       => $plugin_file,
+							'plugin'       => (string) $plugin_file,
 							'name'         => $plugin_data->Name,
 							'success'      => true,
 							'from_version' => $from_version,

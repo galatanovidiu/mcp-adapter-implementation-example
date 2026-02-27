@@ -129,7 +129,8 @@ final class ListMenus implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
+		$input = $input ?? [];
 		return \current_user_can( 'edit_theme_options' );
 	}
 
@@ -139,7 +140,8 @@ final class ListMenus implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? [];
 		$include_items     = (bool) ( $input['include_items'] ?? false );
 		$include_locations = (bool) ( $input['include_locations'] ?? true );
 		$menu_id           = isset( $input['menu_id'] ) ? (int) $input['menu_id'] : 0;

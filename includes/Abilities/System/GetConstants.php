@@ -110,7 +110,8 @@ final class GetConstants implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
+		$input = $input ?? [];
 		return \current_user_can( 'manage_options' );
 	}
 
@@ -120,7 +121,8 @@ final class GetConstants implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? [];
 		$category          = \sanitize_text_field( (string) ( $input['category'] ?? 'all' ) );
 		$include_undefined = (bool) ( $input['include_undefined'] ?? false );
 		$filter            = isset( $input['filter'] ) ? \sanitize_text_field( (string) $input['filter'] ) : '';

@@ -21,9 +21,9 @@ final class AssignMenuLocation implements RegistersAbility {
 							'type'        => 'array',
 							'description' => 'Array of menu location assignments.',
 							'items'       => array(
-								'type'       => 'object',
-								'required'   => array( 'location' ),
-								'properties' => array(
+								'type'                 => 'object',
+								'required'             => array( 'location' ),
+								'properties'           => array(
 									'location'        => array(
 										'type'        => 'string',
 										'description' => 'Theme menu location identifier.',
@@ -33,6 +33,7 @@ final class AssignMenuLocation implements RegistersAbility {
 										'description' => 'Menu ID, slug, or name to assign. Leave empty to unassign.',
 									),
 								),
+								'additionalProperties' => false,
 							),
 						),
 						'replace_all' => array(
@@ -91,20 +92,21 @@ final class AssignMenuLocation implements RegistersAbility {
 	/**
 	 * Check permission for assigning menu locations.
 	 *
-	 * @param array $input Input parameters.
+	 * @param array|null $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
 		return \current_user_can( 'edit_theme_options' );
 	}
 
 	/**
 	 * Execute the assign menu location operation.
 	 *
-	 * @param array $input Input parameters.
+	 * @param array|null $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? array();
 		$assignments = $input['assignments'] ?? array();
 		$replace_all = (bool) ( $input['replace_all'] ?? false );
 		$current_assignments = \get_nav_menu_locations();

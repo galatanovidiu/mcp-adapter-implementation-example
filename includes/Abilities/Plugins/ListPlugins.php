@@ -91,7 +91,8 @@ final class ListPlugins implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
+		$input = $input ?? [];
 		return \current_user_can( 'activate_plugins' );
 	}
 
@@ -101,7 +102,8 @@ final class ListPlugins implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? [];
 		$status = isset( $input['status'] ) ? \sanitize_key( (string) $input['status'] ) : 'all';
 		$search = isset( $input['search'] ) ? \sanitize_text_field( (string) $input['search'] ) : '';
 

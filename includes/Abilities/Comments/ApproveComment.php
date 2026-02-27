@@ -75,20 +75,25 @@ final class ApproveComment implements RegistersAbility {
 	/**
 	 * Check permission for moderating comments.
 	 *
-	 * @param array $input Input parameters.
+	 * @param array|null $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input = null ): bool {
+		$input = $input ?? array();
 		return \current_user_can( 'moderate_comments' );
 	}
 
 	/**
 	 * Execute the approve comment operation.
 	 *
-	 * @param array $input Input parameters.
+	 * Handles idempotent calls gracefully: if the comment is already in the
+	 * requested status, returns success with action_taken = 'no_change'.
+	 *
+	 * @param array|null $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input = null ) {
+		$input      = $input ?? array();
 		$comment_id = (int) $input['comment_id'];
 		$status     = \sanitize_text_field( (string) $input['status'] );
 
@@ -102,7 +107,35 @@ final class ApproveComment implements RegistersAbility {
 			);
 		}
 
-		$old_status   = $comment->comment_approved;
+		$old_status = $comment->comment_approved;
+
+		// Map requested status to expected comment_approved DB value for idempotency detection.
+		$status_db_map = array(
+			'approve' => '1',
+			'hold'    => '0',
+			'spam'    => 'spam',
+			'unspam'  => null, // Target is "not spam" — any non-spam value means already unspammed
+			'trash'   => 'trash',
+			'untrash' => null, // Target is "not trash" — any non-trash value means already untrashed
+		);
+
+		// Check if the comment is already in the requested target status.
+		$already_in_target = false;
+		if ( array_key_exists( $status, $status_db_map ) ) {
+			$target_value = $status_db_map[ $status ];
+			if ( null === $target_value ) {
+				// For inverse operations, "already done" means NOT in the source status.
+				$already_in_target = ( 'unspam' === $status && 'spam' !== $old_status )
+					|| ( 'untrash' === $status && 'trash' !== $old_status );
+			} else {
+				$already_in_target = ( $old_status === $target_value );
+			}
+		}
+
+		if ( $already_in_target ) {
+			return self::build_success_response( $comment_id, $comment, $old_status, $old_status, 'no_change' );
+		}
+
 		$action_taken = '';
 		$new_status   = '';
 		$result       = false;
@@ -166,17 +199,43 @@ final class ApproveComment implements RegistersAbility {
 			);
 		}
 
-		// Get the updated comment
+		// Get the updated comment for the response
+		$refreshed_comment = \get_comment( $comment_id );
+		if ( $refreshed_comment ) {
+			$new_status = $refreshed_comment->comment_approved;
+		}
+
+		return self::build_success_response( $comment_id, $comment, $old_status, $new_status, $action_taken );
+	}
+
+	/**
+	 * Build a standardised success response array.
+	 *
+	 * @param int         $comment_id  The comment ID.
+	 * @param \WP_Comment $original    The comment object captured before the operation.
+	 * @param string      $old_status  The comment_approved value before the operation.
+	 * @param string      $new_status  The comment_approved value after the operation.
+	 * @param string      $action_taken The action label (e.g. 'approved', 'no_change').
+	 * @return array Success response.
+	 */
+	private static function build_success_response(
+		int $comment_id,
+		\WP_Comment $original,
+		string $old_status,
+		string $new_status,
+		string $action_taken
+	): array {
+		// Fetch the current state of the comment for the response payload.
 		$updated_comment = \get_comment( $comment_id );
+
 		if ( ! $updated_comment ) {
-			// Comment might have been permanently deleted
 			$comment_data = array(
-				'comment_ID'       => (int) $comment->comment_ID,
-				'comment_author'   => $comment->comment_author,
-				'comment_content'  => $comment->comment_content,
-				'comment_date'     => $comment->comment_date,
+				'comment_ID'       => (int) $original->comment_ID,
+				'comment_author'   => $original->comment_author,
+				'comment_content'  => $original->comment_content,
+				'comment_date'     => $original->comment_date,
 				'comment_approved' => $new_status,
-				'comment_post_ID'  => (int) $comment->comment_post_ID,
+				'comment_post_ID'  => (int) $original->comment_post_ID,
 				'comment_url'      => '',
 			);
 		} else {
@@ -189,10 +248,8 @@ final class ApproveComment implements RegistersAbility {
 				'comment_post_ID'  => (int) $updated_comment->comment_post_ID,
 				'comment_url'      => \get_comment_link( $updated_comment ),
 			);
-			$new_status   = $updated_comment->comment_approved;
 		}
 
-		// Generate appropriate message
 		$messages = array(
 			'approved'            => 'Comment approved successfully.',
 			'held_for_moderation' => 'Comment held for moderation.',
@@ -200,6 +257,7 @@ final class ApproveComment implements RegistersAbility {
 			'unmarked_as_spam'    => 'Comment unmarked as spam.',
 			'moved_to_trash'      => 'Comment moved to trash.',
 			'restored_from_trash' => 'Comment restored from trash.',
+			'no_change'           => 'Comment is already in the requested status.',
 		);
 
 		$message = $messages[ $action_taken ] ?? 'Comment status updated successfully.';
