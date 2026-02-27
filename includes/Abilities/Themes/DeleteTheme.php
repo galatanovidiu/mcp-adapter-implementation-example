@@ -70,7 +70,8 @@ final class DeleteTheme implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input = null ): bool {
+		$input = $input ?? array();
 		return \current_user_can( 'delete_themes' );
 	}
 
@@ -80,19 +81,15 @@ final class DeleteTheme implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input = null ) {
+		$input      = $input ?? array();
 		$stylesheet = \sanitize_text_field( (string) $input['stylesheet'] );
 		$force      = (bool) ( $input['force'] ?? false );
 
 		// Check if theme exists
 		$theme = \wp_get_theme( $stylesheet );
 		if ( ! $theme->exists() ) {
-			return array(
-				'error' => array(
-					'code'    => 'theme_not_found',
-					'message' => 'Theme not found.',
-				),
-			);
+			return new \WP_Error( 'theme_not_found', 'Theme not found.' );
 		}
 
 		$theme_name     = $theme->get( 'Name' );
@@ -102,23 +99,13 @@ final class DeleteTheme implements RegistersAbility {
 
 		// Prevent deletion of active theme unless forced
 		if ( $was_active && ! $force ) {
-			return array(
-				'error' => array(
-					'code'    => 'theme_is_active',
-					'message' => 'Cannot delete active theme. Use force parameter or switch to another theme first.',
-				),
-			);
+			return new \WP_Error( 'theme_is_active', 'Cannot delete active theme. Use force parameter or switch to another theme first.' );
 		}
 
 		// Prevent deletion of default themes (unless forced)
 		$default_themes = array( 'twentytwentyfour', 'twentytwentythree', 'twentytwentytwo', 'twentytwentyone', 'twentytwenty' );
 		if ( in_array( $stylesheet, $default_themes, true ) && ! $force ) {
-			return array(
-				'error' => array(
-					'code'    => 'default_theme_protection',
-					'message' => 'Cannot delete default WordPress theme. Use force parameter to override.',
-				),
-			);
+			return new \WP_Error( 'default_theme_protection', 'Cannot delete default WordPress theme. Use force parameter to override.' );
 		}
 
 		// Check if this is a parent theme with active child themes
@@ -133,13 +120,7 @@ final class DeleteTheme implements RegistersAbility {
 		}
 
 		if ( ! empty( $child_themes ) && ! $force ) {
-			return array(
-				'error' => array(
-					'code'         => 'has_child_themes',
-					'message'      => 'Cannot delete theme that has child themes. Child themes: ' . implode( ', ', $child_themes ),
-					'child_themes' => $child_themes,
-				),
-			);
+			return new \WP_Error( 'has_child_themes', 'Cannot delete theme that has child themes. Child themes: ' . implode( ', ', $child_themes ), array( 'child_themes' => $child_themes ) );
 		}
 
 		// If deleting active theme, switch to a fallback theme first
@@ -170,12 +151,7 @@ final class DeleteTheme implements RegistersAbility {
 			}
 
 			if ( ! $fallback_theme ) {
-				return array(
-					'error' => array(
-						'code'    => 'no_fallback_theme',
-						'message' => 'Cannot delete active theme: no other themes available to switch to.',
-					),
-				);
+				return new \WP_Error( 'no_fallback_theme', 'Cannot delete active theme: no other themes available to switch to.' );
 			}
 
 			// Switch to fallback theme
@@ -214,23 +190,13 @@ final class DeleteTheme implements RegistersAbility {
 				\switch_theme( $stylesheet );
 			}
 
-			return array(
-				'error' => array(
-					'code'    => 'deletion_failed',
-					'message' => 'Theme deletion failed: ' . $result->get_error_message(),
-				),
-			);
+			return new \WP_Error( 'deletion_failed', 'Theme deletion failed: ' . $result->get_error_message() );
 		}
 
 		// Verify deletion was successful
 		$theme_check = \wp_get_theme( $stylesheet );
 		if ( $theme_check->exists() ) {
-			return array(
-				'error' => array(
-					'code'    => 'deletion_incomplete',
-					'message' => 'Theme deletion may not have completed successfully.',
-				),
-			);
+			return new \WP_Error( 'deletion_incomplete', 'Theme deletion may not have completed successfully.' );
 		}
 
 		// Clear any cached data

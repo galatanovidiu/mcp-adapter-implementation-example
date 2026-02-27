@@ -89,7 +89,8 @@ final class InstallPlugin implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input = null ): bool {
+		$input = $input ?? array();
 		return \current_user_can( 'install_plugins' );
 	}
 
@@ -99,7 +100,8 @@ final class InstallPlugin implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input = null ) {
+		$input = $input ?? array();
 		$slug             = isset( $input['slug'] ) ? \sanitize_key( (string) $input['slug'] ) : '';
 		$zip_url          = isset( $input['zip_url'] ) ? \esc_url_raw( (string) $input['zip_url'] ) : '';
 		$activate         = ! empty( $input['activate'] );
@@ -108,17 +110,15 @@ final class InstallPlugin implements RegistersAbility {
 
 		// Validate input
 		if ( empty( $slug ) && empty( $zip_url ) ) {
-			return array(
-				'error' => array(
-					'code'    => 'missing_source',
-					'message' => 'Either slug or zip_url must be provided.',
-				),
-			);
+			return new \WP_Error( 'missing_source', 'Either slug or zip_url must be provided.' );
 		}
 
 		// Ensure required WordPress functions are available
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		if ( ! function_exists( 'plugins_api' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
 		}
 		if ( ! class_exists( 'Plugin_Upgrader' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
@@ -130,12 +130,7 @@ final class InstallPlugin implements RegistersAbility {
 			// WordPress.org repository
 			$api = \plugins_api( 'plugin_information', array( 'slug' => $slug ) );
 			if ( \is_wp_error( $api ) ) {
-				return array(
-					'error' => array(
-						'code'    => 'plugin_not_found',
-						'message' => 'Plugin not found in WordPress.org repository: ' . $api->get_error_message(),
-					),
-				);
+				return new \WP_Error( 'plugin_not_found', 'Plugin not found in WordPress.org repository: ' . $api->get_error_message() );
 			}
 			$source = isset( $api->download_link ) ? $api->download_link : '';
 		} else {
@@ -160,12 +155,7 @@ final class InstallPlugin implements RegistersAbility {
 		}
 
 		if ( $plugin_exists && ! $overwrite ) {
-			return array(
-				'error' => array(
-					'code'    => 'plugin_exists',
-					'message' => 'Plugin already exists. Use overwrite=true to replace it.',
-				),
-			);
+			return new \WP_Error( 'plugin_exists', 'Plugin already exists. Use overwrite=true to replace it.' );
 		}
 
 		// Set up upgrader
@@ -175,21 +165,11 @@ final class InstallPlugin implements RegistersAbility {
 		$result = $upgrader->install( $source );
 
 		if ( \is_wp_error( $result ) ) {
-			return array(
-				'error' => array(
-					'code'    => $result->get_error_code(),
-					'message' => $result->get_error_message(),
-				),
-			);
+			return new \WP_Error( $result->get_error_code(), $result->get_error_message() );
 		}
 
 		if ( ! $result ) {
-			return array(
-				'error' => array(
-					'code'    => 'installation_failed',
-					'message' => 'Plugin installation failed for unknown reason.',
-				),
-			);
+			return new \WP_Error( 'installation_failed', 'Plugin installation failed for unknown reason.' );
 		}
 
 		// Get the installed plugin file
@@ -206,12 +186,7 @@ final class InstallPlugin implements RegistersAbility {
 		}
 
 		if ( ! $plugin_file ) {
-			return array(
-				'error' => array(
-					'code'    => 'plugin_file_not_found',
-					'message' => 'Plugin installed but plugin file could not be determined.',
-				),
-			);
+			return new \WP_Error( 'plugin_file_not_found', 'Plugin installed but plugin file could not be determined.' );
 		}
 
 		// Get plugin information

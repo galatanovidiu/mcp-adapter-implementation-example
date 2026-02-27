@@ -83,7 +83,8 @@ final class InstallTheme implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input = null ): bool {
+		$input = $input ?? array();
 		return \current_user_can( 'install_themes' );
 	}
 
@@ -93,7 +94,8 @@ final class InstallTheme implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input = null ) {
+		$input = $input ?? array();
 		$theme_identifier = \sanitize_text_field( (string) $input['theme'] );
 		$activate         = (bool) ( $input['activate'] ?? false );
 		$overwrite        = (bool) ( $input['overwrite'] ?? false );
@@ -126,12 +128,7 @@ final class InstallTheme implements RegistersAbility {
 			$api = \themes_api( 'theme_information', array( 'slug' => $theme_slug ) );
 
 			if ( is_wp_error( $api ) ) {
-				return array(
-					'error' => array(
-						'code'    => 'theme_api_error',
-						'message' => 'Could not retrieve theme information: ' . $api->get_error_message(),
-					),
-				);
+				return new \WP_Error( 'theme_api_error', 'Could not retrieve theme information: ' . $api->get_error_message() );
 			}
 
 			$download_url  = $api->download_link ?? '';
@@ -141,26 +138,14 @@ final class InstallTheme implements RegistersAbility {
 
 			if ( '' === $download_url ) {
 				$install_log[] = 'Theme API response missing download link.';
-				return array(
-					'error' => array(
-						'code'        => 'theme_download_missing',
-						'message'     => 'Theme download URL is missing from WordPress.org. Try another theme slug or provide a direct download URL.',
-						'install_log' => $install_log,
-					),
-				);
+				return new \WP_Error( 'theme_download_missing', 'Theme download URL is missing from WordPress.org. Try another theme slug or provide a direct download URL.' );
 			}
 		}
 
 		// Check if theme already exists
 		$existing_theme = \wp_get_theme( $theme_slug );
 		if ( $existing_theme->exists() && ! $overwrite ) {
-			return array(
-				'error' => array(
-					'code'    => 'theme_already_exists',
-					'message' => 'Theme already exists. Use overwrite parameter to replace it.',
-					'theme'   => $theme_slug,
-				),
-			);
+			return new \WP_Error( 'theme_already_exists', 'Theme already exists. Use overwrite parameter to replace it.' );
 		}
 
 		// Create a custom skin to capture installation messages
@@ -200,23 +185,11 @@ final class InstallTheme implements RegistersAbility {
 		$install_log = array_merge( $install_log, $skin->messages );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'error' => array(
-					'code'        => 'installation_failed',
-					'message'     => 'Theme installation failed: ' . $result->get_error_message(),
-					'install_log' => $install_log,
-				),
-			);
+			return new \WP_Error( 'installation_failed', 'Theme installation failed: ' . $result->get_error_message() );
 		}
 
 		if ( ! $result ) {
-			return array(
-				'error' => array(
-					'code'        => 'installation_failed',
-					'message'     => 'Theme installation failed for unknown reason.',
-					'install_log' => $install_log,
-				),
-			);
+			return new \WP_Error( 'installation_failed', 'Theme installation failed for unknown reason.' );
 		}
 
 		// Get the installed theme information
@@ -236,13 +209,7 @@ final class InstallTheme implements RegistersAbility {
 		}
 
 		if ( ! $installed_theme || ! $installed_theme->exists() ) {
-			return array(
-				'error' => array(
-					'code'        => 'theme_not_found_after_install',
-					'message'     => 'Theme was installed but could not be found.',
-					'install_log' => $install_log,
-				),
-			);
+			return new \WP_Error( 'theme_not_found_after_install', 'Theme was installed but could not be found.' );
 		}
 
 		$install_log[] = "Theme installed successfully: {$installed_theme->get('Name')}";
