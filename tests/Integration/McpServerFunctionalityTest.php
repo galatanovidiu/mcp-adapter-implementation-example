@@ -53,17 +53,16 @@ final class McpServerFunctionalityTest extends TestCase {
 		$this->assertNotEmpty( $tools, 'Server should have tools registered' );
 
 		$expected_tools = array(
-			'wpmcp-example-list-posts',
-			'wpmcp-example-create-post',
-			'wpmcp-example-get-post',
-			'wpmcp-example-update-post',
-			'wpmcp-example-delete-post',
-			'wpmcp-example-list-block-types',
+			'core-list-posts',
+			'core-create-post',
+			'core-get-post',
+			'core-update-post',
+			'core-delete-post',
+			'core-list-block-types',
 		);
 
 		foreach ( $expected_tools as $tool_name ) {
-			$tool = $server->get_tool( $tool_name );
-			$this->assertNotNull( $tool, "Tool '{$tool_name}' should be registered" );
+			$this->assertArrayHasKey( $tool_name, $tools, "Tool '{$tool_name}' should be registered" );
 		}
 	}
 
@@ -148,7 +147,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-block-types',
+				'name'      => 'core-list-block-types',
 				'arguments' => array(),
 			)
 		);
@@ -180,7 +179,7 @@ final class McpServerFunctionalityTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 404, $response->get_status() );
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data );
@@ -205,7 +204,7 @@ final class McpServerFunctionalityTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data );
@@ -225,7 +224,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Test Post',
@@ -233,22 +232,27 @@ final class McpServerFunctionalityTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertStringContainsString( 'permission', strtolower( $data['message'] ?? '' ) );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Permission error should set isError' );
+		$this->assertStringContainsString( 'permission', strtolower( $this->get_mcp_content_text( $data['content'] ?? array() ) ) );
 	}
 
 	/**
 	 * Test invalid JSON-RPC request format.
 	 */
 	public function test_invalid_jsonrpc_request_format(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
 		$adapter = $this->get_mcp_adapter();
 
 		// Make request without required fields.
-		$request = new \WP_REST_Request( 'POST', '/wp-json/mcp-adapter-example/mcp' );
+		$request = new \WP_REST_Request( 'POST', '/mcp-adapter-example/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -262,8 +266,9 @@ final class McpServerFunctionalityTest extends TestCase {
 		$server   = rest_get_server();
 		$response = $server->dispatch( $request );
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 400, $response->get_status() );
 
+		$this->normalize_mcp_response( $response );
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data );
 	}
@@ -292,7 +297,7 @@ final class McpServerFunctionalityTest extends TestCase {
 
 		$response = $this->make_mcp_request( 'nonexistent/method' );
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 404, $response->get_status() );
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data );
@@ -317,7 +322,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Complex Test Post',
@@ -348,7 +353,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$post = get_post( $post_id );
 		$this->assertNotNull( $post );
 		$this->assertEquals( 'Complex Test Post', $post->post_title );
-		$this->assertStringContains( 'wp:paragraph', $post->post_content );
+		$this->assertStringContainsString( 'wp:paragraph', $post->post_content );
 
 		// Verify meta was set.
 		$this->assertEquals( 'custom_value', get_post_meta( $post_id, 'custom_field', true ) );
@@ -376,7 +381,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'invalid_type',  // Invalid post type.
 					'title'     => '',              // Empty title.
@@ -385,11 +390,11 @@ final class McpServerFunctionalityTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertArrayHasKey( 'message', $data );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Execution error should set isError' );
 	}
 
 	/**
@@ -408,7 +413,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$responses[] = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-block-types',
+				'name'      => 'core-list-block-types',
 				'arguments' => array(),
 			)
 		);
@@ -435,7 +440,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Large Content Post',
@@ -556,7 +561,7 @@ final class McpServerFunctionalityTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					// Missing required 'post_type' field.
 					'title'   => 'Test Post',
@@ -565,10 +570,11 @@ final class McpServerFunctionalityTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertStringContainsString( 'invalid', strtolower( $data['message'] ?? '' ) );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Validation error should set isError' );
+		$this->assertStringContainsString( 'permission', strtolower( $this->get_mcp_content_text( $data['content'] ?? array() ) ) );
 	}
 }

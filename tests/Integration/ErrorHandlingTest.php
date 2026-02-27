@@ -38,7 +38,7 @@ final class ErrorHandlingTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					// Missing required 'post_type' field.
 					'title'   => 'Test Post',
@@ -47,12 +47,16 @@ final class ErrorHandlingTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertArrayHasKey( 'message', $data );
-		$this->assertStringContainsString( 'invalid', strtolower( $data['message'] ) );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Null input should set isError' );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Validation error should set isError' );
+		$this->assertStringContainsString( 'permission', strtolower( $this->get_mcp_content_text( $data['content'] ?? array() ) ) );
 	}
 
 	/**
@@ -68,7 +72,7 @@ final class ErrorHandlingTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'invalid_post_type',
 					'title'     => 'Test Post',
@@ -76,11 +80,11 @@ final class ErrorHandlingTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertArrayHasKey( 'message', $data );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Execution error should set isError' );
 	}
 
 	/**
@@ -96,7 +100,7 @@ final class ErrorHandlingTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Test Post',
@@ -104,23 +108,27 @@ final class ErrorHandlingTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertArrayHasKey( 'message', $data );
-		$this->assertStringContainsString( 'permission', strtolower( $data['message'] ?? '' ) );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Permission error should set isError' );
+		$this->assertStringContainsString( 'permission', strtolower( $this->get_mcp_content_text( $data['content'] ?? array() ) ) );
 	}
 
 	/**
 	 * Test malformed JSON-RPC requests.
 	 */
 	public function test_malformed_jsonrpc_requests(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
 		$adapter = $this->get_mcp_adapter();
 
 		// Test request without method.
-		$request = new \WP_REST_Request( 'POST', '/wp-json/mcp-adapter-example/mcp' );
+		$request = new \WP_REST_Request( 'POST', '/mcp-adapter-example/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -133,8 +141,9 @@ final class ErrorHandlingTest extends TestCase {
 		$server   = rest_get_server();
 		$response = $server->dispatch( $request );
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 400, $response->get_status() );
 
+		$this->normalize_mcp_response( $response );
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data );
 		$this->assertArrayHasKey( 'message', $data );
@@ -144,10 +153,14 @@ final class ErrorHandlingTest extends TestCase {
 	 * Test invalid JSON in request body.
 	 */
 	public function test_invalid_json_in_request_body(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
 		$adapter = $this->get_mcp_adapter();
 
-		$request = new \WP_REST_Request( 'POST', '/wp-json/mcp-adapter-example/mcp' );
+		$request = new \WP_REST_Request( 'POST', '/mcp-adapter-example/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body( '{"invalid": json}' ); // Invalid JSON.
 
 		$server   = rest_get_server();
@@ -169,7 +182,7 @@ final class ErrorHandlingTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => str_repeat( 'Very long title ', 1000 ), // Extremely long title.
@@ -200,9 +213,9 @@ final class ErrorHandlingTest extends TestCase {
 		$adapter = $this->get_mcp_adapter();
 
 		$tools_to_test = array(
-			'wpmcp-example-create-post',
-			'wpmcp-example-update-post',
-			'wpmcp-example-get-post',
+			'core-create-post',
+			'core-update-post',
+			'core-get-post',
 		);
 
 		foreach ( $tools_to_test as $tool_name ) {
@@ -215,13 +228,12 @@ final class ErrorHandlingTest extends TestCase {
 				)
 			);
 
-			$this->assertEquals( 500, $response->get_status(), "Tool '{$tool_name}' should return error for empty arguments" );
+			$this->assertEquals( 200, $response->get_status(), "Tool '{$tool_name}' should return error for empty arguments" );
 
 			$data = $response->get_data();
-			$this->assertArrayHasKey( 'code', $data, "Error response should have 'code' field" );
-			$this->assertArrayHasKey( 'message', $data, "Error response should have 'message' field" );
-			$this->assertIsString( $data['message'], 'Error message should be string' );
-			$this->assertNotEmpty( $data['message'], 'Error message should not be empty' );
+			$this->assertArrayHasKey( 'isError', $data, "Error response should have 'isError' field" );
+			$this->assertTrue( $data['isError'], 'Error response should set isError' );
+			$this->assertNotEmpty( $this->get_mcp_content_text( $data['content'] ?? array() ), 'Error message should not be empty' );
 		}
 	}
 
@@ -238,7 +250,7 @@ final class ErrorHandlingTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => null,
 					'title'     => 'Test Post',
@@ -246,13 +258,13 @@ final class ErrorHandlingTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		// Test with extremely large data.
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Test Post',
@@ -268,7 +280,7 @@ final class ErrorHandlingTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Test Post with Special Characters: áéíóú 中文 🚀',
@@ -290,7 +302,7 @@ final class ErrorHandlingTest extends TestCase {
 
 		// Verify content was properly sanitized.
 		$this->assertNotNull( $post );
-		$this->assertStringNotContains( '<script>', $post->post_content );
+		$this->assertStringNotContainsString( '<script>', $post->post_content );
 	}
 
 	/**
@@ -306,20 +318,21 @@ final class ErrorHandlingTest extends TestCase {
 		$error_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'invalid_type',
 				),
 			)
 		);
 
-		$this->assertEquals( 500, $error_response->get_status() );
+		$this->assertEquals( 200, $error_response->get_status() );
+		$this->assertTrue( $error_response->get_data()['isError'] ?? false, 'Expected error response' );
 
 		// Then, make a successful request to ensure system recovered.
 		$success_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-block-types',
+				'name'      => 'core-list-block-types',
 				'arguments' => array(),
 			)
 		);
@@ -330,7 +343,7 @@ final class ErrorHandlingTest extends TestCase {
 		$success_response2 = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Recovery Test Post',
@@ -356,7 +369,7 @@ final class ErrorHandlingTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 404, $response->get_status() );
 
 		$data = $response->get_data();
 

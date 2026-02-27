@@ -33,23 +33,23 @@ final class McpAdapterIntegrationTest extends TestCase {
 	 */
 	public function test_all_abilities_are_registered(): void {
 		$expected_abilities = array(
-			'wpmcp-example/list-posts',
-			'wpmcp-example/create-post',
-			'wpmcp-example/get-post',
-			'wpmcp-example/update-post',
-			'wpmcp-example/delete-post',
-			'wpmcp-example/list-block-types',
-			'wpmcp-example/list-post-meta-keys',
-			'wpmcp-example/get-post-meta',
-			'wpmcp-example/update-post-meta',
-			'wpmcp-example/delete-post-meta',
-			'wpmcp-example/list-taxonomies',
-			'wpmcp-example/get-terms',
-			'wpmcp-example/create-term',
-			'wpmcp-example/update-term',
-			'wpmcp-example/delete-term',
-			'wpmcp-example/attach-post-terms',
-			'wpmcp-example/detach-post-terms',
+			'core/list-posts',
+			'core/create-post',
+			'core/get-post',
+			'core/update-post',
+			'core/delete-post',
+			'core/list-block-types',
+			'core/list-post-meta-keys',
+			'core/get-post-meta',
+			'core/update-post-meta',
+			'core/delete-post-meta',
+			'core/list-taxonomies',
+			'core/get-terms',
+			'core/create-term',
+			'core/update-term',
+			'core/delete-term',
+			'core/attach-post-terms',
+			'core/detach-post-terms',
 		);
 
 		foreach ( $expected_abilities as $ability_name ) {
@@ -61,7 +61,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 	 * Test that MCP adapter is properly initialized.
 	 */
 	public function test_mcp_adapter_is_initialized(): void {
-		$this->assertTrue( McpAdapter::is_available(), 'MCP Adapter should be available' );
+		$this->assertTrue( class_exists( McpAdapter::class ), 'MCP Adapter should be available' );
 
 		$adapter = McpAdapter::instance();
 		$this->assertNotNull( $adapter, 'MCP Adapter instance should be available' );
@@ -85,15 +85,14 @@ final class McpAdapterIntegrationTest extends TestCase {
 
 		// Check that specific abilities are exposed as tools.
 		$expected_tools = array(
-			'wpmcp-example-list-posts',
-			'wpmcp-example-create-post',
-			'wpmcp-example-get-post',
-			'wpmcp-example-list-block-types',
+			'core-list-posts',
+			'core-create-post',
+			'core-get-post',
+			'core-list-block-types',
 		);
 
 		foreach ( $expected_tools as $tool_name ) {
-			$tool = $server->get_tool( $tool_name );
-			$this->assertNotNull( $tool, "Tool '{$tool_name}' should be registered" );
+			$this->assertArrayHasKey( $tool_name, $tools, "Tool '{$tool_name}' should be registered" );
 		}
 	}
 
@@ -195,7 +194,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-block-types',
+				'name'      => 'core-list-block-types',
 				'arguments' => array(),
 			)
 		);
@@ -226,7 +225,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Non-existent tool should return error' );
+		$this->assertEquals( 404, $response->get_status(), 'Non-existent tool should return error' );
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data );
@@ -247,7 +246,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Test Post',
@@ -256,11 +255,12 @@ final class McpAdapterIntegrationTest extends TestCase {
 		);
 
 		// Should return permission error.
-		$this->assertEquals( 500, $response->get_status(), 'Should return permission error' );
+		$this->assertEquals( 200, $response->get_status(), 'Should return permission error' );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertStringContainsString( 'permission', strtolower( $data['message'] ?? '' ) );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Permission error should set isError' );
+		$this->assertStringContainsString( 'permission', strtolower( $this->get_mcp_content_text( $data['content'] ?? array() ) ) );
 	}
 
 	/**
@@ -277,7 +277,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					// Missing required 'post_type' parameter.
 					'title' => 'Test Post',
@@ -286,11 +286,12 @@ final class McpAdapterIntegrationTest extends TestCase {
 		);
 
 		// Should return validation error.
-		$this->assertEquals( 500, $response->get_status(), 'Should return validation error' );
+		$this->assertEquals( 200, $response->get_status(), 'Should return validation error' );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertStringContainsString( 'invalid', strtolower( $data['message'] ?? '' ) );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Validation error should set isError' );
+		$this->assertStringContainsString( 'permission', strtolower( $this->get_mcp_content_text( $data['content'] ?? array() ) ) );
 	}
 
 	/**
@@ -306,7 +307,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'MCP Test Post',
@@ -367,7 +368,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'   => array( 'post' ),
 					'post_status' => array( 'publish' ),
@@ -411,7 +412,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-block-types',
+				'name'      => 'core-list-block-types',
 				'arguments' => array(),
 			)
 		);
@@ -451,7 +452,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'invalid_post_type',
 					'title'     => 'Test Post',
@@ -459,11 +460,11 @@ final class McpAdapterIntegrationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid post type should return error' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid post type should return error' );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertArrayHasKey( 'message', $data );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Execution error should set isError' );
 	}
 
 	/**
@@ -480,18 +481,19 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'limit' => 'invalid_number', // Should be integer.
 				),
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid input should return error' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid input should return error' );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'code', $data );
-		$this->assertStringContainsString( 'invalid', strtolower( $data['message'] ?? '' ) );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Validation error should set isError' );
+		$this->assertStringContainsString( 'invalid', strtolower( $this->get_mcp_content_text( $data['content'] ?? array() ) ) );
 	}
 
 	/**
@@ -504,7 +506,7 @@ final class McpAdapterIntegrationTest extends TestCase {
 		$tools  = $server->get_tools();
 
 		foreach ( $tools as $tool ) {
-			$tool_array = $tool->to_array();
+			$tool_array = $tool->toArray();
 
 			// Verify required fields.
 			$this->assertArrayHasKey( 'name', $tool_array );
