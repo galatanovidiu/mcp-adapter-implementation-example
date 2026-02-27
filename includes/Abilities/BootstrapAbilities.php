@@ -59,13 +59,13 @@ use OvidiuGalatan\McpAdapterExample\Abilities\Settings\GetSiteSettings;
 use OvidiuGalatan\McpAdapterExample\Abilities\Settings\ListSiteOptions;
 use OvidiuGalatan\McpAdapterExample\Abilities\Settings\UpdateSiteSettings;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\CheckUpdates;
-use OvidiuGalatan\McpAdapterExample\Abilities\System\ExecuteWorkflow;
-use OvidiuGalatan\McpAdapterExample\Abilities\System\GetWorkflowAbilityInfo;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\ExecuteWorkflow;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\GetWorkflowAbilityInfo;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\GetConstants;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\GetDebugInfo;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\GetSystemInfo;
-use OvidiuGalatan\McpAdapterExample\Abilities\System\GetWorkflowPolicy;
-use OvidiuGalatan\McpAdapterExample\Abilities\System\ListWorkflowAbilities;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\GetWorkflowPolicy;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\ListWorkflowAbilities;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\ManageTransients;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\OptimizeDatabase;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\RunUpdates;
@@ -261,10 +261,10 @@ final class BootstrapAbilities {
 				GetDebugInfo::register();
 				ManageTransients::register();
 				GetConstants::register();
-				ExecuteWorkflow::register();
-				ListWorkflowAbilities::register();
-				GetWorkflowAbilityInfo::register();
-				GetWorkflowPolicy::register();
+				// ExecuteWorkflow::register();
+				// ListWorkflowAbilities::register();
+				// GetWorkflowAbilityInfo::register();
+				// GetWorkflowPolicy::register();
 
 				// Security/Maintenance abilities
 				CheckFilePermissions::register();
