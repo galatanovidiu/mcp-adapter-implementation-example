@@ -41,7 +41,9 @@ function test_ability_registration(): void {
 	BootstrapAbilities::init();
 
 	// Trigger the registration.
-	do_action( 'abilities_api_init' );
+	if ( class_exists( 'WP_Abilities_Registry' ) ) {
+		\WP_Abilities_Registry::get_instance();
+	}
 
 	// Check that abilities were registered.
 	$all_abilities = wp_get_abilities();
@@ -53,9 +55,9 @@ function test_ability_registration(): void {
 
 	// Check specific abilities.
 	$expected_abilities = array(
-		'wpmcp-example/create-post',
-		'wpmcp-example/list-posts',
-		'wpmcp-example/list-block-types',
+		'core/create-post',
+		'core/list-posts',
+		'core/list-block-types',
 	);
 
 	foreach ( $expected_abilities as $ability_name ) {

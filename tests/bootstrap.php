@@ -28,6 +28,17 @@ require_once $_test_root . '/includes/functions.php';
 function _manually_load_plugin() {
 	// Load the main plugin (which includes its own dependency loading).
 	require_once TESTS_REPO_ROOT_DIR . '/mcp-adapter-implementation-example.php';
+
+	$mcp_adapter_path = '';
+	if ( defined( 'WP_PLUGIN_DIR' ) ) {
+		$mcp_adapter_path = WP_PLUGIN_DIR . '/mcp-adapter/mcp-adapter.php';
+	}
+	if ( '' === $mcp_adapter_path ) {
+		$mcp_adapter_path = dirname( TESTS_REPO_ROOT_DIR ) . '/mcp-adapter/mcp-adapter.php';
+	}
+	if ( file_exists( $mcp_adapter_path ) ) {
+		require_once $mcp_adapter_path;
+	}
 }
 
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
