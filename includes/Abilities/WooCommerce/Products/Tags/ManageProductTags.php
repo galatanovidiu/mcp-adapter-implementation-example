@@ -28,6 +28,12 @@ class ManageProductTags implements RegistersAbility {
 								'name'        => array( 'type' => 'string' ),
 								'slug'        => array( 'type' => 'string' ),
 								'description' => array( 'type' => 'string' ),
+								'if_exists'   => array(
+									'type'        => 'string',
+									'description' => 'How to handle an existing tag (error, use_existing, create_duplicate).',
+									'enum'        => array( 'error', 'use_existing', 'create_duplicate' ),
+									'default'     => 'error',
+								),
 							),
 						),
 						'tag_id'           => array(
@@ -64,6 +70,8 @@ class ManageProductTags implements RegistersAbility {
 					'properties' => array(
 						'success'       => array( 'type' => 'boolean' ),
 						'operation'     => array( 'type' => 'string' ),
+						'exists'        => array( 'type' => 'boolean' ),
+						'action'        => array( 'type' => 'string' ),
 						'tag'           => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -75,18 +83,31 @@ class ManageProductTags implements RegistersAbility {
 								'link'        => array( 'type' => 'string' ),
 							),
 						),
-						'batch_results' => array(
-							'type'  => 'array',
-							'items' => array(
+				'batch_results' => array(
+					'type'  => 'array',
+					'items' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'operation' => array( 'type' => 'string' ),
+							'success'   => array( 'type' => 'boolean' ),
+							'exists'    => array( 'type' => 'boolean' ),
+							'action'    => array( 'type' => 'string' ),
+							'tag_id'    => array( 'type' => 'integer' ),
+							'tag'       => array(
 								'type'       => 'object',
 								'properties' => array(
-									'operation' => array( 'type' => 'string' ),
-									'success'   => array( 'type' => 'boolean' ),
-									'tag_id'    => array( 'type' => 'integer' ),
-									'message'   => array( 'type' => 'string' ),
+									'id'          => array( 'type' => 'integer' ),
+									'name'        => array( 'type' => 'string' ),
+									'slug'        => array( 'type' => 'string' ),
+									'description' => array( 'type' => 'string' ),
+									'count'       => array( 'type' => 'integer' ),
+									'link'        => array( 'type' => 'string' ),
 								),
 							),
+							'message'   => array( 'type' => 'string' ),
 						),
+					),
+				),
 						'changes_made'  => array( 'type' => 'array' ),
 						'message'       => array( 'type' => 'string' ),
 					),
@@ -121,7 +142,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => $input['operation'],
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'WooCommerce is not active.',
@@ -147,7 +170,9 @@ class ManageProductTags implements RegistersAbility {
 				return array(
 					'success'       => false,
 					'operation'     => $operation,
-					'tag'           => null,
+					'exists'        => false,
+					'action'        => 'error',
+					'tag'           => self::empty_tag_payload(),
 					'batch_results' => array(),
 					'changes_made'  => array(),
 					'message'       => 'Invalid operation specified.',
@@ -158,13 +183,16 @@ class ManageProductTags implements RegistersAbility {
 	private static function create_tag( array $input ): array {
 		$tag_data = $input['tag_data'] ?? array();
 
-		$name = isset( $tag_data['name'] ) ? sanitize_text_field( (string) $tag_data['name'] ) : '';
+		$name      = isset( $tag_data['name'] ) ? sanitize_text_field( (string) $tag_data['name'] ) : '';
+		$if_exists = self::normalize_if_exists( $tag_data['if_exists'] ?? 'error' );
 
 		if ( '' === $name ) {
 			return array(
 				'success'       => false,
 				'operation'     => 'create',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Tag name is required.',
@@ -176,6 +204,37 @@ class ManageProductTags implements RegistersAbility {
 			$slug = sanitize_title( $name );
 		}
 		$description = isset( $tag_data['description'] ) ? sanitize_textarea_field( (string) $tag_data['description'] ) : '';
+
+		$existing_tag = self::find_existing_tag( $slug, $name );
+		if ( $existing_tag ) {
+			$existing_payload = self::build_tag_payload( $existing_tag );
+			if ( 'use_existing' === $if_exists ) {
+				return array(
+					'success'       => true,
+					'operation'     => 'create',
+					'exists'        => true,
+					'action'        => 'existing',
+					'tag'           => $existing_payload,
+					'batch_results' => array(),
+					'changes_made'  => array(),
+					'message'       => 'Tag already exists. Using existing tag.',
+				);
+			}
+			if ( 'create_duplicate' !== $if_exists ) {
+				return array(
+					'success'       => false,
+					'operation'     => 'create',
+					'exists'        => true,
+					'action'        => 'exists',
+					'tag'           => $existing_payload,
+					'batch_results' => array(),
+					'changes_made'  => array(),
+					'message'       => 'Tag already exists. Set if_exists to use_existing or create_duplicate.',
+				);
+			}
+
+			$slug = self::unique_term_slug( $slug !== '' ? $slug : $name, 'product_tag' );
+		}
 
 		try {
 			$result = wp_insert_term(
@@ -191,7 +250,9 @@ class ManageProductTags implements RegistersAbility {
 				return array(
 					'success'       => false,
 					'operation'     => 'create',
-					'tag'           => null,
+					'exists'        => false,
+					'action'        => 'error',
+					'tag'           => self::empty_tag_payload(),
 					'batch_results' => array(),
 					'changes_made'  => array(),
 					'message'       => 'Error creating tag: ' . $result->get_error_message(),
@@ -199,27 +260,37 @@ class ManageProductTags implements RegistersAbility {
 			}
 
 			$created_tag = get_term( $result['term_id'], 'product_tag' );
+			if ( ! $created_tag || is_wp_error( $created_tag ) ) {
+				return array(
+					'success'       => false,
+					'operation'     => 'create',
+					'exists'        => false,
+					'action'        => 'error',
+					'tag'           => self::empty_tag_payload(),
+					'batch_results' => array(),
+					'changes_made'  => array(),
+					'message'       => 'Error retrieving created tag.',
+				);
+			}
 
+			$action = $existing_tag ? 'duplicate' : 'created';
 			return array(
 				'success'       => true,
 				'operation'     => 'create',
-				'tag'           => array(
-					'id'          => $created_tag->term_id,
-					'name'        => $created_tag->name,
-					'slug'        => $created_tag->slug,
-					'description' => $created_tag->description,
-					'count'       => $created_tag->count,
-					'link'        => get_term_link( $created_tag ),
-				),
+				'exists'        => (bool) $existing_tag,
+				'action'        => $action,
+				'tag'           => self::build_tag_payload( $created_tag ),
 				'batch_results' => array(),
 				'changes_made'  => array( 'created' ),
-				'message'       => sprintf( 'Successfully created tag "%s".', $name ),
+				'message'       => sprintf( 'Successfully %s tag "%s".', $action === 'duplicate' ? 'duplicated' : 'created', $name ),
 			);
 		} catch ( \Throwable $e ) {
 			return array(
 				'success'       => false,
 				'operation'     => 'create',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Error creating tag: ' . $e->getMessage(),
@@ -235,7 +306,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'update',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Tag ID is required for update operation.',
@@ -247,7 +320,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'update',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Tag not found.',
@@ -276,7 +351,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'update',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'No update data provided.',
@@ -290,7 +367,9 @@ class ManageProductTags implements RegistersAbility {
 				return array(
 					'success'       => false,
 					'operation'     => 'update',
-					'tag'           => null,
+					'exists'        => false,
+					'action'        => 'error',
+					'tag'           => self::empty_tag_payload(),
 					'batch_results' => array(),
 					'changes_made'  => array(),
 					'message'       => 'Error updating tag: ' . $result->get_error_message(),
@@ -302,14 +381,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => true,
 				'operation'     => 'update',
-				'tag'           => array(
-					'id'          => $updated_tag->term_id,
-					'name'        => $updated_tag->name,
-					'slug'        => $updated_tag->slug,
-					'description' => $updated_tag->description,
-					'count'       => $updated_tag->count,
-					'link'        => get_term_link( $updated_tag ),
-				),
+				'exists'        => false,
+				'action'        => 'updated',
+				'tag'           => self::build_tag_payload( $updated_tag ),
 				'batch_results' => array(),
 				'changes_made'  => $changes_made,
 				'message'       => sprintf( 'Successfully updated tag "%s". Changes: %s', $updated_tag->name, implode( ', ', $changes_made ) ),
@@ -318,7 +392,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'update',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Error updating tag: ' . $e->getMessage(),
@@ -334,7 +410,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'delete',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Tag ID is required for delete operation.',
@@ -346,7 +424,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'delete',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Tag not found.',
@@ -358,25 +438,16 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'delete',
-				'tag'           => array(
-					'id'    => $tag->term_id,
-					'name'  => $tag->name,
-					'count' => $tag->count,
-				),
+				'exists'        => true,
+				'action'        => 'blocked',
+				'tag'           => self::build_tag_payload( $tag ),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => sprintf( 'Tag "%s" has %d products. Use force_delete to delete anyway.', $tag->name, $tag->count ),
 			);
 		}
 
-		$tag_info = array(
-			'id'          => $tag->term_id,
-			'name'        => $tag->name,
-			'slug'        => $tag->slug,
-			'description' => $tag->description,
-			'count'       => $tag->count,
-			'link'        => get_term_link( $tag ),
-		);
+		$tag_info = self::build_tag_payload( $tag );
 
 		try {
 			$result = wp_delete_term( $tag_id, 'product_tag' );
@@ -385,6 +456,8 @@ class ManageProductTags implements RegistersAbility {
 				return array(
 					'success'       => false,
 					'operation'     => 'delete',
+					'exists'        => false,
+					'action'        => 'error',
 					'tag'           => $tag_info,
 					'batch_results' => array(),
 					'changes_made'  => array(),
@@ -395,6 +468,8 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => true,
 				'operation'     => 'delete',
+				'exists'        => true,
+				'action'        => 'deleted',
 				'tag'           => $tag_info,
 				'batch_results' => array(),
 				'changes_made'  => array( 'deleted' ),
@@ -404,12 +479,71 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'delete',
+				'exists'        => false,
+				'action'        => 'error',
 				'tag'           => $tag_info,
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'Error deleting tag: ' . $e->getMessage(),
 			);
 		}
+	}
+
+	private static function normalize_if_exists( $value ): string {
+		$value = sanitize_key( (string) $value );
+		$allowed = array( 'error', 'use_existing', 'create_duplicate' );
+		return in_array( $value, $allowed, true ) ? $value : 'error';
+	}
+
+	private static function find_existing_tag( string $slug, string $name ): ?\WP_Term {
+		$term_id = 0;
+		if ( $slug !== '' ) {
+			$term_exists = term_exists( $slug, 'product_tag' );
+			$term_id     = is_array( $term_exists ) ? (int) $term_exists['term_id'] : (int) $term_exists;
+		}
+		if ( ! $term_id && $name !== '' ) {
+			$term_exists = term_exists( $name, 'product_tag' );
+			$term_id     = is_array( $term_exists ) ? (int) $term_exists['term_id'] : (int) $term_exists;
+		}
+		if ( ! $term_id ) {
+			return null;
+		}
+		$term = get_term( $term_id, 'product_tag' );
+		return $term instanceof \WP_Term ? $term : null;
+	}
+
+	private static function build_tag_payload( \WP_Term $tag ): array {
+		$link = get_term_link( $tag );
+		if ( is_wp_error( $link ) ) {
+			$link = '';
+		}
+		return array(
+			'id'          => $tag->term_id,
+			'name'        => $tag->name,
+			'slug'        => $tag->slug,
+			'description' => $tag->description,
+			'count'       => $tag->count,
+			'link'        => $link,
+		);
+	}
+
+	private static function empty_tag_payload(): array {
+		return array(
+			'id'          => 0,
+			'name'        => '',
+			'slug'        => '',
+			'description' => '',
+			'count'       => 0,
+			'link'        => '',
+		);
+	}
+
+	private static function unique_term_slug( string $slug, string $taxonomy ): string {
+		$slug = sanitize_title( $slug );
+		if ( $slug === '' ) {
+			return $slug;
+		}
+		return wp_unique_term_slug( $slug, (object) array( 'taxonomy' => $taxonomy ) );
 	}
 
 	private static function batch_operations( array $input ): array {
@@ -419,7 +553,9 @@ class ManageProductTags implements RegistersAbility {
 			return array(
 				'success'       => false,
 				'operation'     => 'batch',
-				'tag'           => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'tag'           => self::empty_tag_payload(),
 				'batch_results' => array(),
 				'changes_made'  => array(),
 				'message'       => 'No batch operations provided.',
@@ -435,7 +571,10 @@ class ManageProductTags implements RegistersAbility {
 				$batch_results[] = array(
 					'operation' => 'invalid',
 					'success'   => false,
+					'exists'    => false,
+					'action'    => 'error',
 					'tag_id'    => 0,
+					'tag'       => self::empty_tag_payload(),
 					'message'   => sprintf( 'Batch operation at index %d must be an object.', $index ),
 				);
 				++$total_errors;
@@ -447,7 +586,10 @@ class ManageProductTags implements RegistersAbility {
 				$batch_results[] = array(
 					'operation' => $operation ?: 'invalid',
 					'success'   => false,
+					'exists'    => false,
+					'action'    => 'error',
 					'tag_id'    => 0,
+					'tag'       => self::empty_tag_payload(),
 					'message'   => sprintf( 'Invalid batch operation at index %d.', $index ),
 				);
 				++$total_errors;
@@ -478,7 +620,10 @@ class ManageProductTags implements RegistersAbility {
 				$batch_results[] = array(
 					'operation' => $operation,
 					'success'   => false,
+					'exists'    => false,
+					'action'    => 'error',
 					'tag_id'    => 0,
+					'tag'       => self::empty_tag_payload(),
 					'message'   => sprintf( 'Batch operation at index %d failed to execute.', $index ),
 				);
 				++$total_errors;
@@ -488,7 +633,10 @@ class ManageProductTags implements RegistersAbility {
 			$batch_results[] = array(
 				'operation' => $operation,
 				'success'   => $result['success'],
+				'exists'    => $result['exists'] ?? false,
+				'action'    => $result['action'] ?? ( $result['success'] ? 'ok' : 'error' ),
 				'tag_id'    => $result['tag'] ? $result['tag']['id'] : 0,
+				'tag'       => $result['tag'] ?? self::empty_tag_payload(),
 				'message'   => $result['message'],
 			);
 
@@ -502,7 +650,9 @@ class ManageProductTags implements RegistersAbility {
 		return array(
 			'success'       => $total_success > 0,
 			'operation'     => 'batch',
-			'tag'           => array(),
+			'exists'        => false,
+			'action'        => 'batch',
+			'tag'           => self::empty_tag_payload(),
 			'batch_results' => $batch_results,
 			'changes_made'  => array( 'batch_processed' ),
 			'message'       => sprintf(

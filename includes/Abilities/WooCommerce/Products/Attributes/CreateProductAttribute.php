@@ -41,6 +41,12 @@ class CreateProductAttribute implements RegistersAbility {
 							'description' => 'Enable archives for this attribute.',
 							'default'     => false,
 						),
+						'if_exists'    => array(
+							'type'        => 'string',
+							'description' => 'How to handle an existing attribute (error, use_existing, create_duplicate).',
+							'enum'        => array( 'error', 'use_existing', 'create_duplicate' ),
+							'default'     => 'error',
+						),
 						'terms'        => array(
 							'type'        => 'array',
 							'description' => 'Initial terms to create for this attribute.',
@@ -61,6 +67,8 @@ class CreateProductAttribute implements RegistersAbility {
 					'type'       => 'object',
 					'properties' => array(
 						'success'       => array( 'type' => 'boolean' ),
+						'exists'        => array( 'type' => 'boolean' ),
+						'action'        => array( 'type' => 'string' ),
 						'attribute'     => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -128,7 +136,9 @@ class CreateProductAttribute implements RegistersAbility {
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			return array(
 				'success'       => false,
-				'attribute'     => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'attribute'     => self::empty_attribute_payload(),
 				'terms_created' => array(),
 				'term_errors'   => array(),
 				'message'       => 'WooCommerce is not active.',
@@ -155,13 +165,47 @@ class CreateProductAttribute implements RegistersAbility {
 
 		$has_archives = ! empty( $input['has_archives'] );
 		$terms        = self::sanitize_terms( $input['terms'] ?? array() );
+		$if_exists    = self::normalize_if_exists( $input['if_exists'] ?? 'error' );
+
+		$existing_attribute = self::find_existing_attribute( $slug, $name );
+		if ( $existing_attribute ) {
+			$existing_payload = self::build_attribute_payload( $existing_attribute );
+
+			if ( 'use_existing' === $if_exists ) {
+				return array(
+					'success'       => true,
+					'exists'        => true,
+					'action'        => 'existing',
+					'attribute'     => $existing_payload,
+					'terms_created' => array(),
+					'term_errors'   => array(),
+					'message'       => 'Attribute already exists. Using existing attribute.',
+				);
+			}
+
+			if ( 'create_duplicate' !== $if_exists ) {
+				return array(
+					'success'       => false,
+					'exists'        => true,
+					'action'        => 'exists',
+					'attribute'     => $existing_payload,
+					'terms_created' => array(),
+					'term_errors'   => array(),
+					'message'       => 'Attribute already exists. Set if_exists to use_existing or create_duplicate.',
+				);
+			}
+
+			$slug = self::unique_attribute_slug( $slug !== '' ? $slug : $name );
+		}
 
 		// Check if attribute already exists
 		$existing_attribute = wc_attribute_taxonomy_name( $slug );
 		if ( taxonomy_exists( $existing_attribute ) ) {
 			return array(
 				'success'       => false,
-				'attribute'     => null,
+				'exists'        => true,
+				'action'        => 'exists',
+				'attribute'     => self::empty_attribute_payload(),
 				'terms_created' => array(),
 				'term_errors'   => array(),
 				'message'       => 'Attribute with this name already exists.',
@@ -173,11 +217,11 @@ class CreateProductAttribute implements RegistersAbility {
 		try {
 			// Create the attribute
 			$attribute_data = array(
-				'attribute_name'    => $slug,
-				'attribute_label'   => $name,
-				'attribute_type'    => $type,
-				'attribute_orderby' => $order_by,
-				'attribute_public'  => $has_archives ? 1 : 0,
+				'name'         => $name,
+				'slug'         => $slug,
+				'type'         => $type,
+				'order_by'     => $order_by,
+				'has_archives' => $has_archives,
 			);
 
 			$attribute_id = wc_create_attribute( $attribute_data );
@@ -185,7 +229,9 @@ class CreateProductAttribute implements RegistersAbility {
 			if ( is_wp_error( $attribute_id ) ) {
 				return array(
 					'success'       => false,
-					'attribute'     => null,
+					'exists'        => false,
+					'action'        => 'error',
+					'attribute'     => self::empty_attribute_payload(),
 					'terms_created' => array(),
 					'term_errors'   => $term_errors,
 					'message'       => 'Error creating attribute: ' . $attribute_id->get_error_message(),
@@ -196,7 +242,7 @@ class CreateProductAttribute implements RegistersAbility {
 			$created_attributes = wc_get_attribute_taxonomies();
 			$created_attribute  = null;
 			foreach ( $created_attributes as $attr ) {
-				if ( $attr->attribute_id === $attribute_id ) {
+				if ( (int) $attr->attribute_id === (int) $attribute_id ) {
 					$created_attribute = $attr;
 					break;
 				}
@@ -205,7 +251,9 @@ class CreateProductAttribute implements RegistersAbility {
 			if ( ! $created_attribute ) {
 				return array(
 					'success'       => false,
-					'attribute'     => null,
+					'exists'        => false,
+					'action'        => 'error',
+					'attribute'     => self::empty_attribute_payload(),
 					'terms_created' => array(),
 					'term_errors'   => $term_errors,
 					'message'       => 'Failed to retrieve created attribute.',
@@ -264,10 +312,13 @@ class CreateProductAttribute implements RegistersAbility {
 				}
 			}
 
+			$action = $existing_attribute ? 'duplicate' : 'created';
 			return array(
 				'success'       => true,
+				'exists'        => (bool) $existing_attribute,
+				'action'        => $action,
 				'attribute'     => array(
-					'id'           => $created_attribute->attribute_id,
+					'id'           => (int) $created_attribute->attribute_id,
 					'name'         => $created_attribute->attribute_label,
 					'slug'         => $created_attribute->attribute_name,
 					'type'         => $created_attribute->attribute_type,
@@ -278,7 +329,8 @@ class CreateProductAttribute implements RegistersAbility {
 				'terms_created' => $terms_created,
 				'term_errors'   => $term_errors,
 				'message'       => sprintf(
-					'Successfully created attribute "%s" with %d terms.',
+					'Successfully %s attribute "%s" with %d terms.',
+					$action === 'duplicate' ? 'duplicated' : 'created',
 					$name,
 					count( $terms_created )
 				),
@@ -286,12 +338,72 @@ class CreateProductAttribute implements RegistersAbility {
 		} catch ( \Throwable $e ) {
 			return array(
 				'success'       => false,
-				'attribute'     => null,
+				'exists'        => false,
+				'action'        => 'error',
+				'attribute'     => self::empty_attribute_payload(),
 				'terms_created' => array(),
 				'term_errors'   => $term_errors,
 				'message'       => 'Error creating attribute: ' . $e->getMessage(),
 			);
 		}
+	}
+
+	private static function empty_attribute_payload(): array {
+		return array(
+			'id'           => 0,
+			'name'         => '',
+			'slug'         => '',
+			'type'         => '',
+			'order_by'     => '',
+			'has_archives' => false,
+			'taxonomy'     => '',
+		);
+	}
+
+	private static function normalize_if_exists( $value ): string {
+		$value = sanitize_key( (string) $value );
+		$allowed = array( 'error', 'use_existing', 'create_duplicate' );
+		return in_array( $value, $allowed, true ) ? $value : 'error';
+	}
+
+	private static function find_existing_attribute( string $slug, string $name ) {
+		$attributes = wc_get_attribute_taxonomies();
+		foreach ( $attributes as $attribute ) {
+			if ( ! isset( $attribute->attribute_name, $attribute->attribute_label ) ) {
+				continue;
+			}
+			if ( $slug !== '' && $attribute->attribute_name === $slug ) {
+				return $attribute;
+			}
+			if ( $name !== '' && strtolower( $attribute->attribute_label ) === strtolower( $name ) ) {
+				return $attribute;
+			}
+		}
+		return null;
+	}
+
+	private static function build_attribute_payload( $attribute ): array {
+		$taxonomy = wc_attribute_taxonomy_name( $attribute->attribute_name );
+		return array(
+			'id'           => (int) $attribute->attribute_id,
+			'name'         => (string) $attribute->attribute_label,
+			'slug'         => (string) $attribute->attribute_name,
+			'type'         => (string) $attribute->attribute_type,
+			'order_by'     => (string) $attribute->attribute_orderby,
+			'has_archives' => (bool) $attribute->attribute_public,
+			'taxonomy'     => $taxonomy,
+		);
+	}
+
+	private static function unique_attribute_slug( string $base_slug ): string {
+		$base_slug = sanitize_title( $base_slug );
+		$slug      = $base_slug;
+		$index     = 2;
+		while ( $slug !== '' && wc_attribute_taxonomy_id_by_name( $slug ) ) {
+			$slug = $base_slug . '-' . $index;
+			$index++;
+		}
+		return $slug;
 	}
 
 	private static function sanitize_terms( $terms ): array {

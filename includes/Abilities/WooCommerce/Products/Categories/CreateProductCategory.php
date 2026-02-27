@@ -48,6 +48,12 @@ class CreateProductCategory implements RegistersAbility {
 							'description' => 'Menu order for category sorting.',
 							'default'     => 0,
 						),
+						'if_exists'    => array(
+							'type'        => 'string',
+							'description' => 'How to handle an existing category (error, use_existing, create_duplicate).',
+							'enum'        => array( 'error', 'use_existing', 'create_duplicate' ),
+							'default'     => 'error',
+						),
 					),
 					'additionalProperties' => false,
 				),
@@ -55,6 +61,8 @@ class CreateProductCategory implements RegistersAbility {
 					'type'       => 'object',
 					'properties' => array(
 						'success'     => array( 'type' => 'boolean' ),
+						'exists'      => array( 'type' => 'boolean' ),
+						'action'      => array( 'type' => 'string' ),
 						'category'    => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -108,8 +116,10 @@ class CreateProductCategory implements RegistersAbility {
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			return array(
 				'success'     => false,
-				'category'    => null,
-				'parent_info' => null,
+				'exists'      => false,
+				'action'      => 'error',
+				'category'    => self::empty_category_payload(),
+				'parent_info' => self::empty_parent_payload(),
 				'message'     => 'WooCommerce is not active.',
 			);
 		}
@@ -124,6 +134,37 @@ class CreateProductCategory implements RegistersAbility {
 		$display_type = $input['display_type'] ?? 'default';
 		$image_id     = $input['image_id'] ?? 0;
 		$menu_order   = $input['menu_order'] ?? 0;
+		$if_exists    = self::normalize_if_exists( $input['if_exists'] ?? 'error' );
+
+		$existing_category = self::find_existing_category( $slug, $name );
+		if ( $existing_category ) {
+			$existing_payload = self::build_category_payload( $existing_category );
+			$existing_parent  = self::build_parent_payload( $existing_category->parent );
+
+			if ( 'use_existing' === $if_exists ) {
+				return array(
+					'success'     => true,
+					'exists'      => true,
+					'action'      => 'existing',
+					'category'    => $existing_payload,
+					'parent_info' => $existing_parent,
+					'message'     => 'Category already exists. Using existing category.',
+				);
+			}
+
+			if ( 'create_duplicate' !== $if_exists ) {
+				return array(
+					'success'     => false,
+					'exists'      => true,
+					'action'      => 'exists',
+					'category'    => $existing_payload,
+					'parent_info' => $existing_parent,
+					'message'     => 'Category already exists. Set if_exists to use_existing or create_duplicate.',
+				);
+			}
+
+			$slug = self::unique_term_slug( $slug !== '' ? $slug : $name, 'product_cat' );
+		}
 
 		// Validate parent category
 		$parent_info = null;
@@ -132,8 +173,10 @@ class CreateProductCategory implements RegistersAbility {
 			if ( is_wp_error( $parent_category ) || ! $parent_category ) {
 				return array(
 					'success'     => false,
-					'category'    => null,
-					'parent_info' => null,
+					'exists'      => false,
+					'action'      => 'error',
+					'category'    => self::empty_category_payload(),
+					'parent_info' => self::empty_parent_payload(),
 					'message'     => 'Parent category not found.',
 				);
 			}
@@ -159,7 +202,9 @@ class CreateProductCategory implements RegistersAbility {
 			if ( is_wp_error( $result ) ) {
 				return array(
 					'success'     => false,
-					'category'    => null,
+					'exists'      => false,
+					'action'      => 'error',
+					'category'    => self::empty_category_payload(),
 					'parent_info' => $parent_info,
 					'message'     => 'Error creating category: ' . $result->get_error_message(),
 				);
@@ -184,8 +229,10 @@ class CreateProductCategory implements RegistersAbility {
 			if ( is_wp_error( $created_category ) || ! $created_category ) {
 				return array(
 					'success'     => false,
-					'category'    => array(),
-					'parent_info' => $parent_info ?: array(),
+					'exists'      => false,
+					'action'      => 'error',
+					'category'    => self::empty_category_payload(),
+					'parent_info' => $parent_info ?: self::empty_parent_payload(),
 					'message'     => 'Failed to retrieve created category.',
 				);
 			}
@@ -195,8 +242,11 @@ class CreateProductCategory implements RegistersAbility {
 				$link = '';
 			}
 
+			$action = $existing_category ? 'duplicate' : 'created';
 			return array(
 				'success'     => true,
+				'exists'      => (bool) $existing_category,
+				'action'      => $action,
 				'category'    => array(
 					'id'          => $created_category->term_id,
 					'name'        => $created_category->name,
@@ -210,7 +260,8 @@ class CreateProductCategory implements RegistersAbility {
 				),
 				'parent_info' => $parent_info ?: array(),
 				'message'     => sprintf(
-					'Successfully created category "%s"%s.',
+					'Successfully %s category "%s"%s.',
+					$action === 'duplicate' ? 'duplicated' : 'created',
 					$name,
 					$parent_info ? ' under "' . $parent_info['name'] . '"' : ''
 				),
@@ -218,10 +269,97 @@ class CreateProductCategory implements RegistersAbility {
 		} catch ( \Throwable $e ) {
 			return array(
 				'success'     => false,
-				'category'    => null,
-				'parent_info' => $parent_info,
+				'exists'      => false,
+				'action'      => 'error',
+				'category'    => self::empty_category_payload(),
+				'parent_info' => $parent_info ?: self::empty_parent_payload(),
 				'message'     => 'Error creating category: ' . $e->getMessage(),
 			);
 		}
+	}
+
+	private static function empty_category_payload(): array {
+		return array(
+			'id'          => 0,
+			'name'        => '',
+			'slug'        => '',
+			'description' => '',
+			'parent'      => 0,
+			'count'       => 0,
+			'display'     => '',
+			'menu_order'  => 0,
+			'link'        => '',
+		);
+	}
+
+	private static function empty_parent_payload(): array {
+		return array(
+			'id'   => 0,
+			'name' => '',
+		);
+	}
+
+	private static function normalize_if_exists( $value ): string {
+		$value = sanitize_key( (string) $value );
+		$allowed = array( 'error', 'use_existing', 'create_duplicate' );
+		return in_array( $value, $allowed, true ) ? $value : 'error';
+	}
+
+	private static function find_existing_category( string $slug, string $name ): ?\WP_Term {
+		$term_id = 0;
+		if ( $slug !== '' ) {
+			$term_exists = term_exists( $slug, 'product_cat' );
+			$term_id     = is_array( $term_exists ) ? (int) $term_exists['term_id'] : (int) $term_exists;
+		}
+		if ( ! $term_id && $name !== '' ) {
+			$term_exists = term_exists( $name, 'product_cat' );
+			$term_id     = is_array( $term_exists ) ? (int) $term_exists['term_id'] : (int) $term_exists;
+		}
+		if ( ! $term_id ) {
+			return null;
+		}
+		$term = get_term( $term_id, 'product_cat' );
+		return $term instanceof \WP_Term ? $term : null;
+	}
+
+	private static function build_category_payload( \WP_Term $term ): array {
+		$link = get_term_link( $term );
+		if ( is_wp_error( $link ) ) {
+			$link = '';
+		}
+
+		return array(
+			'id'          => $term->term_id,
+			'name'        => $term->name,
+			'slug'        => $term->slug,
+			'description' => $term->description,
+			'parent'      => $term->parent,
+			'count'       => $term->count,
+			'display'     => get_term_meta( $term->term_id, 'display_type', true ),
+			'menu_order'  => get_term_meta( $term->term_id, 'order', true ),
+			'link'        => $link,
+		);
+	}
+
+	private static function build_parent_payload( int $parent_id ): array {
+		if ( $parent_id <= 0 ) {
+			return self::empty_parent_payload();
+		}
+		$parent = get_term( $parent_id, 'product_cat' );
+		if ( ! $parent instanceof \WP_Term ) {
+			return self::empty_parent_payload();
+		}
+		return array(
+			'id'   => $parent->term_id,
+			'name' => $parent->name,
+		);
+	}
+
+	private static function unique_term_slug( string $slug, string $taxonomy ): string {
+		$slug = sanitize_title( $slug );
+		if ( $slug === '' ) {
+			return $slug;
+		}
+		return wp_unique_term_slug( $slug, (object) array( 'taxonomy' => $taxonomy ) );
 	}
 }
