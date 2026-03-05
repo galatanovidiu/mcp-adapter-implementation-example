@@ -35,7 +35,10 @@ final class AttachPostTerms implements RegistersAbility {
 							'minItems'    => 1,
 							'maxItems'    => 100,
 							'items'       => array(
-								'type' => array( 'integer', 'string' ),
+								'oneOf' => array(
+									array( 'type' => 'integer' ),
+									array( 'type' => 'string' ),
+								),
 							),
 						),
 						'append'            => array(

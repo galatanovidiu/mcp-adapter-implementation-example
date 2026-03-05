@@ -26,7 +26,10 @@ final class DetachPostTerms implements RegistersAbility {
 							'type'        => 'array',
 							'description' => 'Array of term IDs to detach from the post.',
 							'items'       => array(
-								'type' => array( 'integer', 'string' ),
+								'oneOf' => array(
+									array( 'type' => 'integer' ),
+									array( 'type' => 'string' ),
+								),
 							),
 							'minItems'    => 1,
 						),

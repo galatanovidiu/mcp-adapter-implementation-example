@@ -265,28 +265,28 @@ add_action(
 			$prompts
 		);
 
-		$adapter->create_server(
-			'wordpress-workflow',
-			'mcp',
-			'workflow',
-			sprintf( '%s - Workflow', $site_name ),
-			sprintf(
-				'Workflow MCP server for "%s" (%s). Start with core/get-workflow-policy and core/list-workflow-abilities; use core/get-workflow-ability-info for schemas, then orchestrate via core/execute-workflow.',
-				$site_name,
-				$site_url
-			),
-			'v1.0.0',
-			array( HttpTransport::class ),
-			RayMcpErrorHandler::class,
-			RayMcpObservabilityHandler::class,
-			array(
-				'core/execute-workflow',
-				'core/list-workflow-abilities',
-				'core/get-workflow-ability-info',
-				'core/get-workflow-policy',
-			),
-			array(),
-			array()
-		);
+		// $adapter->create_server(
+		// 	'wordpress-workflow',
+		// 	'mcp',
+		// 	'workflow',
+		// 	sprintf( '%s - Workflow', $site_name ),
+		// 	sprintf(
+		// 		'Workflow MCP server for "%s" (%s). Start with core/get-workflow-policy and core/list-workflow-abilities; use core/get-workflow-ability-info for schemas, then orchestrate via core/execute-workflow.',
+		// 		$site_name,
+		// 		$site_url
+		// 	),
+		// 	'v1.0.0',
+		// 	array( HttpTransport::class ),
+		// 	RayMcpErrorHandler::class,
+		// 	RayMcpObservabilityHandler::class,
+		// 	array(
+		// 		'core/execute-workflow',
+		// 		'core/list-workflow-abilities',
+		// 		'core/get-workflow-ability-info',
+		// 		'core/get-workflow-policy',
+		// 	),
+		// 	array(),
+		// 	array()
+		// );
 	}
 );

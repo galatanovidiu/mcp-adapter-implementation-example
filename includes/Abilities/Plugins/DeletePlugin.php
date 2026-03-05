@@ -161,6 +161,9 @@ final class DeletePlugin implements RegistersAbility {
 			return new \WP_Error( 'deletion_failed', 'Plugin deletion failed for unknown reason.' );
 		}
 
+		// Clear plugin cache before verification
+		\wp_cache_delete( 'plugins', 'plugins' );
+
 		// Verify deletion was successful
 		$updated_plugins = \get_plugins();
 		if ( isset( $updated_plugins[ $plugin_file ] ) ) {
