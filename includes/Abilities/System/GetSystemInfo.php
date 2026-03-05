@@ -154,7 +154,8 @@ final class GetSystemInfo implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
+		$input = $input ?? [];
 		return \current_user_can( 'manage_options' );
 	}
 
@@ -164,7 +165,8 @@ final class GetSystemInfo implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? [];
 		$include_server_info   = (bool) ( $input['include_server_info'] ?? true );
 		$include_database_info = (bool) ( $input['include_database_info'] ?? true );
 		$include_theme_info    = (bool) ( $input['include_theme_info'] ?? true );

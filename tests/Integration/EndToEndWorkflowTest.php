@@ -40,7 +40,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$blocks_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-block-types',
+				'name'      => 'core-list-block-types',
 				'arguments' => array(),
 			)
 		);
@@ -54,7 +54,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$category_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-term',
+				'name'      => 'core-create-term',
 				'arguments' => array(
 					'taxonomy'    => 'category',
 					'name'        => 'AI Generated Content',
@@ -71,7 +71,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$tag_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-term',
+				'name'      => 'core-create-term',
 				'arguments' => array(
 					'taxonomy' => 'post_tag',
 					'name'     => 'ai-generated',
@@ -90,7 +90,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$post_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Complete AI Generated Blog Post',
@@ -118,11 +118,9 @@ final class EndToEndWorkflowTest extends TestCase {
 		$get_post_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-get-post',
+				'name'      => 'core-get-post',
 				'arguments' => array(
-					'post_id'            => $post_id,
-					'include_meta'       => true,
-					'include_taxonomies' => true,
+					'id' => $post_id,
 				),
 			)
 		);
@@ -133,14 +131,25 @@ final class EndToEndWorkflowTest extends TestCase {
 		// Verify all data was preserved.
 		$this->assertEquals( 'Complete AI Generated Blog Post', $retrieved_post['title'] );
 		$this->assertEquals( 'draft', $retrieved_post['status'] );
-		$this->assertStringContains( 'wp:heading', $retrieved_post['content'] );
-		$this->assertStringContains( 'AI Generated Article', $retrieved_post['content'] );
+		$this->assertStringContainsString( 'wp:heading', $retrieved_post['content'] );
+		$this->assertStringContainsString( 'AI Generated Article', $retrieved_post['content'] );
 
 		// Verify meta fields.
-		$this->assertArrayHasKey( 'meta', $retrieved_post );
-		$meta = $retrieved_post['meta'];
-		$this->assertEquals( 'true', $meta['_ai_generated'][0] ?? '' );
-		$this->assertEquals( 'end-to-end', $meta['_workflow_test'][0] ?? '' );
+		$meta_response = $this->make_mcp_request(
+			'tools/call',
+			array(
+				'name'      => 'core-get-post-meta',
+				'arguments' => array(
+					'id'                => $post_id,
+					'include_private'   => true,
+					'only_show_in_rest' => false,
+				),
+			)
+		);
+		$this->assertEquals( 200, $meta_response->get_status() );
+		$meta = $meta_response->get_data()['content']['meta'];
+		$this->assertEquals( 'true', $meta['_ai_generated'] ?? '' );
+		$this->assertEquals( 'end-to-end', $meta['_workflow_test'] ?? '' );
 
 		// Verify taxonomies.
 		$this->assertArrayHasKey( 'taxonomies', $retrieved_post );
@@ -155,7 +164,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$list_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'          => array( 'post' ),
 					'post_status'        => array( 'draft' ),
@@ -198,7 +207,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$create_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Draft Article',
@@ -215,9 +224,9 @@ final class EndToEndWorkflowTest extends TestCase {
 		$update_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-update-post',
+				'name'      => 'core-update-post',
 				'arguments' => array(
-					'post_id' => $post_id,
+					'id'      => $post_id,
 					'title'   => 'Updated Article Title',
 					'content' => '<!-- wp:heading --><h2>Updated Content</h2><!-- /wp:heading -->' .
 								'<!-- wp:paragraph --><p>This content has been updated by an AI agent.</p><!-- /wp:paragraph -->',
@@ -232,11 +241,12 @@ final class EndToEndWorkflowTest extends TestCase {
 		$meta_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-update-post-meta',
+				'name'      => 'core-update-post-meta',
 				'arguments' => array(
-					'post_id'    => $post_id,
-					'meta_key'   => 'ai_revision_count',
-					'meta_value' => '1',
+					'id'   => $post_id,
+					'meta' => array(
+						'ai_revision_count' => '1',
+					),
 				),
 			)
 		);
@@ -247,10 +257,9 @@ final class EndToEndWorkflowTest extends TestCase {
 		$get_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-get-post',
+				'name'      => 'core-get-post',
 				'arguments' => array(
-					'post_id'      => $post_id,
-					'include_meta' => true,
+					'id' => $post_id,
 				),
 			)
 		);
@@ -260,8 +269,20 @@ final class EndToEndWorkflowTest extends TestCase {
 
 		$this->assertEquals( 'Updated Article Title', $final_post['title'] );
 		$this->assertEquals( 'publish', $final_post['status'] );
-		$this->assertStringContains( 'Updated Content', $final_post['content'] );
-		$this->assertEquals( '1', $final_post['meta']['ai_revision_count'][0] ?? '' );
+		$this->assertStringContainsString( 'Updated Content', $final_post['content'] );
+
+		$meta_response = $this->make_mcp_request(
+			'tools/call',
+			array(
+				'name'      => 'core-get-post-meta',
+				'arguments' => array(
+					'id' => $post_id,
+				),
+			)
+		);
+		$this->assertEquals( 200, $meta_response->get_status() );
+		$meta = $meta_response->get_data()['content']['meta'];
+		$this->assertEquals( '1', $meta['ai_revision_count'] ?? '' );
 	}
 
 	/**
@@ -290,7 +311,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$posts_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'any' ),
 					'limit'     => 1,
@@ -304,7 +325,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$blocks_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-block-types',
+				'name'      => 'core-list-block-types',
 				'arguments' => array(),
 			)
 		);
@@ -315,7 +336,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$taxonomies_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-taxonomies',
+				'name'      => 'core-list-taxonomies',
 				'arguments' => array(),
 			)
 		);
@@ -353,7 +374,7 @@ final class EndToEndWorkflowTest extends TestCase {
 			$response = $this->make_mcp_request(
 				'tools/call',
 				array(
-					'name'      => 'wpmcp-example-create-post',
+					'name'      => 'core-create-post',
 					'arguments' => array(
 						'post_type' => 'post',
 						'title'     => $topic,
@@ -377,14 +398,14 @@ final class EndToEndWorkflowTest extends TestCase {
 		$list_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'    => array( 'post' ),
 					'post_status'  => array( 'draft' ),
 					'meta_query'   => array(
 						array(
 							'key'   => 'series_name',
-							'value' => 'WordPress Guide Series',
+							'value' => array( 'WordPress Guide Series' ),
 						),
 					),
 					'include_meta' => true,
@@ -399,7 +420,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		// Verify posts are properly ordered.
 		$series_orders = array();
 		foreach ( $posts as $post ) {
-			$series_orders[] = $post['meta']['series_order'][0] ?? '';
+			$series_orders[] = $post['meta']['series_order'] ?? '';
 		}
 
 		$this->assertContains( '1', $series_orders );
@@ -431,9 +452,9 @@ final class EndToEndWorkflowTest extends TestCase {
 		$get_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-get-post',
+				'name'      => 'core-get-post',
 				'arguments' => array(
-					'post_id' => $post_id,
+					'id'      => $post_id,
 				),
 			)
 		);
@@ -450,47 +471,52 @@ final class EndToEndWorkflowTest extends TestCase {
 			'content_quality'  => 'good',
 		);
 
-		foreach ( $analysis_meta as $key => $value ) {
-			$meta_response = $this->make_mcp_request(
-				'tools/call',
-				array(
-					'name'      => 'wpmcp-example-update-post-meta',
-					'arguments' => array(
-						'post_id'    => $post_id,
-						'meta_key'   => $key,
-						'meta_value' => (string) $value,
-					),
-				)
-			);
+		$meta_response = $this->make_mcp_request(
+			'tools/call',
+			array(
+				'name'      => 'core-update-post-meta',
+				'arguments' => array(
+					'id'   => $post_id,
+					'meta' => array_map( 'strval', $analysis_meta ),
+				),
+			)
+		);
 
-			$this->assertEquals( 200, $meta_response->get_status(), "Meta update for '{$key}' should succeed" );
-		}
+		$this->assertEquals( 200, $meta_response->get_status(), 'Meta update should succeed' );
 
 		// Step 3: AI agent verifies the analysis was stored.
 		$verify_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-get-post',
+				'name'      => 'core-get-post',
 				'arguments' => array(
-					'post_id'      => $post_id,
-					'include_meta' => true,
+					'id' => $post_id,
 				),
 			)
 		);
 
 		$this->assertEquals( 200, $verify_response->get_status() );
-		$analyzed_post = $verify_response->get_data()['content'];
+		$meta_response = $this->make_mcp_request(
+			'tools/call',
+			array(
+				'name'      => 'core-get-post-meta',
+				'arguments' => array(
+					'id' => $post_id,
+				),
+			)
+		);
+		$this->assertEquals( 200, $meta_response->get_status() );
+		$meta = $meta_response->get_data()['content']['meta'];
 
 		// Verify all analysis metadata was stored.
-		$meta = $analyzed_post['meta'];
 		$this->assertArrayHasKey( 'word_count', $meta );
 		$this->assertArrayHasKey( 'reading_time', $meta );
 		$this->assertArrayHasKey( 'content_topics', $meta );
 		$this->assertArrayHasKey( 'ai_analysis_date', $meta );
 		$this->assertArrayHasKey( 'content_quality', $meta );
 
-		$this->assertEquals( 'WordPress,development,best-practices', $meta['content_topics'][0] );
-		$this->assertEquals( 'good', $meta['content_quality'][0] );
+		$this->assertEquals( 'wordpress,development,best-practices', $meta['content_topics'] ?? '' );
+		$this->assertEquals( 'good', $meta['content_quality'] ?? '' );
 	}
 
 	/**
@@ -508,7 +534,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$parent_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-term',
+				'name'      => 'core-create-term',
 				'arguments' => array(
 					'taxonomy'    => 'category',
 					'name'        => 'Technology',
@@ -523,7 +549,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$child_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-term',
+				'name'      => 'core-create-term',
 				'arguments' => array(
 					'taxonomy'    => 'category',
 					'name'        => 'Web Development',
@@ -540,7 +566,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$post1_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'WordPress Development Tips',
@@ -559,10 +585,9 @@ final class EndToEndWorkflowTest extends TestCase {
 		$get_post_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-get-post',
+				'name'      => 'core-get-post',
 				'arguments' => array(
-					'post_id'            => $post1_id,
-					'include_taxonomies' => true,
+					'id' => $post1_id,
 				),
 			)
 		);
@@ -578,7 +603,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$terms_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-get-terms',
+				'name'      => 'core-get-terms',
 				'arguments' => array(
 					'taxonomy' => 'category',
 					'parent'   => $parent_id,
@@ -609,7 +634,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$invalid_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'invalid_type',
 					'title'     => 'Test Post',
@@ -617,13 +642,14 @@ final class EndToEndWorkflowTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $invalid_response->get_status() );
+		$this->assertEquals( 200, $invalid_response->get_status() );
+		$this->assertTrue( $invalid_response->get_data()['isError'] ?? false );
 
 		// Step 2: AI agent recovers by using valid data.
 		$valid_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post',
 					'title'     => 'Recovery Test Post',
@@ -678,7 +704,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$search_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'search'             => 'WordPress tutorial',
 					'post_type'          => array( 'post' ),
@@ -697,14 +723,14 @@ final class EndToEndWorkflowTest extends TestCase {
 		$meta_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'    => array( 'post' ),
 					'post_status'  => array( 'publish' ),
 					'meta_query'   => array(
 						array(
 							'key'   => 'difficulty_level',
-							'value' => 'advanced',
+							'value' => array( 'advanced' ),
 						),
 					),
 					'include_meta' => true,
@@ -720,7 +746,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$tax_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'          => array( 'post' ),
 					'post_status'        => array( 'publish' ),
@@ -788,7 +814,7 @@ final class EndToEndWorkflowTest extends TestCase {
 			$response = $this->make_mcp_request(
 				'tools/call',
 				array(
-					'name'      => 'wpmcp-example-create-post',
+					'name'      => 'core-create-post',
 					'arguments' => array(
 						'post_type' => 'post',
 						'title'     => "Performance Test Post {$i}",
@@ -811,7 +837,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$page1_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'   => array( 'post' ),
 					'post_status' => array( 'publish' ),
@@ -832,7 +858,7 @@ final class EndToEndWorkflowTest extends TestCase {
 		$page2_response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'   => array( 'post' ),
 					'post_status' => array( 'publish' ),

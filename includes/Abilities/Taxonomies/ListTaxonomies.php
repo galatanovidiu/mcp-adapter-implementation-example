@@ -76,7 +76,8 @@ final class ListTaxonomies implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
+		$input = $input ?? [];
 		return \current_user_can( 'edit_posts' );
 	}
 
@@ -86,7 +87,8 @@ final class ListTaxonomies implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? [];
 		$post_type         = isset( $input['post_type'] ) ? \sanitize_key( (string) $input['post_type'] ) : '';
 		$include_private   = ! empty( $input['include_private'] );
 		$only_show_in_rest = array_key_exists( 'only_show_in_rest', $input ) ? (bool) $input['only_show_in_rest'] : true;

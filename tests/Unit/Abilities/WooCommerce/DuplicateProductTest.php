@@ -26,6 +26,10 @@ final class DuplicateProductTest extends TestCase {
 	}
 
 	public function test_ability_is_registered(): void {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not available.' );
+		}
+
 		$this->assertAbilityRegistered( 'woo/duplicate-product' );
 	}
 

@@ -29,7 +29,7 @@ final class ListPostsTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/list-posts' );
+		$this->assertAbilityRegistered( 'core/list-posts' );
 	}
 
 	/**
@@ -630,7 +630,7 @@ final class ListPostsTest extends TestCase {
 			'limit'       => 5,
 		);
 
-		$result = $this->execute_ability( 'wpmcp-example/list-posts', $input );
+		$result = $this->execute_ability( 'core/list-posts', $input );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'posts', $result );

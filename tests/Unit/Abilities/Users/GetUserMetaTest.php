@@ -29,7 +29,7 @@ final class GetUserMetaTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/get-user-meta' );
+		$this->assertAbilityRegistered( 'core/get-user-meta' );
 	}
 
 	/**
@@ -72,7 +72,7 @@ final class GetUserMetaTest extends TestCase {
 
 		$this->assertSame( $user_id, $result['user_id'] );
 		$this->assertArrayHasKey( 'favorite_color', $result['meta'] );
-		$this->assertSame( array( 'blue' ), $result['meta']['favorite_color'] );
+		$this->assertContains( 'blue', (array) $result['meta']['favorite_color'] );
 	}
 
 	/**

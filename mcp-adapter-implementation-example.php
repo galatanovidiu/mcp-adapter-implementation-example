@@ -91,22 +91,7 @@ add_action(
 		$site_name = get_bloginfo( 'name' );
 		$site_url  = home_url();
 
-		$adapter->create_server(
-			'wordpress-full',
-			'mcp',
-			'full',
-			sprintf( '%s - %s', $site_name, $site_url ),
-			sprintf(
-				'MCP server for "%s" (%s). Complete WordPress management with tools for content, media, users, plugins, themes, menus, comments, settings, system management, security, and WooCommerce operations.',
-				$site_name,
-				$site_url
-			),
-			'v1.0.0',
-			array( HttpTransport::class ),
-			RayMcpErrorHandler::class,
-			RayMcpObservabilityHandler::class,
-			// Tools
-			array(
+		$tools = array(
 				// Posts
 				'core/create-post',
 				'core/get-post',
@@ -191,52 +176,117 @@ add_action(
 				'core/check-file-permissions',
 				'core/scan-malware',
 				'core/update-salts',
-				// WooCommerce Products
-				'woo/list-products',
-				'woo/get-product',
-				'woo/create-product',
-				'woo/update-product',
-				'woo/delete-product',
-				'woo/duplicate-product',
-				// WooCommerce Store
-				'woo/get-store-settings',
-				'woo/get-store-status',
-				'woo/get-store-info',
-				'woo/update-store-settings',
-				'woo/manage-payment-methods',
-				'woo/manage-shipping-methods',
-				// WooCommerce Variations
-				'woo/list-product-variations',
-				'woo/get-product-variation',
-				'woo/create-product-variation',
-				'woo/update-product-variation',
-				'woo/delete-product-variation',
-				// WooCommerce Attributes
-				'woo/list-product-attributes',
-				'woo/create-product-attribute',
-				'woo/update-product-attribute',
-				// WooCommerce Categories
-				'woo/list-product-categories',
-				'woo/get-product-category',
-				'woo/create-product-category',
-				'woo/update-product-category',
-				'woo/delete-product-category',
-				// WooCommerce Tags
-				'woo/list-product-tags',
-				'woo/manage-product-tags',
-			),
-			// Resources
-			array(
-				'resources/posts-list',
-				'resources/site-settings',
-				// UI Resources for MCP Apps
-				'core/list-posts-ui',
-			),
-			// Prompts
-			array(
-				'prompts/generate-post',
-				'prompts/summarize-content',
-			)
 		);
+
+		$resources = array(
+			'resources/posts-list',
+			'resources/site-settings',
+			// UI Resources for MCP Apps
+			'core/list-posts-ui',
+		);
+
+		$prompts = array(
+			'prompts/generate-post',
+			'prompts/summarize-content',
+		);
+
+		if ( class_exists( 'WooCommerce' ) ) {
+			$tools = array_merge(
+				$tools,
+				array(
+					// WooCommerce Products
+					'woo/list-products',
+					'woo/get-product',
+					'woo/create-product',
+					'woo/update-product',
+					'woo/delete-product',
+					'woo/duplicate-product',
+					// WooCommerce Store
+					'woo/get-store-settings',
+					'woo/get-store-status',
+					'woo/get-store-info',
+					'woo/update-store-settings',
+					'woo/manage-payment-methods',
+					'woo/manage-shipping-methods',
+					// WooCommerce Variations
+					'woo/list-product-variations',
+					'woo/get-product-variation',
+					'woo/create-product-variation',
+					'woo/update-product-variation',
+					'woo/delete-product-variation',
+					// WooCommerce Attributes
+					'woo/list-product-attributes',
+					'woo/create-product-attribute',
+					'woo/update-product-attribute',
+					// WooCommerce Categories
+					'woo/list-product-categories',
+					'woo/get-product-category',
+					'woo/create-product-category',
+					'woo/update-product-category',
+					'woo/delete-product-category',
+					// WooCommerce Tags
+					'woo/list-product-tags',
+					'woo/manage-product-tags',
+				)
+			);
+		}
+
+		$adapter->create_server(
+			'mcp-adapter-example-server',
+			'mcp-adapter-example',
+			'mcp',
+			'MCP Adapter Example Server',
+			'MCP server for the MCP Adapter Implementation Example plugin',
+			'v1.0.0',
+			array( HttpTransport::class ),
+			RayMcpErrorHandler::class,
+			RayMcpObservabilityHandler::class,
+			$tools,
+			$resources,
+			$prompts
+		);
+
+		$adapter->create_server(
+			'wordpress-full',
+			'mcp',
+			'full',
+			sprintf( '%s - %s', $site_name, $site_url ),
+			sprintf(
+				'MCP server for "%s" (%s). Complete WordPress management with tools for content, media, users, plugins, themes, menus, comments, settings, system management, security, and WooCommerce operations.',
+				$site_name,
+				$site_url
+			),
+			'v1.0.0',
+			array( HttpTransport::class ),
+			RayMcpErrorHandler::class,
+			RayMcpObservabilityHandler::class,
+			$tools,
+			$resources,
+			$prompts
+		);
+
+		// $adapter->create_server(
+		// 	'wordpress-workflow',
+		// 	'mcp',
+		// 	'workflow',
+		// 	sprintf( '%s - Workflow', $site_name ),
+		// 	sprintf(
+		// 		'Workflow MCP server for "%s" (%s). Start with core/get-workflow-policy and core/list-workflow-abilities; use core/get-workflow-ability-info for schemas, then orchestrate via core/execute-workflow.',
+		// 		$site_name,
+		// 		$site_url
+		// 	),
+		// 	'v1.0.0',
+		// 	array( HttpTransport::class ),
+		// 	RayMcpErrorHandler::class,
+		// 	RayMcpObservabilityHandler::class,
+		// 	array(
+		// 		'core/execute-workflow',
+		// 		'core/list-workflow-abilities',
+		// 		'core/get-workflow-ability-info',
+		// 		'core/get-workflow-policy',
+		// 	),
+		// 	array(),
+		// 	array()
+		// );
 	}
 );

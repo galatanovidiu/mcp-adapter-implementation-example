@@ -90,7 +90,8 @@ final class GetMenuLocations implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
+		$input = $input ?? [];
 		return \current_user_can( 'edit_theme_options' );
 	}
 
@@ -100,7 +101,8 @@ final class GetMenuLocations implements RegistersAbility {
 	 * @param array $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? [];
 		$include_unassigned   = (bool) ( $input['include_unassigned'] ?? true );
 		$include_menu_details = (bool) ( $input['include_menu_details'] ?? true );
 

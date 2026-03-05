@@ -26,9 +26,10 @@ final class DetachPostTerms implements RegistersAbility {
 							'type'        => 'array',
 							'description' => 'Array of term IDs to detach from the post.',
 							'items'       => array(
-								'type'        => 'integer',
-								'description' => 'Term ID',
-								'minimum'     => 1,
+								'oneOf' => array(
+									array( 'type' => 'integer' ),
+									array( 'type' => 'string' ),
+								),
 							),
 							'minItems'    => 1,
 						),
@@ -67,10 +68,11 @@ final class DetachPostTerms implements RegistersAbility {
 	/**
 	 * Check permission for detaching post terms.
 	 *
-	 * @param array $input Input parameters.
+	 * @param array|null $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input ): bool {
+		$input = $input ?? array();
 		$post_id  = (int) ( $input['id'] ?? 0 );
 		$taxonomy = isset( $input['taxonomy'] ) ? \sanitize_key( (string) $input['taxonomy'] ) : '';
 		if ( $post_id <= 0 || ! \taxonomy_exists( $taxonomy ) ) {
@@ -87,10 +89,11 @@ final class DetachPostTerms implements RegistersAbility {
 	/**
 	 * Execute the detach post terms operation.
 	 *
-	 * @param array $input Input parameters.
+	 * @param array|null $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input ) {
+		$input = $input ?? array();
 		$post_id  = (int) $input['id'];
 		$taxonomy = \sanitize_key( (string) $input['taxonomy'] );
 		$post     = \get_post( $post_id );

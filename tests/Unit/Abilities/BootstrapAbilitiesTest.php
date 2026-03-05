@@ -24,36 +24,38 @@ final class BootstrapAbilitiesTest extends TestCase {
 		// Initialize abilities.
 		BootstrapAbilities::init();
 
-		// Trigger the abilities_api_init action.
-		do_action( 'abilities_api_init' );
+		// Trigger the abilities API initialization.
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			\WP_Abilities_Registry::get_instance();
+		}
 
 		$expected_abilities = array(
 			// Post CRUD abilities.
-			'wpmcp-example/create-post',
-			'wpmcp-example/get-post',
-			'wpmcp-example/list-posts',
-			'wpmcp-example/update-post',
-			'wpmcp-example/delete-post',
+			'core/create-post',
+			'core/get-post',
+			'core/list-posts',
+			'core/update-post',
+			'core/delete-post',
 
 			// Post Meta abilities.
-			'wpmcp-example/list-post-meta-keys',
-			'wpmcp-example/get-post-meta',
-			'wpmcp-example/update-post-meta',
-			'wpmcp-example/delete-post-meta',
+			'core/list-post-meta-keys',
+			'core/get-post-meta',
+			'core/update-post-meta',
+			'core/delete-post-meta',
 
 			// Blocks discovery.
-			'wpmcp-example/list-block-types',
+			'core/list-block-types',
 
 			// Taxonomy & Terms abilities.
-			'wpmcp-example/list-taxonomies',
-			'wpmcp-example/get-terms',
-			'wpmcp-example/create-term',
-			'wpmcp-example/update-term',
-			'wpmcp-example/delete-term',
+			'core/list-taxonomies',
+			'core/get-terms',
+			'core/create-term',
+			'core/update-term',
+			'core/delete-term',
 
 			// Attach/Detach helpers.
-			'wpmcp-example/attach-post-terms',
-			'wpmcp-example/detach-post-terms',
+			'core/attach-post-terms',
+			'core/detach-post-terms',
 		);
 
 		foreach ( $expected_abilities as $ability_name ) {
@@ -68,9 +70,11 @@ final class BootstrapAbilitiesTest extends TestCase {
 		// Clean up any existing abilities.
 		$this->cleanup_test_abilities();
 
+		BootstrapAbilities::reset();
+		$this->reset_abilities_registry();
+
 		// Check that abilities are not registered yet.
-		$ability = wp_get_ability( 'wpmcp-example/create-post' );
-		$this->assertNull( $ability, 'Abilities should not be registered before init' );
+		$this->assertFalse( wp_has_ability( 'core/create-post' ), 'Abilities should not be registered before init' );
 	}
 
 	/**
@@ -82,18 +86,19 @@ final class BootstrapAbilitiesTest extends TestCase {
 		BootstrapAbilities::init();
 		BootstrapAbilities::init();
 
-		// Trigger the action multiple times.
-		do_action( 'abilities_api_init' );
-		do_action( 'abilities_api_init' );
+		// Trigger the abilities API initialization.
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			\WP_Abilities_Registry::get_instance();
+		}
 
 		// Should still work correctly.
-		$this->assertAbilityRegistered( 'wpmcp-example/create-post' );
+		$this->assertAbilityRegistered( 'core/create-post' );
 
 		// Count how many times the ability is registered (should be once per action call).
 		$all_abilities     = wp_get_abilities();
 		$create_post_count = 0;
 		foreach ( $all_abilities as $ability ) {
-			if ( $ability->get_name() !== 'wpmcp-example/create-post' ) {
+			if ( $ability->get_name() !== 'core/create-post' ) {
 				continue;
 			}
 
@@ -110,13 +115,15 @@ final class BootstrapAbilitiesTest extends TestCase {
 	 */
 	public function test_all_abilities_have_proper_schemas(): void {
 		BootstrapAbilities::init();
-		do_action( 'abilities_api_init' );
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			\WP_Abilities_Registry::get_instance();
+		}
 
 		$all_abilities     = wp_get_abilities();
 		$example_abilities = array_filter(
 			$all_abilities,
 			static function ( $ability ) {
-				return str_starts_with( $ability->get_name(), 'wpmcp-example/' );
+				return str_starts_with( $ability->get_name(), 'core/' );
 			}
 		);
 
@@ -153,12 +160,14 @@ final class BootstrapAbilitiesTest extends TestCase {
 	 */
 	public function test_abilities_have_permission_callbacks(): void {
 		BootstrapAbilities::init();
-		do_action( 'abilities_api_init' );
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			\WP_Abilities_Registry::get_instance();
+		}
 
 		$test_abilities = array(
-			'wpmcp-example/create-post',
-			'wpmcp-example/list-posts',
-			'wpmcp-example/list-block-types',
+			'core/create-post',
+			'core/list-posts',
+			'core/list-block-types',
 		);
 
 		foreach ( $test_abilities as $ability_name ) {
@@ -167,26 +176,26 @@ final class BootstrapAbilitiesTest extends TestCase {
 
 			// Prepare valid input based on ability requirements.
 			$test_input = array();
-			if ( $ability_name === 'wpmcp-example/create-post' ) {
+			if ( $ability_name === 'core/create-post' ) {
 				$test_input = array(
 					'post_type' => 'post',
 					'title'     => 'Test',
 				);
-			} elseif ( $ability_name === 'wpmcp-example/list-posts' ) {
+			} elseif ( $ability_name === 'core/list-posts' ) {
 				$test_input = array( 'post_type' => 'post' );
-			} elseif ( $ability_name === 'wpmcp-example/list-block-types' ) {
+			} elseif ( $ability_name === 'core/list-block-types' ) {
 				$test_input = array();
 			}
 
 			// Test permission check with no user.
 			wp_set_current_user( 0 );
-			$permission_result = $ability->has_permission( $test_input );
+			$permission_result = $ability->check_permissions( $test_input );
 			$this->assertIsBool( $permission_result, "Permission check should return boolean for '{$ability_name}'" );
 
 			// Test permission check with admin user.
 			$admin_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 			wp_set_current_user( $admin_id );
-			$admin_permission = $ability->has_permission( $test_input );
+			$admin_permission = $ability->check_permissions( $test_input );
 			$this->assertIsBool( $admin_permission, "Admin permission check should return boolean for '{$ability_name}'" );
 		}
 	}
@@ -196,13 +205,15 @@ final class BootstrapAbilitiesTest extends TestCase {
 	 */
 	public function test_abilities_work_with_abilities_api(): void {
 		BootstrapAbilities::init();
-		do_action( 'abilities_api_init' );
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			\WP_Abilities_Registry::get_instance();
+		}
 
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
 		// Test list-block-types ability.
-		$result = $this->execute_ability( 'wpmcp-example/list-block-types', array() );
+		$result = $this->execute_ability( 'core/list-block-types', array() );
 
 		$this->assertIsArray( $result, 'list-block-types should return array' );
 		$this->assertArrayHasKey( 'blocks', $result );
@@ -210,7 +221,7 @@ final class BootstrapAbilitiesTest extends TestCase {
 
 		// Test list-posts ability.
 		$result = $this->execute_ability(
-			'wpmcp-example/list-posts',
+			'core/list-posts',
 			array(
 				'post_type'   => array( 'post' ),
 				'post_status' => array( 'publish' ),

@@ -26,7 +26,11 @@ final class ManagePaymentMethodsTest extends TestCase {
 	}
 
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/manage-payment-methods' );
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not available.' );
+		}
+
+		$this->assertAbilityRegistered( 'woo/manage-payment-methods' );
 	}
 
 	public function test_list_action_returns_gateways(): void {

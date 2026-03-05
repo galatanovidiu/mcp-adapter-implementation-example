@@ -29,7 +29,7 @@ final class ListThemesTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/list-themes' );
+		$this->assertAbilityRegistered( 'core/list-themes' );
 	}
 
 	/**

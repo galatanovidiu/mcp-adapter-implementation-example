@@ -29,7 +29,7 @@ final class UpdateUserMetaTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/update-user-meta' );
+		$this->assertAbilityRegistered( 'core/update-user-meta' );
 	}
 
 	/**

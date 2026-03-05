@@ -47,7 +47,7 @@ final class ListPostMetaKeys implements RegistersAbility {
 									'type'         => array( 'type' => 'string' ),
 									'single'       => array( 'type' => 'boolean' ),
 									'description'  => array( 'type' => 'string' ),
-									'default'      => array(),
+									'default'      => array( 'type' => array( 'string', 'integer', 'boolean', 'null' ) ),
 									'show_in_rest' => array( 'type' => 'boolean' ),
 									'schema'       => array( 'type' => 'object' ),
 								),

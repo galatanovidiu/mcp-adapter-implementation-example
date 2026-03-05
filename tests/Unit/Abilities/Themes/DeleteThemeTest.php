@@ -29,7 +29,7 @@ final class DeleteThemeTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/delete-theme' );
+		$this->assertAbilityRegistered( 'core/delete-theme' );
 	}
 
 	/**

@@ -63,6 +63,7 @@ final class ListSiteOptions implements RegistersAbility {
 								'properties' => array(
 									'option_name'   => array( 'type' => 'string' ),
 									'option_value'  => array(
+										'type'        => array( 'string', 'integer', 'number', 'boolean', 'null' ),
 										'description' => 'Option value (may be string, number, boolean, or object)',
 									),
 									'autoload'      => array( 'type' => 'string' ),

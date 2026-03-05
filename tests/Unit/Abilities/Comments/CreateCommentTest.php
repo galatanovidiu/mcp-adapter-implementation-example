@@ -21,7 +21,7 @@ final class CreateCommentTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/create-comment' );
+		$this->assertAbilityRegistered( 'core/create-comment' );
 	}
 
 	/**

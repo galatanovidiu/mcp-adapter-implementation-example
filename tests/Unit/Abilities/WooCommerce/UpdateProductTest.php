@@ -21,6 +21,10 @@ final class UpdateProductTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not available.' );
+		}
+
 		$this->assertAbilityRegistered( 'woo/update-product' );
 	}
 

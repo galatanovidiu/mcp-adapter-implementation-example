@@ -29,7 +29,7 @@ final class ActivateThemeTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/activate-theme' );
+		$this->assertAbilityRegistered( 'core/activate-theme' );
 	}
 
 	/**

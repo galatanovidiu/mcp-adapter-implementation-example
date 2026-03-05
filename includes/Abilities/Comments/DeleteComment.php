@@ -71,13 +71,21 @@ final class DeleteComment implements RegistersAbility {
 	/**
 	 * Check permission for deleting comments.
 	 *
-	 * @param array $input Input parameters.
+	 * Uses edit_comment + moderate_comments as a fallback when the
+	 * delete_comment meta capability check fails (observed on WP 7.0).
+	 *
+	 * @param array|null $input Input parameters.
 	 * @return bool Whether the user has permission.
 	 */
-	public static function check_permission( array $input ): bool {
+	public static function check_permission( ?array $input = null ): bool {
+		$input      = $input ?? array();
 		$comment_id = (int) ( $input['comment_id'] ?? 0 );
 
 		if ( $comment_id > 0 ) {
+			// Check specific comment deletion capability first, fall back to moderate_comments
+			if ( \current_user_can( 'edit_comment', $comment_id ) && \current_user_can( 'moderate_comments' ) ) {
+				return true;
+			}
 			return \current_user_can( 'delete_comment', $comment_id );
 		}
 
@@ -87,10 +95,11 @@ final class DeleteComment implements RegistersAbility {
 	/**
 	 * Execute the delete comment operation.
 	 *
-	 * @param array $input Input parameters.
+	 * @param array|null $input Input parameters.
 	 * @return array|\WP_Error Result array or error.
 	 */
-	public static function execute( array $input ) {
+	public static function execute( ?array $input = null ) {
+		$input = $input ?? array();
 		$comment_id   = (int) $input['comment_id'];
 		$force_delete = (bool) ( $input['force_delete'] ?? false );
 

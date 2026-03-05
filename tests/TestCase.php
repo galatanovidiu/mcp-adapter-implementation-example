@@ -18,6 +18,12 @@ use WP_UnitTestCase;
  * Base test case with common functionality for all tests.
  */
 abstract class TestCase extends WP_UnitTestCase {
+	/**
+	 * MCP session ID for HTTP transport tests.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $mcp_session_id = null;
 
 	/**
 	 * Set up before each test.
@@ -28,15 +34,24 @@ abstract class TestCase extends WP_UnitTestCase {
 		// Initialize abilities before anything else.
 		BootstrapAbilities::init();
 
-		// Ensure abilities API is initialized.
-		do_action( 'abilities_api_init' );
-
-		// Ensure MCP adapter is available.
-		if ( ! McpAdapter::is_available() ) {
-			return;
+		if ( ! \did_action( 'init' ) ) {
+			\do_action( 'init' );
 		}
 
-		$adapter = McpAdapter::instance();
+		$this->register_test_meta_keys();
+
+		$adapter = null;
+		if ( class_exists( McpAdapter::class ) ) {
+			$adapter = McpAdapter::instance();
+		}
+
+		// Ensure abilities API is initialized after MCP adapter hooks are in place.
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			\WP_Abilities_Registry::get_instance();
+		}
+
+		$this->ensure_mcp_adapter_abilities();
+
 		if ( ! $adapter ) {
 			return;
 		}
@@ -52,6 +67,7 @@ abstract class TestCase extends WP_UnitTestCase {
 	public function tear_down(): void {
 		// Clean up any test abilities.
 		$this->cleanup_test_abilities();
+		$this->reset_abilities_registry();
 
 		// Clean up any test posts.
 		$this->cleanup_test_posts();
@@ -65,6 +81,8 @@ abstract class TestCase extends WP_UnitTestCase {
 		// Reset abilities bootstrap state.
 		BootstrapAbilities::reset();
 
+		$this->mcp_session_id = null;
+
 		// Remove the mcp_adapter_init action to prevent conflicts.
 		remove_all_actions( 'mcp_adapter_init' );
 
@@ -72,7 +90,46 @@ abstract class TestCase extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Clean up test abilities that start with 'test/' or 'wpmcp-example/'.
+	 * Register meta keys used in tests so MCP tools can read them.
+	 */
+	protected function register_test_meta_keys(): void {
+		if ( ! function_exists( 'register_post_meta' ) ) {
+			return;
+		}
+
+		$keys = array(
+			'_ai_generated',
+			'_creation_date',
+			'_workflow_test',
+			'ai_analysis_date',
+			'ai_revision_count',
+			'content_quality',
+			'content_topics',
+			'difficulty_level',
+			'estimated_time',
+			'priority',
+			'reading_time',
+			'series_name',
+			'series_order',
+			'test_number',
+			'word_count',
+		);
+
+		foreach ( $keys as $key ) {
+			register_post_meta(
+				'post',
+				$key,
+				array(
+					'type'         => 'string',
+					'single'       => true,
+					'show_in_rest' => true,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Clean up test abilities that start with 'test/', 'core/', or 'woo/'.
 	 */
 	protected function cleanup_test_abilities(): void {
 		if ( ! function_exists( 'wp_get_abilities' ) ) {
@@ -82,11 +139,27 @@ abstract class TestCase extends WP_UnitTestCase {
 		$abilities = wp_get_abilities();
 		foreach ( $abilities as $ability ) {
 			$name = $ability->get_name();
-			if ( ! str_starts_with( $name, 'test/' ) && ! str_starts_with( $name, 'wpmcp-example/' ) ) {
+			if ( ! str_starts_with( $name, 'test/' ) && ! str_starts_with( $name, 'core/' ) && ! str_starts_with( $name, 'woo/' ) ) {
 				continue;
 			}
 
 			wp_unregister_ability( $name );
+		}
+	}
+
+	protected function reset_abilities_registry(): void {
+		foreach ( array( 'WP_Abilities_Registry', 'WP_Ability_Categories_Registry' ) as $class_name ) {
+			if ( ! class_exists( $class_name ) ) {
+				continue;
+			}
+			try {
+				$reflection = new \ReflectionClass( $class_name );
+				$property   = $reflection->getProperty( 'instance' );
+				$property->setAccessible( true );
+				$property->setValue( null, null );
+			} catch ( \ReflectionException $e ) {
+				continue;
+			}
 		}
 	}
 
@@ -197,7 +270,7 @@ abstract class TestCase extends WP_UnitTestCase {
 	 * @return \WP\MCP\Core\McpAdapter|null
 	 */
 	protected function get_mcp_adapter(): ?McpAdapter {
-		if ( ! McpAdapter::is_available() ) {
+		if ( ! class_exists( McpAdapter::class ) ) {
 			$this->markTestSkipped( 'MCP Adapter is not available' );
 		}
 
@@ -239,8 +312,8 @@ abstract class TestCase extends WP_UnitTestCase {
 		$server = $this->get_mcp_server( $server_id );
 		$this->assertNotNull( $server, "MCP server '{$server_id}' should exist" );
 
-		$tool = $server->get_tool( $tool_name );
-		$this->assertNotNull( $tool, "Tool '{$tool_name}' should be registered with server '{$server_id}'" );
+		$tools = $server->get_tools();
+		$this->assertArrayHasKey( $tool_name, $tools, "Tool '{$tool_name}' should be registered with server '{$server_id}'" );
 	}
 
 	/**
@@ -315,7 +388,7 @@ abstract class TestCase extends WP_UnitTestCase {
 	 * Clean up MCP servers to prevent conflicts between tests.
 	 */
 	protected function cleanup_mcp_servers(): void {
-		if ( ! McpAdapter::is_available() ) {
+		if ( ! class_exists( McpAdapter::class ) ) {
 			return;
 		}
 
@@ -333,14 +406,70 @@ abstract class TestCase extends WP_UnitTestCase {
 			$servers_property->setAccessible( true );
 			$servers_property->setValue( $adapter, array() );
 
-			// Reset the has_triggered_init flag so mcp_adapter_init can be called again.
-			$init_flag_property = $reflection->getProperty( 'has_triggered_init' );
-			$init_flag_property->setAccessible( true );
-			$init_flag_property->setValue( $adapter, false );
+			// Reset adapter initialization flags so mcp_adapter_init can be called again.
+			foreach ( array( 'has_triggered_init', 'initialized' ) as $property_name ) {
+				if ( ! $reflection->hasProperty( $property_name ) ) {
+					continue;
+				}
+				$init_flag_property = $reflection->getProperty( $property_name );
+				$init_flag_property->setAccessible( true );
+				$init_flag_property->setValue( $init_flag_property->isStatic() ? null : $adapter, false );
+			}
 		} catch ( \ReflectionException $e ) {
 			// If reflection fails, we can't clean up servers.
 			// This might cause some tests to fail, but it's better than crashing.
 		}
+	}
+
+	private function ensure_mcp_adapter_abilities(): void {
+		if ( ! class_exists( '\\WP\\MCP\\Abilities\\DiscoverAbilitiesAbility' ) ) {
+			return;
+		}
+
+		if ( function_exists( 'wp_has_ability_category' ) && ! wp_has_ability_category( 'mcp-adapter' ) ) {
+			global $wp_current_filter;
+			$original_filters = $wp_current_filter;
+			if ( ! is_array( $wp_current_filter ) ) {
+				$wp_current_filter = array();
+			}
+			$wp_current_filter[] = 'wp_abilities_api_categories_init';
+			wp_register_ability_category(
+				'mcp-adapter',
+				array(
+					'label'       => 'MCP Adapter',
+					'description' => 'Abilities for the MCP Adapter',
+				)
+			);
+			array_pop( $wp_current_filter );
+			$wp_current_filter = $original_filters;
+		}
+
+		$needs_register = ! wp_has_ability( 'mcp-adapter/discover-abilities' )
+			|| ! wp_has_ability( 'mcp-adapter/get-ability-info' )
+			|| ! wp_has_ability( 'mcp-adapter/execute-ability' );
+		if ( ! $needs_register ) {
+			return;
+		}
+
+		global $wp_current_filter;
+		$original_filters = $wp_current_filter;
+		if ( ! is_array( $wp_current_filter ) ) {
+			$wp_current_filter = array();
+		}
+		$wp_current_filter[] = 'wp_abilities_api_init';
+
+		if ( ! wp_has_ability( 'mcp-adapter/discover-abilities' ) ) {
+			\WP\MCP\Abilities\DiscoverAbilitiesAbility::register();
+		}
+		if ( ! wp_has_ability( 'mcp-adapter/get-ability-info' ) ) {
+			\WP\MCP\Abilities\GetAbilityInfoAbility::register();
+		}
+		if ( ! wp_has_ability( 'mcp-adapter/execute-ability' ) ) {
+			\WP\MCP\Abilities\ExecuteAbilityAbility::register();
+		}
+
+		array_pop( $wp_current_filter );
+		$wp_current_filter = $original_filters;
 	}
 
 	/**
@@ -367,6 +496,13 @@ abstract class TestCase extends WP_UnitTestCase {
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
+		if ( 'initialize' !== $method ) {
+			$session_id = $this->ensure_mcp_session_id( $server_namespace, $server_route );
+			if ( $session_id ) {
+				$request->set_header( 'Mcp-Session-Id', $session_id );
+			}
+		}
+
 		// Set the JSON-RPC body.
 		$body = wp_json_encode(
 			array(
@@ -379,7 +515,184 @@ abstract class TestCase extends WP_UnitTestCase {
 		$request->set_body( $body );
 
 		// Get the REST server and dispatch the request.
-		$server = rest_get_server();
-		return $server->dispatch( $request );
+		$server            = rest_get_server();
+		$previous_reporting = error_reporting();
+		error_reporting( $previous_reporting & ~E_DEPRECATED & ~E_USER_DEPRECATED );
+		try {
+			$response = $server->dispatch( $request );
+		} finally {
+			error_reporting( $previous_reporting );
+		}
+
+		$this->store_mcp_session_id( $response );
+		$this->normalize_mcp_response( $response );
+
+		return $response;
+	}
+
+	/**
+	 * Ensure an MCP session exists for the server.
+	 *
+	 * @param string $server_namespace MCP server namespace.
+	 * @param string $server_route MCP server route.
+	 *
+	 * @return string|null
+	 */
+	protected function ensure_mcp_session_id( string $server_namespace, string $server_route ): ?string {
+		if ( $this->mcp_session_id ) {
+			return $this->mcp_session_id;
+		}
+
+		$params = array(
+			'protocolVersion' => '2025-06-18',
+			'capabilities'    => array(),
+			'clientInfo'      => array(
+				'name'    => 'test-client',
+				'version' => '1.0.0',
+			),
+		);
+
+		$request = new \WP_REST_Request( 'POST', "/{$server_namespace}/{$server_route}" );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'jsonrpc' => '2.0',
+					'method'  => 'initialize',
+					'params'  => $params,
+					'id'      => 1,
+				)
+			)
+		);
+
+		$server   = rest_get_server();
+		$response = $server->dispatch( $request );
+
+		$this->store_mcp_session_id( $response );
+		if ( ! $this->mcp_session_id && class_exists( \WP\MCP\Transport\Infrastructure\HttpSessionValidator::class ) ) {
+			$session_id = \WP\MCP\Transport\Infrastructure\HttpSessionValidator::create_session( $params );
+			if ( is_string( $session_id ) && '' !== $session_id ) {
+				$this->mcp_session_id = $session_id;
+			}
+		}
+
+		return $this->mcp_session_id;
+	}
+
+	/**
+	 * Persist session ID from an MCP response.
+	 *
+	 * @param \WP_REST_Response $response REST response.
+	 *
+	 * @return void
+	 */
+	protected function store_mcp_session_id( \WP_REST_Response $response ): void {
+		$headers = $response->get_headers();
+		if ( ! is_array( $headers ) ) {
+			$headers = array();
+		}
+		$headers    = array_change_key_case( $headers, CASE_LOWER );
+		$session_id = $headers['mcp-session-id'] ?? null;
+		if ( ! is_string( $session_id ) || '' === $session_id ) {
+			$data = $response->get_data();
+			if ( is_array( $data ) ) {
+				$result = $data['result'] ?? $data;
+				if ( is_object( $result ) ) {
+					$result = method_exists( $result, 'toArray' ) ? $result->toArray() : (array) $result;
+				}
+				if ( is_array( $result ) ) {
+					$session_id = $result['sessionId'] ?? $result['session_id'] ?? $session_id;
+				}
+			}
+		}
+		if ( is_string( $session_id ) && '' !== $session_id ) {
+			$this->mcp_session_id = $session_id;
+		}
+	}
+
+	/**
+	 * Normalize MCP JSON-RPC responses to simplify assertions.
+	 *
+	 * @param \WP_REST_Response $response REST response.
+	 *
+	 * @return void
+	 */
+	protected function normalize_mcp_response( \WP_REST_Response $response ): void {
+		$data = $response->get_data();
+		if ( ! is_array( $data ) ) {
+			return;
+		}
+
+		if ( isset( $data['result'] ) ) {
+			$result = $data['result'];
+			if ( is_object( $result ) ) {
+				$result = method_exists( $result, 'toArray' ) ? $result->toArray() : (array) $result;
+			}
+			if ( is_array( $result ) ) {
+				$result = $this->normalize_mcp_result( $result );
+			}
+			$response->set_data( $result );
+			return;
+		}
+
+		if ( isset( $data['error'] ) ) {
+			$error = $data['error'];
+			$error = is_object( $error ) ? (array) $error : $error;
+			$response->set_data( $error );
+		}
+	}
+
+	/**
+	 * Normalize MCP result payloads.
+	 *
+	 * @param array $result MCP result payload.
+	 *
+	 * @return array
+	 */
+	private function normalize_mcp_result( array $result ): array {
+		if ( isset( $result['structuredContent'] ) && null !== $result['structuredContent'] ) {
+			$structured = $result['structuredContent'];
+			if ( is_object( $structured ) ) {
+				$structured = (array) $structured;
+			}
+			if ( is_array( $structured ) ) {
+				$result['content'] = $structured;
+			}
+		}
+
+		if ( isset( $result['tools'] ) && is_array( $result['tools'] ) ) {
+			$normalized_tools = array();
+			foreach ( $result['tools'] as $tool ) {
+				if ( is_object( $tool ) && method_exists( $tool, 'toArray' ) ) {
+					$normalized_tools[] = $tool->toArray();
+					continue;
+				}
+				$normalized_tools[] = is_object( $tool ) ? (array) $tool : $tool;
+			}
+			$result['tools'] = $normalized_tools;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Extract text from MCP content blocks.
+	 *
+	 * @param array $content MCP content blocks.
+	 *
+	 * @return string
+	 */
+	protected function get_mcp_content_text( array $content ): string {
+		if ( empty( $content ) ) {
+			return '';
+		}
+
+		$first = $content[0] ?? array();
+		if ( is_array( $first ) && isset( $first['text'] ) && is_string( $first['text'] ) ) {
+			return $first['text'];
+		}
+
+		return '';
 	}
 }

@@ -26,7 +26,11 @@ final class ManageShippingMethodsTest extends TestCase {
 	}
 
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/manage-shipping-methods' );
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not available.' );
+		}
+
+		$this->assertAbilityRegistered( 'woo/manage-shipping-methods' );
 	}
 
 	public function test_list_zones_action_returns_zones(): void {

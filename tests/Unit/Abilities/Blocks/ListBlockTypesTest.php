@@ -29,7 +29,7 @@ final class ListBlockTypesTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/list-block-types' );
+		$this->assertAbilityRegistered( 'core/list-block-types' );
 	}
 
 	/**
@@ -210,7 +210,7 @@ final class ListBlockTypesTest extends TestCase {
 		$user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $user_id );
 
-		$result = $this->execute_ability( 'wpmcp-example/list-block-types', array() );
+		$result = $this->execute_ability( 'core/list-block-types', array() );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'blocks', $result );

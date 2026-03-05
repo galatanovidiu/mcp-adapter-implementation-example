@@ -29,14 +29,14 @@ final class GetTermsTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/get-terms' );
+		$this->assertAbilityRegistered( 'core/get-terms' );
 	}
 
 	/**
 	 * Test output schema matches response payload.
 	 */
 	public function test_output_schema_matches_response(): void {
-		$ability = wp_get_ability( 'wpmcp-example/get-terms' );
+		$ability = wp_get_ability( 'core/get-terms' );
 		$this->assertNotNull( $ability, 'Ability should be registered' );
 
 		$output_schema = $ability->get_output_schema();
@@ -257,7 +257,7 @@ final class GetTermsTest extends TestCase {
 		$result2         = GetTerms::execute( $input );
 
 		$this->assertIsArray( $result2 );
-		$this->assertLessThanOrEqual( 2, $result2['total'], 'Should return at most 2 terms on second page' );
+		$this->assertLessThanOrEqual( 2, count( $result2['terms'] ), 'Should return at most 2 terms on second page' );
 	}
 
 	/**
@@ -270,7 +270,7 @@ final class GetTermsTest extends TestCase {
 		$this->create_test_term( 'API Test Term', 'category' );
 
 		$input  = array( 'taxonomy' => 'category' );
-		$result = $this->execute_ability( 'wpmcp-example/get-terms', $input );
+		$result = $this->execute_ability( 'core/get-terms', $input );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'terms', $result );

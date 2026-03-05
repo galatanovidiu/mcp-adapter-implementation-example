@@ -29,7 +29,7 @@ final class CreateTermTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/create-term' );
+		$this->assertAbilityRegistered( 'core/create-term' );
 	}
 
 	/**
@@ -81,8 +81,8 @@ final class CreateTermTest extends TestCase {
 		$input  = array( 'name' => 'Test Category' );
 		$result = CreateTerm::execute( $input );
 
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertSame( 'missing_taxonomy', $result['error']['code'] );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'Taxonomy is required.', $result['message'] );
 	}
 
 	/**
@@ -98,8 +98,8 @@ final class CreateTermTest extends TestCase {
 		);
 		$result = CreateTerm::execute( $input );
 
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertSame( 'invalid_taxonomy', $result['error']['code'] );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'Invalid taxonomy.', $result['message'] );
 	}
 
 	/**
@@ -112,8 +112,8 @@ final class CreateTermTest extends TestCase {
 		$input  = array( 'taxonomy' => 'category' );
 		$result = CreateTerm::execute( $input );
 
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertSame( 'missing_name', $result['error']['code'] );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'Name is required.', $result['message'] );
 	}
 
 	/**
@@ -130,8 +130,8 @@ final class CreateTermTest extends TestCase {
 		);
 		$result = CreateTerm::execute( $input );
 
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertSame( 'invalid_parent', $result['error']['code'] );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'Parent term not found.', $result['message'] );
 	}
 
 	/**
@@ -154,9 +154,11 @@ final class CreateTermTest extends TestCase {
 		$result = CreateTerm::execute( $input );
 
 		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
 		$this->assertArrayHasKey( 'id', $result );
+		$this->assertSame( 'created', $result['action'] );
 
-		$term = get_term( $result['id'], 'category' );
+		$term = \get_term( $result['id'], 'category' );
 		$this->assertNotNull( $term );
 		$this->assertSame( 'Test Category', $term->name );
 		$this->assertSame( 'test-category', $term->slug );
@@ -176,10 +178,59 @@ final class CreateTermTest extends TestCase {
 			'name'     => 'API Term',
 		);
 
-		$result = $this->execute_ability( 'wpmcp-example/create-term', $input );
+		$result = $this->execute_ability( 'core/create-term', $input );
 
 		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
 		$this->assertArrayHasKey( 'id', $result );
-		$this->assertNotNull( get_term( $result['id'], 'category' ) );
+		$this->assertNotNull( \get_term( $result['id'], 'category' ) );
+	}
+
+	/**
+	 * Test create term with if_exists use_existing.
+	 */
+	public function test_term_creation_with_use_existing(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$existing_id = $this->create_test_term( 'Existing Term', 'category' );
+
+		$input = array(
+			'taxonomy'  => 'category',
+			'name'      => 'Existing Term',
+			'if_exists' => 'use_existing',
+		);
+
+		$result = CreateTerm::execute( $input );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertTrue( $result['exists'] );
+		$this->assertSame( 'existing', $result['action'] );
+		$this->assertSame( $existing_id, $result['id'] );
+	}
+
+	/**
+	 * Test create term with if_exists create_duplicate.
+	 */
+	public function test_term_creation_with_create_duplicate(): void {
+		$user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$existing_id = $this->create_test_term( 'Duplicate Term', 'category', array( 'slug' => 'duplicate-term' ) );
+
+		$input = array(
+			'taxonomy'  => 'category',
+			'name'      => 'Duplicate Term',
+			'slug'      => 'duplicate-term',
+			'if_exists' => 'create_duplicate',
+		);
+
+		$result = CreateTerm::execute( $input );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertTrue( $result['exists'] );
+		$this->assertSame( 'duplicate', $result['action'] );
+		$this->assertNotSame( $existing_id, $result['id'] );
+		$this->assertNotSame( 'duplicate-term', $result['term']['slug'] );
 	}
 }

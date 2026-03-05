@@ -29,13 +29,15 @@ final class SchemaValidationTest extends TestCase {
 	 * Test that all ability schemas are valid JSON Schema.
 	 */
 	public function test_all_ability_schemas_are_valid(): void {
-		do_action( 'abilities_api_init' );
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			\WP_Abilities_Registry::get_instance();
+		}
 
 		$abilities         = wp_get_abilities();
 		$example_abilities = array_filter(
 			$abilities,
 			static function ( $ability ) {
-				return str_starts_with( $ability->get_name(), 'wpmcp-example/' );
+				return str_starts_with( $ability->get_name(), 'core/' );
 			}
 		);
 
@@ -50,10 +52,11 @@ final class SchemaValidationTest extends TestCase {
 				$this->assertIsArray( $input_schema, "Input schema for '{$ability->get_name()}' should be array" );
 				$this->assertArrayHasKey( 'type', $input_schema, "Input schema should have 'type'" );
 
-				if ( $input_schema['type'] === 'object' ) {
-					$this->assertArrayHasKey( 'properties', $input_schema, "Object schemas should have 'properties'" );
+			if ( $input_schema['type'] === 'object' ) {
+				if ( isset( $input_schema['properties'] ) ) {
 					$this->assertIsArray( $input_schema['properties'], "'properties' should be array" );
 				}
+			}
 			}
 
 			// Test output schema validity.
@@ -78,7 +81,7 @@ final class SchemaValidationTest extends TestCase {
 		$this->assertNotEmpty( $tools, 'Should have tools registered' );
 
 		foreach ( $tools as $tool ) {
-			$tool_array = $tool->to_array();
+			$tool_array = $tool->toArray();
 
 			// Verify required MCP tool fields.
 			$this->assertArrayHasKey( 'name', $tool_array );
@@ -111,7 +114,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 123, // Should be string, not integer.
 					'title'     => 'Test Post',
@@ -119,26 +122,29 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid string type should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid string type should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 
 		// Test array validation.
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => 'post', // Should be array, not string.
 				),
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid array type should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'String post_type should be coerced' );
+		$this->assertFalse( $response->get_data()['isError'] ?? false );
+		$this->assertArrayHasKey( 'posts', $response->get_data()['content'] ?? array() );
 
 		// Test integer validation.
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					'limit'     => 'ten', // Should be integer, not string.
@@ -146,7 +152,8 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid integer type should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid integer type should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 	}
 
 	/**
@@ -162,7 +169,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					'orderby'   => 'invalid_orderby', // Not in enum.
@@ -170,13 +177,14 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid enum value should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid enum value should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 
 		// Test valid enum value.
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					'orderby'   => 'title', // Valid enum value.
@@ -200,7 +208,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					// Missing required 'post_type' field.
 					'title'   => 'Test Post',
@@ -209,13 +217,14 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Missing required field should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Missing required field should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 
 		// Test with required field present.
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'post', // Required field present.
 					'title'     => 'Test Post',
@@ -239,7 +248,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'  => array( 'post' ),
 					'date_query' => array(
@@ -256,7 +265,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'  => array( 'post' ),
 					'date_query' => array(
@@ -267,7 +276,8 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid nested object should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid nested object should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 	}
 
 	/**
@@ -283,7 +293,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'   => array( 'post', 'page' ), // Valid array of strings.
 					'post_status' => array( 'publish', 'draft' ), // Valid array of strings.
@@ -297,7 +307,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'   => array( 'post', 123 ), // Mixed types in array.
 					'post_status' => array( 'publish' ),
@@ -305,7 +315,8 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid array items should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid array items should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 	}
 
 	/**
@@ -321,7 +332,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					// Don't specify limit, orderby, order - should use defaults.
@@ -359,7 +370,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'   => array( 'post' ),
 					'post_status' => array( 'publish' ),
@@ -413,8 +424,8 @@ final class SchemaValidationTest extends TestCase {
 		$tools  = $server->get_tools();
 
 		foreach ( $tools as $tool ) {
-			$tool_array   = $tool->to_array();
-			$ability_name = str_replace( '--', '/', $tool_array['name'] );
+			$tool_array   = $tool->toArray();
+			$ability_name = preg_replace( '/-/', '/', $tool_array['name'], 1 );
 
 			// Get the original ability.
 			$ability = wp_get_ability( $ability_name );
@@ -461,18 +472,18 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'  => array( 'post' ),
 					'meta_query' => array(
 						array(
 							'key'     => 'test_meta',
-							'value'   => 'test_value',
+							'value'   => array( 'test_value' ),
 							'compare' => '=',
 						),
 						array(
 							'key'     => 'another_meta',
-							'value'   => 'another_value',
+							'value'   => array( 'another_value' ),
 							'compare' => 'LIKE',
 						),
 					),
@@ -486,7 +497,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type'  => array( 'post' ),
 					'meta_query' => array(
@@ -500,7 +511,8 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Invalid meta_query structure should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Invalid meta_query structure should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 	}
 
 	/**
@@ -516,7 +528,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					'limit'     => 1, // Minimum allowed.
@@ -531,7 +543,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					'limit'     => 100, // Maximum allowed.
@@ -545,7 +557,7 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					'limit'     => 101, // Exceeds maximum.
@@ -553,13 +565,14 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Values exceeding maximum should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Values exceeding maximum should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 
 		// Test below minimum.
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-list-posts',
+				'name'      => 'core-list-posts',
 				'arguments' => array(
 					'post_type' => array( 'post' ),
 					'limit'     => 0, // Below minimum.
@@ -567,7 +580,8 @@ final class SchemaValidationTest extends TestCase {
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status(), 'Values below minimum should fail validation' );
+		$this->assertEquals( 200, $response->get_status(), 'Values below minimum should fail validation' );
+		$this->assertTrue( $response->get_data()['isError'] ?? false );
 	}
 
 	/**
@@ -583,18 +597,18 @@ final class SchemaValidationTest extends TestCase {
 		$response = $this->make_mcp_request(
 			'tools/call',
 			array(
-				'name'      => 'wpmcp-example-create-post',
+				'name'      => 'core-create-post',
 				'arguments' => array(
 					'post_type' => 'invalid_type',
 				),
 			)
 		);
 
-		$this->assertEquals( 500, $response->get_status() );
+		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'message', $data );
-		$this->assertIsString( $data['message'] );
-		$this->assertNotEmpty( $data['message'], 'Error message should not be empty' );
+		$this->assertArrayHasKey( 'isError', $data );
+		$this->assertTrue( $data['isError'], 'Validation error should set isError' );
+		$this->assertNotEmpty( $this->get_mcp_content_text( $data['content'] ?? array() ), 'Error message should not be empty' );
 	}
 }

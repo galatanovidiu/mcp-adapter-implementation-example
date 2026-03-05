@@ -29,7 +29,7 @@ final class UpdateUserTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/update-user' );
+		$this->assertAbilityRegistered( 'core/update-user' );
 	}
 
 	/**

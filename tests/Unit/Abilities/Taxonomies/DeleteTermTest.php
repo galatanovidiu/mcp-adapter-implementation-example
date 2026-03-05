@@ -29,7 +29,7 @@ final class DeleteTermTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/delete-term' );
+		$this->assertAbilityRegistered( 'core/delete-term' );
 	}
 
 	/**
@@ -155,7 +155,7 @@ final class DeleteTermTest extends TestCase {
 			'term_id'  => $term_id,
 		);
 
-		$result = $this->execute_ability( 'wpmcp-example/delete-term', $input );
+		$result = $this->execute_ability( 'core/delete-term', $input );
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'deleted', $result );

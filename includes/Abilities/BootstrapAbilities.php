@@ -59,9 +59,13 @@ use OvidiuGalatan\McpAdapterExample\Abilities\Settings\GetSiteSettings;
 use OvidiuGalatan\McpAdapterExample\Abilities\Settings\ListSiteOptions;
 use OvidiuGalatan\McpAdapterExample\Abilities\Settings\UpdateSiteSettings;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\CheckUpdates;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\ExecuteWorkflow;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\GetWorkflowAbilityInfo;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\GetConstants;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\GetDebugInfo;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\GetSystemInfo;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\GetWorkflowPolicy;
+// use OvidiuGalatan\McpAdapterExample\Abilities\System\ListWorkflowAbilities;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\ManageTransients;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\OptimizeDatabase;
 use OvidiuGalatan\McpAdapterExample\Abilities\System\RunUpdates;
@@ -124,32 +128,45 @@ final class BootstrapAbilities {
 	 * @var bool
 	 */
 	private static bool $initialized = false;
+	private static $categories_callback = null;
+	private static $abilities_callback = null;
 
 	public static function init(): void {
 		if ( self::$initialized ) {
 			return;
 		}
 
-		add_action(
-			'wp_abilities_api_categories_init',
-			static function () {
-				// Register categories first
-				AppearanceCategory::register();
-				ContentCategory::register();
-				EcommerceCategory::register();
-				EngagementCategory::register();
-				MediaCategory::register();
-				PluginsCategory::register();
-				SecurityCategory::register();
-				SettingsCategory::register();
-				SystemCategory::register();
-				UsersCategory::register();
-			}
-		);
+		if ( null === self::$categories_callback ) {
+			self::$categories_callback = static function (): void {
+			// Register categories first
+			AppearanceCategory::register();
+			ContentCategory::register();
+			EcommerceCategory::register();
+			EngagementCategory::register();
+			MediaCategory::register();
+			PluginsCategory::register();
+			SecurityCategory::register();
+			SettingsCategory::register();
+			SystemCategory::register();
+			UsersCategory::register();
+			};
+		}
 
-		\add_action(
-			'wp_abilities_api_init',
-			static function (): void {
+		$register_categories = self::$categories_callback;
+
+		add_action( 'wp_abilities_api_categories_init', $register_categories );
+		if ( \did_action( 'wp_abilities_api_categories_init' ) > 0 && self::registry_has_instance( 'WP_Ability_Categories_Registry' ) ) {
+			global $wp_current_filter;
+			if ( ! is_array( $wp_current_filter ) ) {
+				$wp_current_filter = array();
+			}
+			$wp_current_filter[] = 'wp_abilities_api_categories_init';
+			$register_categories();
+			array_pop( $wp_current_filter );
+		}
+
+		if ( null === self::$abilities_callback ) {
+			self::$abilities_callback = static function (): void {
 
 				// Post CRUD abilities
 				CreatePost::register();
@@ -244,6 +261,10 @@ final class BootstrapAbilities {
 				GetDebugInfo::register();
 				ManageTransients::register();
 				GetConstants::register();
+				// ExecuteWorkflow::register();
+				// ListWorkflowAbilities::register();
+				// GetWorkflowAbilityInfo::register();
+				// GetWorkflowPolicy::register();
 
 				// Security/Maintenance abilities
 				CheckFilePermissions::register();
@@ -300,8 +321,21 @@ final class BootstrapAbilities {
 				// Prompt abilities
 				GeneratePostPrompt::register();
 				SummarizeContentPrompt::register();
+			};
+		}
+
+		$register_abilities = self::$abilities_callback;
+
+		\add_action( 'wp_abilities_api_init', $register_abilities );
+		if ( \did_action( 'wp_abilities_api_init' ) > 0 && self::registry_has_instance( 'WP_Abilities_Registry' ) ) {
+			global $wp_current_filter;
+			if ( ! is_array( $wp_current_filter ) ) {
+				$wp_current_filter = array();
 			}
-		);
+			$wp_current_filter[] = 'wp_abilities_api_init';
+			$register_abilities();
+			array_pop( $wp_current_filter );
+		}
 
 		self::$initialized = true;
 	}
@@ -311,5 +345,27 @@ final class BootstrapAbilities {
 	 */
 	public static function reset(): void {
 		self::$initialized = false;
+		if ( null !== self::$categories_callback ) {
+			\remove_action( 'wp_abilities_api_categories_init', self::$categories_callback );
+		}
+		if ( null !== self::$abilities_callback ) {
+			\remove_action( 'wp_abilities_api_init', self::$abilities_callback );
+		}
+		self::$categories_callback = null;
+		self::$abilities_callback  = null;
+	}
+
+	private static function registry_has_instance( string $class_name ): bool {
+		if ( ! class_exists( $class_name ) ) {
+			return false;
+		}
+		try {
+			$reflection = new \ReflectionClass( $class_name );
+			$property   = $reflection->getProperty( 'instance' );
+			$property->setAccessible( true );
+			return null !== $property->getValue();
+		} catch ( \ReflectionException $e ) {
+			return false;
+		}
 	}
 }

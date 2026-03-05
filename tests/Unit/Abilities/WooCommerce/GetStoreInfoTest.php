@@ -26,7 +26,11 @@ final class GetStoreInfoTest extends TestCase {
 	}
 
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/get-store-info' );
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not available.' );
+		}
+
+		$this->assertAbilityRegistered( 'woo/get-store-info' );
 	}
 
 	public function test_execute_returns_store_info_with_defaults(): void {

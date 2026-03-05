@@ -29,7 +29,7 @@ final class GetThemeInfoTest extends TestCase {
 	 * Test ability registration.
 	 */
 	public function test_ability_is_registered(): void {
-		$this->assertAbilityRegistered( 'wpmcp-example/get-theme-info' );
+		$this->assertAbilityRegistered( 'core/get-theme-info' );
 	}
 
 	/**

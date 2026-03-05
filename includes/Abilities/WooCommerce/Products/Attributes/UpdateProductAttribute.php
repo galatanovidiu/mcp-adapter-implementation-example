@@ -138,7 +138,7 @@ class UpdateProductAttribute implements RegistersAbility {
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			return array(
 				'success'       => false,
-				'attribute'     => null,
+				'attribute'     => self::empty_attribute_payload(),
 				'changes_made'  => array(),
 				'terms_added'   => array(),
 				'terms_updated' => array(),
@@ -154,7 +154,7 @@ class UpdateProductAttribute implements RegistersAbility {
 		$wc_attributes = wc_get_attribute_taxonomies();
 		$attribute     = null;
 		foreach ( $wc_attributes as $attr ) {
-			if ( $attr->attribute_id === $attribute_id ) {
+			if ( (int) $attr->attribute_id === (int) $attribute_id ) {
 				$attribute = $attr;
 				break;
 			}
@@ -163,7 +163,7 @@ class UpdateProductAttribute implements RegistersAbility {
 		if ( ! $attribute ) {
 			return array(
 				'success'       => false,
-				'attribute'     => null,
+				'attribute'     => self::empty_attribute_payload(),
 				'changes_made'  => array(),
 				'terms_added'   => array(),
 				'terms_updated' => array(),
@@ -221,7 +221,7 @@ class UpdateProductAttribute implements RegistersAbility {
 				if ( is_wp_error( $result ) ) {
 					return array(
 						'success'       => false,
-						'attribute'     => null,
+						'attribute'     => self::empty_attribute_payload(),
 						'changes_made'  => array(),
 						'terms_added'   => array(),
 						'terms_updated' => array(),
@@ -350,7 +350,7 @@ class UpdateProductAttribute implements RegistersAbility {
 			$updated_attributes = wc_get_attribute_taxonomies();
 			$updated_attribute  = null;
 			foreach ( $updated_attributes as $attr ) {
-				if ( $attr->attribute_id === $attribute_id ) {
+				if ( (int) $attr->attribute_id === (int) $attribute_id ) {
 					$updated_attribute = $attr;
 					break;
 				}
@@ -384,7 +384,7 @@ class UpdateProductAttribute implements RegistersAbility {
 		} catch ( \Throwable $e ) {
 			return array(
 				'success'       => false,
-				'attribute'     => null,
+				'attribute'     => self::empty_attribute_payload(),
 				'changes_made'  => array(),
 				'terms_added'   => array(),
 				'terms_updated' => array(),
@@ -393,5 +393,17 @@ class UpdateProductAttribute implements RegistersAbility {
 				'message'       => 'Error updating attribute: ' . $e->getMessage(),
 			);
 		}
+	}
+
+	private static function empty_attribute_payload(): array {
+		return array(
+			'id'           => 0,
+			'name'         => '',
+			'slug'         => '',
+			'type'         => '',
+			'order_by'     => '',
+			'has_archives' => false,
+			'taxonomy'     => '',
+		);
 	}
 }
